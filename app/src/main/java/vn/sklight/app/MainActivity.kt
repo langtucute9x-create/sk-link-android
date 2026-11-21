@@ -175,20 +175,7 @@ fun LedPage() {
             Spacer(Modifier.width(8.dp))
             T("Màu hiện tại: RGB(${(c shr 16) and 255}, ${(c shr 8) and 255}, ${c and 255})", 12, color = Grey)
         }
-    }
-    Card {
-        GroupTitle(Icons.Filled.Tune, "Hiệu ứng", 19)
-        Spacer(Modifier.height(14.dp))
-        ValueRow(Icons.Filled.Speed, Cyan, "Tốc độ nháy & chạy", S.speed.intValue, Color(0xFFD9FBF9), Cyan, Color(0xFF12C9C0))
-        SliderRow("Chậm", "Nhanh") { m ->
-            SkSlider((S.speed.intValue - 1) / 9f, { S.setSpeed(1 + (it * 9).roundToInt()) }, Cyan, Color(0xFFD9FBF9), Cyan, m, 8.dp, 21.dp, 10)
-        }
-        Divider(14.dp, 14.dp)
-        ValueRow(Icons.Filled.GraphicEq, Pink, "Độ nhạy nhịp điệu", S.sens.intValue, Color(0xFFFED8EF), Color(0xFFFF7CC8), Pink)
-        SliderRow("Thấp", "Cao") { m ->
-            SkSlider(S.sens.intValue / 7f, { S.setSens((it * 7).roundToInt()) }, Pink, Color(0xFFFED8EF), Pink, m, 8.dp, 21.dp, 8)
-        }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         Column(Modifier.fillMaxWidth().border(1.dp, Bd, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 11.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.GraphicEq, null, tint = Pink, modifier = Modifier.size(18.dp))
@@ -211,6 +198,19 @@ fun LedPage() {
         }
     }
     for (g in Effects.groups) EffectGroupCard(g)
+    Card {
+        GroupTitle(Icons.Filled.Tune, "Hiệu ứng", 19)
+        Spacer(Modifier.height(14.dp))
+        ValueRow(Icons.Filled.Speed, Cyan, "Tốc độ nháy & chạy", S.speed.intValue, Color(0xFFD9FBF9), Cyan, Color(0xFF12C9C0))
+        SliderRow("Chậm", "Nhanh") { m ->
+            SkSlider((S.speed.intValue - 1) / 9f, { S.setSpeed(1 + (it * 9).roundToInt()) }, Cyan, Color(0xFFD9FBF9), Cyan, m, 8.dp, 21.dp, 10)
+        }
+        Divider(14.dp, 14.dp)
+        ValueRow(Icons.Filled.GraphicEq, Pink, "Độ nhạy nhịp điệu", S.sens.intValue, Color(0xFFFED8EF), Color(0xFFFF7CC8), Pink)
+        SliderRow("Thấp", "Cao") { m ->
+            SkSlider(S.sens.intValue / 7f, { S.setSens((it * 7).roundToInt()) }, Pink, Color(0xFFFED8EF), Pink, m, 8.dp, 21.dp, 8)
+        }
+    }
 }
 
 @Composable
@@ -342,7 +342,8 @@ fun WelcomePage() {
     Card {
         SwitchRow("Hiệu ứng chào mừng", "Bật/Tắt", S.blkBit(1, 0x04)) { if (!S.setBlk(1, 0x04, if (it) 0x04 else 0)) { S.refreshBlocks(); needBlock() } }
         Divider()
-        SwitchRow("Chào xung quanh xe", "Hiệu ứng chào xung quanh xe", S.aroundOn.value) {
+        // Chỉ bật được khi Hiệu ứng chào mừng đang bật. Tắt = cả 5 hộp chạy cùng lúc, bật = chào lần lượt từng cửa.
+        SwitchRow("Chào xung quanh xe", "Hiệu ứng chào xung quanh xe", S.aroundOn.value, enabled = S.blkBit(1, 0x04)) {
             S.aroundOn.value = it
             Toast.makeText(ctx, "Công tắc này chưa gửi lệnh tới hộp (chưa biết mã lệnh).", Toast.LENGTH_SHORT).show()
         }
@@ -516,7 +517,7 @@ fun SettingsPage(onPick: () -> Unit) {
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
     }
-    T("SK Light 0.2.0", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.2.1", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

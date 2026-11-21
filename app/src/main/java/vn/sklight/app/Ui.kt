@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -159,10 +160,10 @@ fun SkSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
 }
 
 @Composable
-fun SwitchRow(title: String, sub: String, on: Boolean, onChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = 58.dp)) {
+fun SwitchRow(title: String, sub: String, on: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = 58.dp).alpha(if (enabled) 1f else 0.45f)) {
         Column(Modifier.weight(1f)) { T(title, 15, FontWeight.Bold); T(sub, 12, color = Grey) }
-        SkSwitch(on, onChange)
+        SkSwitch(on && enabled) { if (enabled) onChange(it) }
     }
 }
 
