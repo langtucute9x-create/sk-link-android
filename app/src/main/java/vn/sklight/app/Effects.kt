@@ -31,7 +31,11 @@ object Effects {
         EffectGroup("CHẾ ĐỘ HIỆU ỨNG", Icons.Filled.AutoAwesome, listOf(
             Effect(7, "Ma thuật", Icons.Filled.AutoAwesome, cRed), Effect(8, "Huyền ảo", Icons.Filled.BlurCircular, Pink),
             Effect(9, "Ma thuật", Icons.Filled.AutoAwesome, cCyan), Effect(11, "Cuộn màn hình", Icons.Outlined.ViewAgenda, cOrange),
-            Effect(14, "Nhảy đa sắc", Icons.Filled.BlurCircular, cBlue))),
+            Effect(14, "Nhảy đa sắc", Icons.Filled.BlurCircular, cBlue),
+            Effect(51, "Chiếu sáng năng động", Icons.Filled.Flare, cOrange,
+                listOf("Đêm trăng đỏ", "Hoàng hôn sa mạc", "Vườn sen", "Mặt trời mọc", "Đường tre", "Bình minh xuân", "Cực quang đa sắc"), 1),
+            Effect(53, "Xếp chồng", Icons.Outlined.Layers, cGreen,
+                listOf("Xếp chồng đỏ-trắng", "Xếp chồng xanh-đỏ", "Xếp chồng đỏ-tím", "Xếp chồng trắng-trắng"), 1))),
         EffectGroup("CHỦ ĐỀ MÙA", Icons.Filled.LocalFlorist, listOf(
             Effect(15, "Xuân", Icons.Filled.LocalFlorist, Pink), Effect(16, "Hạ", wave, cPurple),
             Effect(17, "Thu", Icons.Filled.FilterVintage, cNhip), Effect(18, "Đông", Icons.Filled.AcUnit, cRed))),
@@ -41,12 +45,7 @@ object Effects {
         EffectGroup("CHẾ ĐỘ CHẠY", wave, listOf(
             Effect(52, "Mây trôi", wave, cBlue), Effect(6, "Thể thao", Icons.Filled.DirectionsRun, cBlue, num("Thể thao", 3), 1),
             Effect(10, "Trôi đa sắc", wave, cBlue, num("Chế độ", 6), 1), Effect(12, "Cuộn đủ màu", wave, cBlue, num("Chế độ", 6), 1),
-            Effect(13, "Đuôi sao chổi", wave, cComet, listOf("Đỏ", "Vàng", "Xanh lá", "Xanh lam", "Xanh dương", "Tím", "Trắng"), 1))),
-        EffectGroup("CHẾ ĐỘ NÂNG CAO", Icons.Filled.Flare, listOf(
-            Effect(51, "Chiếu sáng năng động", Icons.Filled.Flare, cOrange,
-                listOf("Đêm trăng đỏ", "Hoàng hôn sa mạc", "Vườn sen", "Mặt trời mọc", "Đường tre", "Bình minh xuân", "Cực quang đa sắc"), 1),
-            Effect(53, "Xếp chồng", Icons.Outlined.Layers, cGreen,
-                listOf("Xếp chồng đỏ-trắng", "Xếp chồng xanh-đỏ", "Xếp chồng đỏ-tím", "Xếp chồng trắng-trắng"), 1)))
+            Effect(13, "Đuôi sao chổi", wave, cComet, listOf("Đỏ", "Vàng", "Xanh lá", "Xanh lam", "Xanh dương", "Tím", "Trắng"), 1)))
     )
     val all: List<Effect> = groups.flatMap { it.items }
     fun byId(id: Int) = all.firstOrNull { it.id == id }

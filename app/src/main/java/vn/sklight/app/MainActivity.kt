@@ -78,17 +78,18 @@ fun Root() {
     }
     LaunchedEffect(Unit) { launcher.launch(perms) }
 
-    Column(
-        Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB))))
-            .systemBarsPadding().verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        if (tab == 0) Hero()
-        Tabs(tab) { tab = it }
-        when (tab) {
-            0 -> LedPage()
-            1 -> WelcomePage()
-            else -> SettingsPage { S.ble.scan(); pickDev = true }
+    Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB)))).systemBarsPadding()) {
+        // menu cố định trên cùng, nội dung cuộn bên dưới
+        Box(Modifier.padding(start = 13.dp, end = 13.dp, top = 8.dp, bottom = 8.dp)) { Tabs(tab) { tab = it } }
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            when (tab) {
+                0 -> { Hero(); LedPage() }
+                1 -> WelcomePage()
+                else -> SettingsPage { S.ble.scan(); pickDev = true }
+            }
         }
     }
     if (pickDev) DevDialog { pickDev = false }
@@ -501,7 +502,7 @@ fun SettingsPage(onPick: () -> Unit) {
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
     }
-    T("SK Light 0.2.2", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.2.3", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
