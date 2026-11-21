@@ -14,6 +14,7 @@ object S {
     // kết nối
     val conn = mutableStateOf("Chưa kết nối")
     val connected = mutableStateOf(false)
+    val devName = mutableStateOf("")
     val isCzh = mutableStateOf(false)
     val scanning = mutableStateOf(false)
     val devices = mutableStateListOf<Dev>()
@@ -23,28 +24,40 @@ object S {
 
     // đèn
     val on = mutableStateOf(true)
-    val zone = mutableIntStateOf(0)                       // 0 đồng nhất, 1 khu 1, 2 khu 2
+    val zone = mutableIntStateOf(0)                       // khu vực của độ sáng: 0 đồng nhất, 1, 2
+    val czone = mutableIntStateOf(0)                      // khu vực của màu
     val bri = mutableStateListOf(100, 100, 100)
     val col = mutableStateListOf(0xFFFFFF, 0xFFFFFF, 0xFFFFFF)
-    val hue = mutableStateListOf(0f, 0f, 0f)
-    val sat = mutableStateListOf(0f, 0f, 0f)
+    val customs = mutableStateListOf<Int>()
     val mode = mutableIntStateOf(0)                       // id hiệu ứng
-    val sub = mutableStateListOf<Int>().also { l -> repeat(64) { l.add(0) } }
+    val sub = mutableStateListOf<Int>().also { l -> repeat(64) { l.add(0) } }   // kiểu con đang chọn theo id (đếm từ 0)
     val speed = mutableIntStateOf(5)
+    val sens = mutableIntStateOf(6)
+    val z2 = mutableIntStateOf(0)                         // chế độ màu vùng 2: 0 tĩnh, 1 tự động, 2 nhấp nháy
 
-    // hàm gốc
+    // chào mừng. Thứ tự đoạn trên sơ đồ: 0 bảng đồng hồ trái, 1 bảng đồng hồ phải, 2 trước trái, 3 trước phải, 4 sau trái, 5 sau phải
     var blk: IntArray? = null
-    var w08: IntArray? = null
     val blkVer = mutableIntStateOf(0)
+    val leds = mutableStateListOf(50, 50, 50, 50, 50, 50)
+    private var ledRaw = IntArray(16) { 50 }
+    private val ledIdx = intArrayOf(5, 0, 1, 2, 3, 4)     // đoạn -> vị trí trong lệnh 06
+    val wDir = mutableStateListOf(false, false, false, false, false, false)
+    private val dirBit = intArrayOf(5, 4, 0, 1, 2, 3)     // đoạn -> bit trong khối 08
+    private var w08d3 = 0
+    val wSpeed = mutableIntStateOf(1)                     // 0..3
+    val wStart = mutableIntStateOf(0)                     // mã vị trí bắt đầu 0..5
+    val aroundOn = mutableStateOf(false)
+    val boxPos = mutableStateListOf(-1, -1, -1, -1)       // -1 chưa gán, 0 khác, 2..5 = đoạn trên sơ đồ
+    val pickBox = mutableIntStateOf(0)                    // hộp phụ đang nháy (1..4), 0 = không
 
     // cài đặt
     val invert = mutableStateOf(true)
-    val leftZone = mutableIntStateOf(1)                   // khu nào là bên trái xe
-    val limit = mutableIntStateOf(0)                      // giới hạn tốc độ nhập tay, 0 = tắt
-    val alertDist = mutableIntStateOf(150)                // nháy khi còn ≤ m
+    val leftZone = mutableIntStateOf(1)
+    val limit = mutableIntStateOf(0)
+    val alertDist = mutableIntStateOf(150)
     val blinkColor = mutableIntStateOf(0xFF9600)
 
-    // dẫn đường
+    // dẫn đường (để sau)
     val navOn = mutableStateOf(false)
     val navDir = mutableStateOf("?")
     val navDist = mutableIntStateOf(-1)
@@ -58,15 +71,15 @@ object S {
         app = c.applicationContext
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert", true)
-        leftZone.intValue = sp.getInt("leftZone", 1)
-        limit.intValue = sp.getInt("limit", 0)
-        alertDist.intValue = sp.getInt("alertDist", 150)
+        (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
+        (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }
         ble = BleLed(app)
     }
 
     fun saveSettings() {
-        sp.edit().putBoolean("invert", invert.value).putInt("leftZone", leftZone.intValue)
-            .putInt("limit", limit.intValue).putInt("alertDist", alertDist.intValue).apply()
+        sp.edit().putBoolean("invert", invert.value)
+            .putString("customs", customs.joinToString(","))
+            .putString("boxPos", boxPos.joinToString(",")).apply()
     }
 
     fun addDev(d: Dev) {
@@ -79,78 +92,126 @@ object S {
         if (m.isNotEmpty() && !connected.value && ble.ready) ble.connect(m)
     }
 
-    fun onConnected() { sendBright() }
+    fun onConnected() {}
 
+    // ---------- nhận từ hộp ----------
     fun onBright(flag: Int, b1: Int, b2: Int) {
         on.value = (flag and 0x40) != 0
         if ((flag and 0x08) != 0) { bri[0] = b1.coerceIn(0, 100) }
         else { bri[1] = b1.coerceIn(0, 100); bri[2] = b2.coerceIn(0, 100) }
     }
 
-    // ---------- gửi lệnh ----------
+    fun onLeds(v: IntArray) {
+        for (i in v.indices) if (i < 16) ledRaw[i] = v[i]
+        for (s in 0 until 6) leds[s] = ledRaw[ledIdx[s]]
+    }
+
+    fun on08(data1: Int, mid: Int, data3: Int) {
+        for (s in 0 until 6) wDir[s] = (data1 shr dirBit[s]) and 1 == 1
+        wSpeed.intValue = (mid shr 3) and 3
+        wStart.intValue = mid and 7
+        w08d3 = data3
+    }
+
+    // ---------- đèn ----------
     fun setPower(v: Boolean) {
         on.value = v
         if (v) sendBright() else ble.send(Protocol.bright(false, true, 100, 100), 1, true)
     }
 
     fun sendBright() {
-        val z = zone.intValue
-        val f = if (z == 0) Protocol.bright(on.value, true, bri[0], bri[0])
+        val f = if (zone.intValue == 0) Protocol.bright(on.value, true, bri[0], bri[0])
         else Protocol.bright(on.value, false, bri[1], bri[2])
         ble.send(f, 1, true)
     }
 
     fun setBright(v: Int) { bri[zone.intValue] = v; on.value = true; sendBright() }
+    fun setZoneSel(z: Int) { zone.intValue = z; sendBright() }
 
     fun colorFrame(): ByteArray =
-        if (zone.intValue == 0) Protocol.color(true, col[0], col[0], invert.value)
+        if (czone.intValue == 0) Protocol.color(true, col[0], col[0], invert.value)
         else Protocol.color(false, col[1], col[2], invert.value)
 
-    fun setColor(rgb: Int, h: Float = -1f, s: Float = -1f) {
-        val z = zone.intValue
-        col[z] = rgb
-        if (h >= 0f) { hue[z] = h; sat[z] = s }
-        if (mode.intValue != 0) { mode.intValue = 0; sendEffect() }
+    fun setColor(rgb: Int) {
+        col[czone.intValue] = rgb
         on.value = true
         ble.send(colorFrame(), 2, true)
     }
 
-    fun sendEffect() { ble.send(Protocol.effect(mode.intValue, sub[mode.intValue], speed.intValue), 3, true) }
+    fun setColorZone(z: Int) { czone.intValue = z; ble.send(colorFrame(), 2, true) }
 
-    fun pickEffect(e: Effect) {
-        if (mode.intValue == e.id && e.subs > 0) sub[e.id] = (sub[e.id] + 1) % e.subs
-        mode.intValue = e.id
-        on.value = true
-        sendEffect()
+    fun addCustom() {
+        val c = col[czone.intValue]
+        if (customs.size >= 8 || customs.contains(c)) return
+        customs.add(c); saveSettings()
     }
 
-    fun setSpeed(v: Int) { speed.intValue = v; if (mode.intValue != 0) sendEffect() }
+    fun removeCustom(c: Int) { customs.remove(c); saveSettings() }
 
-    fun setZoneSel(z: Int) { zone.intValue = z; sendBright() }
+    fun sendEffect() {
+        val e = Effects.byId(mode.intValue)
+        val param = if (e != null && e.subs.isNotEmpty()) e.base + sub[e.id] else 0
+        ble.send(Protocol.effect(sens.intValue, z2.intValue, mode.intValue, param, speed.intValue), 3, true)
+    }
 
-    // ---------- hàm gốc (khối 05) ----------
+    fun pickEffect(e: Effect) { mode.intValue = e.id; on.value = true; sendEffect() }
+    fun pickSub(e: Effect, i: Int) { sub[e.id] = i; sendEffect() }
+    fun setSpeed(v: Int) { if (v != speed.intValue) { speed.intValue = v; sendEffect() } }
+    fun setSens(v: Int) { if (v != sens.intValue) { sens.intValue = v; sendEffect() } }
+    fun setZ2(v: Int) { z2.intValue = v; sendEffect() }
+
+    // ---------- chào mừng ----------
     fun blkBit(i: Int, mask: Int): Boolean = (blk?.get(i) ?: 0) and mask != 0
 
-    fun setBlkBit(i: Int, mask: Int, v: Boolean) {
-        val b = blk?.copyOf() ?: return
-        b[i] = if (v) b[i] or mask else b[i] and mask.inv()
-        blk = b; blkVer.intValue++
-        ble.send(Protocol.block05(b), 10, true)
-    }
-
-    fun setBlkField(i: Int, mask: Int, value: Int) {
-        val b = blk?.copyOf() ?: return
+    /** Trả về false nếu chưa đọc được khối cài đặt từ hộp (không gửi mò). */
+    fun setBlk(i: Int, mask: Int, value: Int): Boolean {
+        val b = blk?.copyOf() ?: return false
         b[i] = (b[i] and mask.inv()) or (value and mask)
         blk = b; blkVer.intValue++
         ble.send(Protocol.block05(b), 10, true)
+        return true
     }
 
-    fun setBlkByte(i: Int, value: Int) {
-        val b = blk?.copyOf() ?: return
-        b[i] = value and 0xFF
-        blk = b; blkVer.intValue++
-        ble.send(Protocol.block05(b), 10, true)
+    private fun send08() {
+        var d1 = 0
+        for (s in 0 until 6) if (wDir[s]) d1 = d1 or (1 shl dirBit[s])
+        ble.send(Protocol.block08(d1, wSpeed.intValue, wStart.intValue, w08d3), 21, true)
     }
 
-    fun refreshBlocks() { ble.send(Protocol.query(0x05)); ble.send(Protocol.query(0x08)); ble.send(Protocol.query(0x00)) }
+    fun setWSpeed(v: Int) { wSpeed.intValue = v; send08() }
+    fun setWStart(code: Int) { wStart.intValue = code; send08() }
+    fun setWDir(seg: Int, right: Boolean) { wDir[seg] = right; send08() }
+
+    fun setLed(seg: Int, v: Int) {
+        val n = v.coerceIn(1, 200)
+        leds[seg] = n; ledRaw[ledIdx[seg]] = n
+        ble.send(Protocol.leds(ledRaw), 20, true)
+    }
+
+    /** Chạm hộp phụ: hộp đó nháy để biết đang gắn ở cửa nào. */
+    fun flashBox(n: Int) {
+        if (pickBox.intValue == n) { pickBox.intValue = 0; return }
+        pickBox.intValue = n
+        ble.send(Protocol.door(n, 0))
+    }
+
+    /** Gán hộp đang nháy vào đoạn [seg] (2..5), hoặc 0 = Khác. Mã vị trí gửi đi: trước trái 1, trước phải 2, sau trái 3, sau phải 4 (chưa kiểm chứng). */
+    fun assignBox(seg: Int) {
+        val n = pickBox.intValue
+        if (n == 0) return
+        if (seg >= 2) for (i in 0 until 4) if (boxPos[i] == seg) boxPos[i] = -1
+        boxPos[n - 1] = seg
+        pickBox.intValue = 0
+        ble.send(Protocol.door(n, if (seg >= 2) seg - 1 else 0x0F))
+        saveSettings()
+    }
+
+    fun resetDoors() {
+        for (i in 0 until 4) boxPos[i] = -1
+        pickBox.intValue = 0
+        ble.send(Protocol.doorReset())
+        saveSettings()
+    }
+
+    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x08)) ble.send(Protocol.query(q)) }
 }

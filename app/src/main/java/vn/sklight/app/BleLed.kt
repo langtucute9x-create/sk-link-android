@@ -69,7 +69,7 @@ class BleLed(private val ctx: Context) {
         gatt = if (Build.VERSION.SDK_INT >= 23) dev.connectGatt(ctx, false, cb, BluetoothDevice.TRANSPORT_LE) else dev.connectGatt(ctx, false, cb)
     }
 
-    fun disconnect() { wantMac = null; closeGatt(); S.connected.value = false; S.conn.value = "Đã ngắt" }
+    fun disconnect() { wantMac = null; closeGatt(); S.connected.value = false; S.conn.value = "Chưa kết nối" }
 
     private fun closeGatt() {
         q.clear(); wch = null
@@ -127,11 +127,12 @@ class BleLed(private val ctx: Context) {
     private fun ready(g: BluetoothGatt) {
         main.post {
             S.connected.value = true
-            S.conn.value = "Đã kết nối " + (g.device.name ?: g.device.address)
+            S.devName.value = g.device.name ?: g.device.address
+            S.conn.value = "Đã kết nối"
             S.isCzh.value = (g.device.name ?: "").contains("CZH2")
             main.postDelayed({
                 for (f in Protocol.init()) send(f)
-                S.onConnected()
+                S.sendBright()
             }, 800)
         }
     }
@@ -166,8 +167,9 @@ class BleLed(private val ctx: Context) {
         val v = IntArray(d.size) { d[it].toInt() and 0xFF }
         main.post {
             when {
-                sub == 0x05 && len >= 7 && v.size >= 10 -> S.blk = IntArray(6) { v[4 + it] }.also { S.blkVer.intValue++ }
-                sub == 0x08 && len >= 4 && v.size >= 7 -> S.w08 = intArrayOf(v[4], v[5], v[6]).also { S.blkVer.intValue++ }
+                sub == 0x05 && len >= 7 && v.size >= 10 -> { S.blk = IntArray(6) { v[4 + it] }; S.blkVer.intValue++ }
+                sub == 0x08 && len >= 4 && v.size >= 7 -> S.on08(v[4], v[5], v[6])
+                sub == 0x06 && len >= 7 && v.size >= 10 -> S.onLeds(IntArray(minOf(16, len - 1)) { v[4 + it] })
                 sub == 0x00 && len >= 4 && v.size >= 7 -> S.onBright(v[4], v[5], v[6])
             }
         }

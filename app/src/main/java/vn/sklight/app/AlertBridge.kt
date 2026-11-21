@@ -51,7 +51,7 @@ object AlertBridge {
         h.removeCallbacks(tick)
         if (k == 0) { S.alertText.value = ""; restore(); return }
         S.alertText.value = when (k) { 1 -> "Sắp rẽ trái"; 2 -> "Sắp rẽ phải"; else -> "Quá tốc độ" }
-        if (S.mode.intValue != 0) S.ble.send(Protocol.effect(0, 0, S.speed.intValue), 3)
+        if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.z2.intValue, 0, 0, S.speed.intValue), 3)
         phase = false
         h.post(tick)
     }
@@ -65,7 +65,7 @@ object AlertBridge {
         }
     }
 
-    private fun base(z: Int): Int = if (S.zone.intValue == 0) S.col[0] else S.col[z]
+    private fun base(z: Int): Int = if (S.czone.intValue == 0) S.col[0] else S.col[z]
 
     private fun frame(k: Int, on: Boolean): ByteArray {
         var c1 = base(1); var c2 = base(2)
