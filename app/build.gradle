@@ -14,13 +14,13 @@ android {
         versionName '0.1'
     }
 
-    // Khoa ky co dinh nam trong kho (kho rieng tu) de moi ban build cung chu ky -> cai de len ban cu duoc, khong phai go.
+    // Khoa ky lay tu GitHub Secrets (workflow giai ma ra file va truyen mat khau qua bien moi truong).
     signingConfigs {
         fixed {
-            storeFile file('../sklink.keystore')
-            storePassword 'sklink-hud'
+            storeFile file(System.getenv('SKLINK_KEYSTORE') ?: '../sklink.keystore')
+            storePassword System.getenv('SKLINK_PASS')
             keyAlias 'sklink'
-            keyPassword 'sklink-hud'
+            keyPassword System.getenv('SKLINK_PASS')
         }
     }
     buildTypes {
