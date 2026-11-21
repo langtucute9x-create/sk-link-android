@@ -80,7 +80,7 @@ fun Root() {
 
     Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB)))).systemBarsPadding()) {
         // menu cố định trên cùng, nội dung cuộn bên dưới
-        Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             PowerBtn()
             Spacer(Modifier.width(8.dp))
             Tabs(tab, Modifier.weight(1f)) { tab = it }
@@ -115,9 +115,9 @@ fun StatusRow(onPick: () -> Unit) {
 fun PowerBtn() {
     val on = S.on.value
     Box(
-        Modifier.size(52.dp).clip(CircleShape).background(if (on) Pink else Color.White).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
+        Modifier.size(46.dp).clip(CircleShape).background(if (on) Pink else Color.White).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
         contentAlignment = Alignment.Center
-    ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size(26.dp)) }
+    ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size(24.dp)) }
 }
 
 @Composable
@@ -130,12 +130,10 @@ fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
         items.forEachIndexed { i, (label, icon) ->
             val on = sel == i
             Row(
-                Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
+                Modifier.weight(1f).height(40.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
             ) {
-                Icon(icon, null, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(5.dp))
-                T(label, 12, if (on) FontWeight.Bold else FontWeight.SemiBold, if (on) Color.White else Txt)
+                Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(22.dp))
             }
         }
     }
@@ -503,7 +501,7 @@ fun SettingsPage(onPick: () -> Unit) {
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
     }
-    T("SK Light 0.2.4", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.2.5", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
