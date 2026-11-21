@@ -17,5 +17,6 @@ Một dòng chữ UTF-8, các trường cách nhau bằng dấu TAB:
     SKNAV1	on=1	dir=L	dist=120	st=Nguyễn Huệ	eta=...	seq=12	ic=<256 ký tự hex>
 
 `dir`: L trái, R phải, S thẳng, U quay đầu, O vòng xuyến, A đến nơi, ? chưa rõ.
+`spd` / `lim` (tuỳ chọn): tốc độ hiện tại và giới hạn tốc độ (km/h); HUD nháy đỏ viền khi spd > lim. Bản app hiện tại chưa gửi hai trường này (thông báo bản đồ không có), script `tools/nav_sim.py` của HUD có gửi để thử.
 `ic`: biểu tượng mũi tên 32x32 điểm, 1 bit mỗi điểm. Lặp lại mỗi 1,5 giây khi đang chỉ đường; `on=0` khi kết thúc.
 HUD trả lời `SKHUD1<TAB>tên` về địa chỉ gửi để ứng dụng biết HUD đang ở đâu.
