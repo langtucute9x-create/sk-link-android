@@ -72,6 +72,10 @@ import kotlin.math.sqrt
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Crash.install(this)
+        val report = Crash.take(this)
+        if (report != null) { crashShown = true; Crash.show(this, report); return }
+        crashShown = false
         S.init(this)
         setContent {
             val scheme = if (Theme.dark) darkColorScheme(primary = Pink, surface = CardBg, surfaceContainerHigh = CardBg, onSurface = Txt, onSurfaceVariant = SubTxt)
@@ -80,10 +84,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onStart() { super.onStart(); Gps.start(this); S.syncService(this) }
-    override fun onStop() { Gps.stop(); super.onStop() }
-    override fun onResume() { super.onResume(); S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this) }
-    override fun onPause() { S.appVisible = false; Voice.close(); FloatButton.sync(this); super.onPause() }
+    /** Đang hiện màn hình báo lỗi của lần mở trước: không chạy các phần khác của app. */
+    private var crashShown = false
+
+    override fun onStart() { super.onStart(); if (crashShown) return; Gps.start(this); S.syncService(this) }
+    override fun onStop() { if (!crashShown) Gps.stop(); super.onStop() }
+    override fun onResume() { super.onResume(); if (crashShown) return; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this) }
+    override fun onPause() { if (!crashShown) { S.appVisible = false; Voice.close(); FloatButton.sync(this) }; super.onPause() }
 }
 
 @Composable
@@ -772,7 +779,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.1, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.2, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
             }
         }
@@ -824,7 +831,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.1 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.2 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

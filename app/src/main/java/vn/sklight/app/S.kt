@@ -111,6 +111,7 @@ object S {
         if (inited) return
         inited = true
         app = c.applicationContext
+        Crash.install(app)
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert", true)
         warnOn.value = sp.getBoolean("warnOn", false)

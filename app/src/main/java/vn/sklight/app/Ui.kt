@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 /** Bảng màu của một giao diện (sáng hoặc tối). */
 class Pal(val bgTop: Color, val bgBot: Color, val card: Color, val txt: Color, val sub: Color, val grey: Color, val chip: Color, val bd: Color, val div: Color, val soft: Color)
 
-private val LIGHT = Pal(Color(0xFFFCF5F9), Color(0xFFF2F0FB), Color.White, Color(0xFF172032), Color(0xFF4B5568), Color(0xFF6B7385), Color(0xFFF4F6FC), Color(0xFFDDE3EF), Color(0xFFEAEEF6), SoftTrack)
+private val LIGHT = Pal(Color(0xFFFCF5F9), Color(0xFFF2F0FB), Color.White, Color(0xFF172032), Color(0xFF4B5568), Color(0xFF6B7385), Color(0xFFF4F6FC), Color(0xFFDDE3EF), Color(0xFFEAEEF6), Color(0xFFE6E9F2))
 private val NIGHT = Pal(Color(0xFF0E1118), Color(0xFF12141C), Color(0xFF1A1F2B), Color(0xFFF2F4F8), Color(0xFFC3C9D6), Color(0xFF98A1B3), Color(0xFF242A38), Color(0xFF343C4D), Color(0xFF2A3140), Color(0xFF343C4D))
 
 /** Cài đặt giao diện: chế độ sáng / tối / tự động, màu nhấn, kiểu chữ, cỡ chữ. Mặc định = giao diện gốc (sáng, hồng SK, Inter). */
