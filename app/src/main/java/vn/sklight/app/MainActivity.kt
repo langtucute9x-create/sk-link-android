@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() { super.onStart(); Gps.start(this); S.syncService(this) }
     override fun onStop() { Gps.stop(); super.onStop() }
     override fun onResume() { super.onResume(); S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this) }
-    override fun onPause() { S.appVisible = false; FloatButton.sync(this); super.onPause() }
+    override fun onPause() { S.appVisible = false; Voice.close(); FloatButton.sync(this); super.onPause() }
 }
 
 @Composable
@@ -120,11 +120,13 @@ fun Root() {
             Column(Modifier.width(54.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn()
                 TabsV(tab) { tab = it }
+                MicBtn()
                 Spacer(Modifier.weight(1f))
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(48.dp), contentScale = ContentScale.Fit)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Strip()
+                VoicePanel()
                 key(tab) {
                     when (tab) {
                         0 -> TwoCol(leftW.dp, { SceneRow(); LedMain() }, { LedEffects(cols) })
@@ -145,8 +147,11 @@ fun Root() {
                 PowerBtn()
                 Spacer(Modifier.width(8.dp))
                 Tabs(tab, Modifier.weight(1f)) { tab = it }
+                Spacer(Modifier.width(8.dp))
+                MicBtn()
             }
             Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
+            VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             Column(
                 Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -757,7 +762,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.4.0, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.4.1, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, "Đã sao chép ${S.navLog.size} dòng.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -809,7 +814,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, "Nội dung cẩm nang sẽ có khi app hoàn thiện.", Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.4.0 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.4.1 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

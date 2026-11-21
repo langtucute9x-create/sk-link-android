@@ -86,6 +86,10 @@ object S {
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
     val floatOn = mutableStateOf(false)                   // nút nổi trên ứng dụng khác
+    val voiceState = mutableIntStateOf(0)                 // xem Voice.kt
+    val voiceHeard = mutableStateOf("")
+    val voiceMsg = mutableStateOf("")
+    val voiceTick = mutableIntStateOf(0)
     val speedKmh = mutableFloatStateOf(0f)
     val song = mutableStateOf("")
     val placeVer = mutableIntStateOf(0)
