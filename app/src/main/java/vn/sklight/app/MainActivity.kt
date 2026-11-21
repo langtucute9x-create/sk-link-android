@@ -129,7 +129,7 @@ fun Root() {
             Column(Modifier.width(54.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn()
                 TabsV(tab) { tab = it; S.subPage.intValue = 0 }
-                MicBtn()
+                if (L.cur.intValue == 0) MicBtn()
                 Spacer(Modifier.weight(1f))
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(48.dp), contentScale = ContentScale.Fit)
             }
@@ -144,7 +144,8 @@ fun Root() {
                             val (granted, open) = navAccess()
                             TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                         }
-                        else -> if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
+                        else -> if (S.subPage.intValue == 2) TwoCol(leftW.dp, { LanguagePage() }, { })
+                        else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
                         else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
                     }
                 }
@@ -157,8 +158,7 @@ fun Root() {
                 PowerBtn()
                 Spacer(Modifier.width(8.dp))
                 Tabs(tab, Modifier.weight(1f)) { tab = it; S.subPage.intValue = 0 }
-                Spacer(Modifier.width(8.dp))
-                MicBtn()
+                if (L.cur.intValue == 0) { Spacer(Modifier.width(8.dp)); MicBtn() }
             }
             Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
@@ -170,7 +170,7 @@ fun Root() {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
-                    else -> if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
+                    else -> if (S.subPage.intValue == 2) LanguagePage() else if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
                 }
                 LogoFooter()
             }
@@ -460,14 +460,14 @@ fun WelcomePage() { WelcomeTop(); WelcomeDiagram() }
 fun WelcomeTop() {
     val ctx = LocalContext.current
     val ver = S.blkVer.intValue      // đọc để vẽ lại khi hộp trả lời
-    fun needBlock() = Toast.makeText(ctx, "Chưa đọc được cài đặt chào mừng từ hộp (v$ver). Kiểm tra kết nối rồi thử lại.", Toast.LENGTH_SHORT).show()
+    fun needBlock() = Toast.makeText(ctx, L.tr("Chưa đọc được cài đặt chào mừng từ hộp (v$ver). Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show()
     Card {
         SwitchRow("Hiệu ứng chào mừng", "Bật/Tắt", S.blkBit(1, 0x04)) { if (!S.setBlk(1, 0x04, if (it) 0x04 else 0)) { S.refreshBlocks(); needBlock() } }
         Divider()
         // Chỉ bật được khi Hiệu ứng chào mừng đang bật. Tắt = cả 5 hộp chạy cùng lúc, bật = chào lần lượt từng cửa.
         SwitchRow("Chào xung quanh xe", "Hiệu ứng chào xung quanh xe", S.aroundOn.value, enabled = S.blkBit(1, 0x04)) {
             S.aroundOn.value = it
-            Toast.makeText(ctx, "Công tắc này chưa gửi lệnh tới hộp (chưa biết mã lệnh).", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, L.tr("Công tắc này chưa gửi lệnh tới hộp (chưa biết mã lệnh)."), Toast.LENGTH_SHORT).show()
         }
     }
     Card {
@@ -645,7 +645,7 @@ fun navAccess(): Pair<Boolean, () -> Unit> {
     LaunchedEffect(Unit) { while (true) { granted = listenerOn(ctx); delay(1000) } }
     val open: () -> Unit = {
         try { ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        catch (e: Exception) { Toast.makeText(ctx, "Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\".", Toast.LENGTH_LONG).show() }
+        catch (e: Exception) { Toast.makeText(ctx, L.tr("Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\"."), Toast.LENGTH_LONG).show() }
     }
     return granted to open
 }
@@ -688,7 +688,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
                     T("Đang dẫn đường · ${S.navApp.value}", 12, FontWeight.Bold, Color(0xFF2E8B3D))
                     val d = S.navDist.intValue
                     T(if (d < 0) "—" else if (d >= 1000) "${d / 100 / 10.0} km" else "$d m", 30, FontWeight.ExtraBold)
-                    val dt = when (dir) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "Chưa rõ hướng" }
+                    val dt = L.tr(when (dir) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "Chưa rõ hướng" })
                     T(if (S.navStreet.value.isEmpty()) dt else "$dt · ${S.navStreet.value}", 15, FontWeight.SemiBold)
                 }
             }
@@ -772,8 +772,8 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.0, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
-                Toast.makeText(ctx, "Đã sao chép ${S.navLog.size} dòng.", Toast.LENGTH_SHORT).show()
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.1, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -813,18 +813,18 @@ fun SettingsFeatures() {
             T("Tính năng thiết bị", 16, FontWeight.Bold)
         }
         Spacer(Modifier.height(8.dp))
-        val later = { Toast.makeText(ctx, "Trang này sẽ làm sau.", Toast.LENGTH_SHORT).show() }
+        val later = { Toast.makeText(ctx, L.tr("Trang này sẽ làm sau."), Toast.LENGTH_SHORT).show() }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối và quản lý thiết bị hộp phụ", later)
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Cài đặt hướng ánh sáng chạy của từng khu vực", later)
         Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói", later)
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
-        Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
+        Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
-            Toast.makeText(ctx, "Nội dung cẩm nang sẽ có khi app hoàn thiện.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.0 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.1 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

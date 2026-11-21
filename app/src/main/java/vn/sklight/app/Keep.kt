@@ -44,11 +44,11 @@ class KeepService : Service() {
     override fun onStartCommand(i: Intent?, f: Int, id: Int): Int {
         S.init(this)
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(NotificationChannel("keep", "SK Light chạy nền", NotificationManager.IMPORTANCE_LOW))
+        nm.createNotificationChannel(NotificationChannel("keep", L.tr("SK Light chạy nền"), NotificationManager.IMPORTANCE_LOW))
         val pi = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(this, "keep")
-            .setContentTitle("SK Light đang giữ kết nối với hộp đèn")
-            .setContentText("Chạm để mở app")
+            .setContentTitle(L.tr("SK Light đang giữ kết nối với hộp đèn"))
+            .setContentText(L.tr("Chạm để mở app"))
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setContentIntent(pi).setOngoing(true).build()
         try {
@@ -166,7 +166,7 @@ object FloatButton {
         val gap = dp(c, 8)
         fun again() = fill(c, p)
         val row = LinearLayout(c).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        row.addView(btn(c, if (S.on.value) "Tắt đèn" else "Bật đèn") { S.setPower(!S.on.value); again() }, LinearLayout.LayoutParams(dp(c, 76), ViewGroup.LayoutParams.WRAP_CONTENT))
+        row.addView(btn(c, L.tr(if (S.on.value) "Tắt đèn" else "Bật đèn")) { S.setPower(!S.on.value); again() }, LinearLayout.LayoutParams(dp(c, 76), ViewGroup.LayoutParams.WRAP_CONTENT))
         row.addView(btn(c, "−") { S.setBright((S.bri[S.zone.intValue] - 10).coerceIn(0, 100)); again() }, LinearLayout.LayoutParams(dp(c, 46), ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = gap })
         row.addView(TextView(c).apply { text = "${S.bri[S.zone.intValue]}%"; gravity = Gravity.CENTER; textSize = 16f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(btn(c, "+") { S.setBright((S.bri[S.zone.intValue] + 10).coerceIn(0, 100)); again() }, LinearLayout.LayoutParams(dp(c, 46), ViewGroup.LayoutParams.WRAP_CONTENT))
@@ -174,14 +174,14 @@ object FloatButton {
         Scenes.all().withIndex().chunked(2).forEach { pair ->
             val r = LinearLayout(c).apply { orientation = LinearLayout.HORIZONTAL }
             pair.forEachIndexed { k, iv ->
-                r.addView(btn(c, iv.value.name, S.sceneSel.intValue == iv.index) { Scenes.apply(iv.index); again() },
+                r.addView(btn(c, L.tr(iv.value.name), S.sceneSel.intValue == iv.index) { Scenes.apply(iv.index); again() },
                     LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { if (k == 1) leftMargin = gap })
             }
             if (pair.size == 1) r.addView(View(c), LinearLayout.LayoutParams(0, 1, 1f).apply { leftMargin = gap })
             p.addView(r, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = gap })
         }
         p.addView(TextView(c).apply {
-            text = "Mở SK Light"; gravity = Gravity.CENTER; textSize = 13f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD; minHeight = dp(c, 44)
+            text = L.tr("Mở SK Light"); gravity = Gravity.CENTER; textSize = 13f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD; minHeight = dp(c, 44)
             setOnClickListener {
                 try { c.startActivity(Intent(c, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {}
                 p.visibility = View.GONE

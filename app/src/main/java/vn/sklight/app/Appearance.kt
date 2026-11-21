@@ -34,14 +34,7 @@ fun AppearancePage() { AppearanceTheme(); AppearanceIdle() }
 /** Chế độ màu, màu nhấn, kiểu chữ, cỡ chữ. */
 @Composable
 fun AppearanceTheme() {
-    Row(
-        Modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable { S.subPage.intValue = 0 }.padding(start = 10.dp, end = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Filled.ArrowBack, null, tint = Txt, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        T("Cài đặt", 13, FontWeight.Bold)
-    }
+    BackToSettings()
     Card {
         GroupTitle(Icons.Filled.DarkMode, "Chế độ màu", 16)
         Spacer(Modifier.height(12.dp))
@@ -88,8 +81,8 @@ fun AppearanceIdle() {
                 ctx.contentResolver.openInputStream(uri)?.use { inp -> photoFile(ctx).outputStream().use { inp.copyTo(it) } }
                 S.idlePhotoVer.intValue++
                 S.idleStyle.intValue = 3; S.saveSettings()
-                Toast.makeText(ctx, "Đã đặt ảnh làm màn hình chờ.", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) { Toast.makeText(ctx, "Không đọc được ảnh này.", Toast.LENGTH_SHORT).show() }
+                Toast.makeText(ctx, L.tr("Đã đặt ảnh làm màn hình chờ."), Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) { Toast.makeText(ctx, L.tr("Không đọc được ảnh này."), Toast.LENGTH_SHORT).show() }
         }
     }
     Card {
@@ -97,7 +90,7 @@ fun AppearanceIdle() {
         Spacer(Modifier.height(12.dp))
         Grid(IDLE_STYLES.indices.toList(), 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
-            OutlineBtn("Chọn ảnh của tôi", Modifier.weight(1f)) { try { pick.launch("image/*") } catch (e: Exception) { Toast.makeText(ctx, "Máy không có trình chọn ảnh.", Toast.LENGTH_SHORT).show() } }
+            OutlineBtn("Chọn ảnh của tôi", Modifier.weight(1f)) { try { pick.launch("image/*") } catch (e: Exception) { Toast.makeText(ctx, L.tr("Máy không có trình chọn ảnh."), Toast.LENGTH_SHORT).show() } }
             OutlineBtn("Xem thử", Modifier.weight(1f)) { S.idleShow.value = true }
         }
         Spacer(Modifier.height(8.dp))

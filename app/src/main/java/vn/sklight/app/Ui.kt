@@ -88,7 +88,7 @@ fun rgbColor(rgb: Int) = Color(0xFF000000 or (rgb.toLong() and 0xFFFFFF))
 @Composable
 fun T(text: String, size: Int = 14, weight: FontWeight = FontWeight.Normal, color: Color = Txt, modifier: Modifier = Modifier, align: TextAlign? = null) {
     val k = Theme.scaleF
-    Text(text, modifier = modifier, fontSize = (size * k).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align, lineHeight = (size * 1.25f * k).sp)
+    Text(L.tr(text), modifier = modifier, fontSize = (size * k).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align, lineHeight = (size * 1.25f * k).sp)
 }
 
 @Composable

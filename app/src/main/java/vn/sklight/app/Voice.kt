@@ -147,7 +147,7 @@ fun MicBtn() {
     val ctx = LocalContext.current
     val on = S.voiceState.intValue == 1
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) Voice.start(ctx) else Toast.makeText(ctx, "Cần quyền micro để ra lệnh bằng giọng nói.", Toast.LENGTH_LONG).show()
+        if (ok) Voice.start(ctx) else Toast.makeText(ctx, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), Toast.LENGTH_LONG).show()
     }
     Box(
         Modifier.size(46.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape)
@@ -218,7 +218,7 @@ fun VoicePanel(modifier: Modifier = Modifier) {
                         try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$id")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                         catch (e: Exception) {
                             try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$id")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                            catch (e2: Exception) { Toast.makeText(ctx, "Máy này không mở được CH Play.", Toast.LENGTH_LONG).show() }
+                            catch (e2: Exception) { Toast.makeText(ctx, L.tr("Máy này không mở được CH Play."), Toast.LENGTH_LONG).show() }
                         }
                     }
                     OutlineBtn("Đóng", Modifier.weight(1f)) { Voice.close() }

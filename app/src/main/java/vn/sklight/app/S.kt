@@ -130,6 +130,7 @@ object S {
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
         Scenes.load(if (sp.contains("scenes2")) sp.getString("scenes2", "") ?: "" else null)
+        L.init(app); L.set(sp.getInt("lang", 0))
         Theme.mode.intValue = sp.getInt("themeMode", 0).coerceIn(0, 2)
         Theme.accent.intValue = sp.getInt("themeAccent", 0).coerceIn(0, Theme.ACCENTS.size - 1)
         Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
@@ -148,7 +149,7 @@ object S {
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value)
             .putString("scenes2", Scenes.dump())
-            .putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
+            .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue)
             .putString("customs", customs.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).apply()

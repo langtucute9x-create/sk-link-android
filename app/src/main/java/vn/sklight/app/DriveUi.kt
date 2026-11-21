@@ -208,7 +208,7 @@ fun DriveCard() {
         SwitchRow("Nút nổi trên màn hình", "Nút SK nổi trên ứng dụng khác: bật tắt, độ sáng, bối cảnh. Cần cấp quyền hiển thị trên ứng dụng khác", S.floatOn.value) {
             S.floatOn.value = it; S.saveSettings(); S.syncService(ctx)
             if (it && !Settings.canDrawOverlays(ctx)) {
-                Toast.makeText(ctx, "Bật quyền \"Hiển thị trên ứng dụng khác\" cho SK Light rồi quay lại.", Toast.LENGTH_LONG).show()
+                Toast.makeText(ctx, L.tr("Bật quyền \"Hiển thị trên ứng dụng khác\" cho SK Light rồi quay lại."), Toast.LENGTH_LONG).show()
                 try { ctx.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {}
             }
         }
@@ -253,7 +253,7 @@ fun IdleScreen(wide: Boolean) {
     }
     val cal = Calendar.getInstance().apply { timeInMillis = now }
     val time = "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-    val date = DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1] + ", %02d/%02d".format(cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
+    val date = L.tr(DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1]) + ", %02d/%02d".format(cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
     val style = S.idleStyle.intValue
     val photo = remember(S.idlePhotoVer.intValue, style) { if (style == 3) loadPhoto(ctx) else null }
     val uni = S.czone.intValue == 0
@@ -301,7 +301,7 @@ fun IdleScreen(wide: Boolean) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
                     Icon(dirIcon(S.navDir.value), null, tint = Color.White, modifier = Modifier.size(28.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text(dist + dirText(S.navDir.value) + (if (S.navStreet.value.isEmpty()) "" else " · " + S.navStreet.value), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(dist + L.tr(dirText(S.navDir.value)) + (if (S.navStreet.value.isEmpty()) "" else " · " + S.navStreet.value), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (S.song.value.isNotEmpty()) {
