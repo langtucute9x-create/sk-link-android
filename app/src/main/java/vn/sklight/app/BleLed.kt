@@ -63,6 +63,7 @@ class BleLed(private val ctx: Context) {
     // ---------------- kết nối ----------------
     fun connect(mac: String) {
         stopScan()
+        S.userOff = false
         wantMac = mac
         S.savedMac = mac
         val dev = try { adapter?.getRemoteDevice(mac) } catch (e: Exception) { null } ?: return
@@ -133,9 +134,12 @@ class BleLed(private val ctx: Context) {
             S.conn.value = "Đã kết nối"
             android.widget.Toast.makeText(ctx, "Đã kết nối với " + S.devName.value, android.widget.Toast.LENGTH_SHORT).show()
             S.isCzh.value = (g.device.name ?: "").contains("CZH2")
+            // Gói mở app + độ sáng trước; các lệnh hỏi gửi sau 700 ms để câu trả lời không rơi vào khoảng "vừa gửi lệnh" bị bỏ qua.
             main.postDelayed({
-                for (f in Protocol.init()) send(f)
+                val init = Protocol.init()
+                send(init[0])
                 S.sendBright()
+                main.postDelayed({ for (f in init.drop(1)) send(f) }, 700)
             }, 800)
         }
     }

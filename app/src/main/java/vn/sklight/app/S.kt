@@ -1,7 +1,13 @@
 package vn.sklight.app
 
+import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
@@ -66,6 +72,31 @@ object S {
     val alertKind = mutableIntStateOf(0)                  // xem AlertBridge
     val alertPhase = mutableStateOf(false)                // pha sáng / tối của nhịp nháy
 
+    // bối cảnh + các tính năng khi lái xe
+    val sceneSel = mutableIntStateOf(-1)                  // bối cảnh đang dùng (vị trí trong Scenes.all()), -1 = không
+    val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
+    val nightOn = mutableStateOf(false)                   // tự dịu đèn ban đêm
+    val nightMode = mutableIntStateOf(0)                  // 0 theo giờ mặt trời, 1 theo giờ tự đặt
+    val nightFrom = mutableIntStateOf(18 * 60)            // phút tính từ 0 giờ
+    val nightTo = mutableIntStateOf(6 * 60)
+    val nightBri = mutableIntStateOf(30)
+    var dayBri: IntArray? = null                          // độ sáng ban ngày đang được giữ lại trong lúc dịu đèn
+    val idleOn = mutableStateOf(false)                    // tự mở màn hình chờ khi xe chạy
+    val idleStyle = mutableIntStateOf(0)                  // 0 đồng hồ + tốc độ, 1 chỉ đồng hồ, 2 tốc độ lớn, 3 ảnh của tôi
+    val idlePhotoVer = mutableIntStateOf(0)
+    val idleShow = mutableStateOf(false)
+    val floatOn = mutableStateOf(false)                   // nút nổi trên ứng dụng khác
+    val speedKmh = mutableFloatStateOf(0f)
+    val song = mutableStateOf("")
+    val placeVer = mutableIntStateOf(0)
+    var lat = Double.NaN
+    var lon = Double.NaN
+    @Volatile var lastTouch = 0L
+    var appVisible = false
+    var userOff = false                                   // người dùng vừa bấm Ngắt kết nối: không tự nối lại
+    private val main = Handler(Looper.getMainLooper())
+    private val nightLoop = object : Runnable { override fun run() { try { Night.tick() } catch (_: Exception) {}; main.postDelayed(this, 30000) } }
+
     fun init(c: Context) {
         if (inited) return
         inited = true
@@ -74,14 +105,35 @@ object S {
         invert.value = sp.getBoolean("invert", true)
         warnOn.value = sp.getBoolean("warnOn", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
+        (sp.getString("bri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) bri[i] = v.coerceIn(0, 100) }
+        on.value = sp.getBoolean("on", true)
+        dayBri = (sp.getString("dayBri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { if (it.size == 3) it.toIntArray() else null }
+        autoBoot.value = sp.getBoolean("autoBoot", true)
+        nightOn.value = sp.getBoolean("nightOn", false)
+        nightMode.intValue = sp.getInt("nightMode", 0)
+        nightFrom.intValue = sp.getInt("nightFrom", 18 * 60)
+        nightTo.intValue = sp.getInt("nightTo", 6 * 60)
+        nightBri.intValue = sp.getInt("nightBri", 30)
+        idleOn.value = sp.getBoolean("idleOn", false)
+        idleStyle.intValue = sp.getInt("idleStyle", 0)
+        floatOn.value = sp.getBoolean("floatOn", false)
+        lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
+        lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
+        Scenes.load(sp.getString("scenes", "") ?: "")
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }
         ble = BleLed(app)
+        main.post(nightLoop)
     }
 
     fun saveSettings() {
         sp.edit().putBoolean("invert", invert.value)
             .putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
+            .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
+            .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
+            .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
+            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value)
+            .putString("scenes", Scenes.dump())
             .putString("customs", customs.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).apply()
     }
@@ -93,7 +145,7 @@ object S {
 
     fun autoConnect() {
         val m = savedMac
-        try { if (m.isNotEmpty() && !connected.value && !ble.busy && ble.ready) ble.connect(m) } catch (_: Exception) {}
+        try { if (!userOff && m.isNotEmpty() && !connected.value && !ble.busy && ble.ready) ble.connect(m) } catch (_: Exception) {}
     }
 
     fun onConnected() {}
@@ -121,6 +173,7 @@ object S {
     fun setPower(v: Boolean) {
         on.value = v
         if (v) sendBright() else ble.send(Protocol.bright(false, true, 100, 100), 1, true)
+        saveSettings()
     }
 
     fun sendBright() {
@@ -129,7 +182,11 @@ object S {
         ble.send(f, 1, true)
     }
 
-    fun setBright(v: Int) { bri[zone.intValue] = v; on.value = true; sendBright() }
+    fun setBright(v: Int) {
+        bri[zone.intValue] = v; on.value = true; sceneSel.intValue = -1
+        if (Night.active) nightBri.intValue = v.coerceIn(5, 100)      // chỉnh tay ban đêm = đổi mức ban đêm
+        sendBright(); saveSettings()
+    }
     fun setZoneSel(z: Int) { zone.intValue = z; sendBright() }
 
     fun colorFrame(): ByteArray =
@@ -138,7 +195,7 @@ object S {
 
     fun setColor(rgb: Int) {
         col[czone.intValue] = rgb
-        on.value = true
+        on.value = true; sceneSel.intValue = -1
         ble.send(colorFrame(), 2, true)
     }
 
@@ -158,8 +215,49 @@ object S {
         ble.send(Protocol.effect(sens.intValue, z2.intValue, mode.intValue, param, speed.intValue), 3, true)
     }
 
-    fun pickEffect(e: Effect) { mode.intValue = e.id; on.value = true; sendEffect() }
-    fun pickSub(e: Effect, i: Int) { sub[e.id] = i; sendEffect() }
+    fun pickEffect(e: Effect) { mode.intValue = e.id; on.value = true; sceneSel.intValue = -1; sendEffect() }
+    fun pickSub(e: Effect, i: Int) { sub[e.id] = i; sceneSel.intValue = -1; sendEffect() }
+
+    // ---------- bối cảnh ----------
+    /** Cài đặt đang dùng, đóng gói thành một bối cảnh tự tạo. */
+    fun currentScene(name: String): Scene {
+        val uni = czone.intValue == 0
+        val m = mode.intValue
+        return Scene(name, uni, if (uni) col[0] else col[1], if (uni) col[0] else col[2], m, if (m in sub.indices) sub[m] else 0,
+            speed.intValue, if (Night.active) (dayBri?.get(zone.intValue) ?: bri[zone.intValue]) else bri[zone.intValue], z2.intValue, true)
+    }
+
+    fun applyScene(sc: Scene) {
+        on.value = true
+        if (sc.uni) { col[0] = sc.c1; czone.intValue = 0 } else { col[1] = sc.c1; col[2] = sc.c2; if (czone.intValue == 0) czone.intValue = 1 }
+        mode.intValue = sc.mode
+        if (sc.mode in sub.indices) sub[sc.mode] = sc.sub
+        speed.intValue = sc.speed; z2.intValue = sc.z2
+        val b = if (Night.active) minOf(sc.bri, nightBri.intValue) else sc.bri       // ban đêm không sáng quá mức ban đêm
+        for (i in 0..2) bri[i] = b
+        sendBright()
+        ble.send(colorFrame(), 2, true)
+        sendEffect()
+        saveSettings()
+    }
+
+    // ---------- khi lái xe ----------
+    fun setPlace(la: Double, lo: Double) {
+        val first = lat.isNaN()
+        if (!first && Math.abs(la - lat) < 0.2 && Math.abs(lo - lon) < 0.2) return     // chỉ lưu lại khi đi xa hẳn
+        lat = la; lon = lo; placeVer.intValue++
+        sp.edit().putString("lat", la.toString()).putString("lon", lo.toString()).apply()
+    }
+
+    /** Bật dịch vụ nền khi cần giữ kết nối (tự kết nối, nút nổi, cảnh báo rẽ), tắt khi không cần. */
+    fun syncService(ctx: Context = app) {
+        val c = ctx.applicationContext
+        try {
+            if (!(autoBoot.value || floatOn.value || warnOn.value)) { c.stopService(Intent(c, KeepService::class.java)); return }
+            if (Build.VERSION.SDK_INT >= 31 && c.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return
+            c.startForegroundService(Intent(c, KeepService::class.java))
+        } catch (_: Exception) {}
+    }
     fun setSpeed(v: Int) { if (v != speed.intValue) { speed.intValue = v; sendEffect() } }
     fun setSens(v: Int) { if (v != sens.intValue) { sens.intValue = v; sendEffect() } }
     fun setZ2(v: Int) { z2.intValue = v; sendEffect() }

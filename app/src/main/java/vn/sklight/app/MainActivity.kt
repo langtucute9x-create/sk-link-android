@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -71,47 +72,68 @@ class MainActivity : ComponentActivity() {
         S.init(this)
         setContent { MaterialTheme(colorScheme = lightColorScheme(primary = Pink)) { Root() } }
     }
+
+    override fun onStart() { super.onStart(); Gps.start(this); S.syncService(this) }
+    override fun onStop() { Gps.stop(); super.onStop() }
+    override fun onResume() { super.onResume(); S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this) }
+    override fun onPause() { S.appVisible = false; FloatButton.sync(this); super.onPause() }
 }
 
 @Composable
 fun Root() {
     var tab by remember { mutableIntStateOf(0) }
     var pickDev by remember { mutableStateOf(false) }
+    val ctx0 = LocalContext.current
     val perms = remember {
         val l = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION)
         if (Build.VERSION.SDK_INT >= 31) { l.add(Manifest.permission.BLUETOOTH_SCAN); l.add(Manifest.permission.BLUETOOTH_CONNECT) }
+        if (Build.VERSION.SDK_INT >= 33) l.add(Manifest.permission.POST_NOTIFICATIONS)
         l.toTypedArray()
     }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         if (S.savedMac.isEmpty()) { S.ble.scan(); pickDev = true } else S.autoConnect()
+        Gps.start(ctx0); S.syncService(ctx0)
     }
     LaunchedEffect(Unit) { launcher.launch(perms) }
+    // xe đang chạy và 10 giây không chạm: tự chuyển sang màn hình chờ
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            if (S.idleOn.value && !S.idleShow.value && S.speedKmh.floatValue >= 10f && System.currentTimeMillis() - S.lastTouch > 10000) S.idleShow.value = true
+        }
+    }
 
     val cfg = LocalConfiguration.current
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
     val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB)))).systemBarsPadding()
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
+    Box(Modifier.fillMaxSize().pointerInput(Unit) {
+        awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
+    }) {
+    if (S.idleShow.value) IdleScreen(wide) else
     if (wide) {
         // màn ngang (màn hình ô tô): menu dọc bên trái, nội dung chia hai cột cuộn riêng
         val avail = cfg.screenWidthDp - 24 - 54 - 12
         val leftW = (avail * 0.43f).coerceIn(346f, 392f)
         val cols = if (avail - leftW - 12f >= 470f) 4 else 3
         Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.width(54.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.width(54.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn()
                 TabsV(tab) { tab = it }
+                Spacer(Modifier.weight(1f))
+                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(48.dp), contentScale = ContentScale.Fit)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Strip()
                 key(tab) {
                     when (tab) {
-                        0 -> TwoCol(leftW.dp, { LedMain() }, { LedEffects(cols) })
+                        0 -> TwoCol(leftW.dp, { SceneRow(); LedMain() }, { LedEffects(cols) })
                         1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                         2 -> {
                             val (granted, open) = navAccess()
                             TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                         }
-                        else -> TwoCol(leftW.dp, { SettingsDevice(pick) }, { SettingsFeatures() })
+                        else -> TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
                     }
                 }
             }
@@ -135,8 +157,10 @@ fun Root() {
                     2 -> NavPage { tab = 1 }
                     else -> SettingsPage(pick)
                 }
+                LogoFooter()
             }
         }
+    }
     }
     if (pickDev) DevDialog { pickDev = false }
 }
@@ -212,7 +236,7 @@ fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
 
 // ===================== TRANG ĐÈN =====================
 @Composable
-fun LedPage() { LedMain(); LedEffects(3) }
+fun LedPage() { SceneRow(); LedMain(); LedEffects(3) }
 
 /** Khu vực + độ sáng + chọn màu. */
 @Composable
@@ -666,7 +690,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     Card {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo rẽ", 16)
         Spacer(Modifier.height(8.dp))
-        SwitchRow("Nháy đèn khi sắp rẽ", "Rẽ bên nào thì các cửa bên đó nháy", S.warnOn.value) { S.warnOn.value = it; S.saveSettings() }
+        SwitchRow("Nháy đèn khi sắp rẽ", "Rẽ bên nào thì các cửa bên đó nháy", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
             T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFFED8EF)).border(1.dp, Color(0xFFFF7CC8), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
@@ -733,7 +757,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.3.1, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.4.0, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, "Đã sao chép ${S.navLog.size} dòng.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -742,7 +766,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); DriveCard(); SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {
@@ -758,7 +782,7 @@ fun SettingsDevice(onPick: () -> Unit) {
         Kv("ID thiết bị", if (S.savedMac.isEmpty()) "—" else S.savedMac)
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FillBtn("Ngắt kết nối", Icons.Filled.BluetoothDisabled, Color(0xFFF44336), Modifier.weight(1f)) { S.ble.disconnect() }
+            FillBtn("Ngắt kết nối", Icons.Filled.BluetoothDisabled, Color(0xFFF44336), Modifier.weight(1f)) { S.userOff = true; S.ble.disconnect() }
             FillBtn("Chọn lại", Icons.Filled.BluetoothSearching, Color(0xFFFE9700), Modifier.weight(1f), onPick)
         }
     }
@@ -781,8 +805,11 @@ fun SettingsFeatures() {
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "Tự động", later)
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
+        Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
+            Toast.makeText(ctx, "Nội dung cẩm nang sẽ có khi app hoàn thiện.", Toast.LENGTH_SHORT).show()
+        }
     }
-    T("SK Light 0.3.1 (bản thử Dẫn đường)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.4.0 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
