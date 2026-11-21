@@ -62,6 +62,16 @@ final class NavParser {
             char ci = analyseIcon(s.icon, s);
             if (s.dir == '?' && ci != '?') { s.dir = ci; s.dirFrom = "hình"; }
         }
+        // Thong bao luc xuat phat ("Huong ve <duong>") chua co khoang cach nhung van la dang chi duong
+        if (!s.on && s.dir != '?' && NavListener.isMapApp(pkg)) {
+            s.on = true;
+            String st = rest.isEmpty() ? s.big : rest;
+            String low = st.toLowerCase(VI);
+            for (String pre : new String[]{"hướng về ", "đi về ", "head toward ", "head to ", "head "}) {
+                if (low.startsWith(pre)) { st = st.substring(pre.length()); break; }
+            }
+            s.street = clean(st);
+        }
         return s;
     }
 
@@ -92,7 +102,7 @@ final class NavParser {
         if (l >= 0 && (r < 0 || l < r)) return 'L';
         if (r >= 0) return 'R';
         if (low.contains("đến nơi") || low.contains("điểm đến") || low.contains("arrive") || low.contains("destination")) return 'A';
-        if (low.contains("đi thẳng") || low.contains("tiếp tục") || low.contains("straight") || low.contains("continue")) return 'S';
+        if (low.contains("đi thẳng") || low.contains("hướng về") || low.contains("tiếp tục") || low.contains("straight") || low.contains("continue")) return 'S';
         return '?';
     }
 
