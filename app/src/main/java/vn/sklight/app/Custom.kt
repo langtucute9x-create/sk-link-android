@@ -153,7 +153,8 @@ fun CustomTestPage() {
         Chip("Dừng", false, Modifier.fillMaxWidth(), 44.dp, 13) { SeqTest.stop() }
         Spacer(Modifier.height(10.dp))
         T("Thử lần lượt 2, 5, 10, 20 lệnh mỗi giây với từng kiểu. Ghi lại mức nào đèn chuyển mượt, mức nào bị giật, đứng hình hoặc sai màu.", 11, color = Grey)
-    }    Card {
+    }
+    Card {
         GroupTitle(Icons.Filled.Science, "Thử riêng khu vực 2", 16)
         Spacer(Modifier.height(10.dp))
         T("Chế độ có sẵn trong hộp", 13, FontWeight.Bold, SubTxt)
