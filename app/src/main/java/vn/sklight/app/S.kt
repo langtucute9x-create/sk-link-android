@@ -52,18 +52,19 @@ object S {
 
     // cài đặt
     val invert = mutableStateOf(true)
-    val leftZone = mutableIntStateOf(1)
-    val limit = mutableIntStateOf(0)
-    val alertDist = mutableIntStateOf(150)
-    val blinkColor = mutableIntStateOf(0xFF9600)
 
-    // dẫn đường (để sau)
+    // dẫn đường + cảnh báo (bản thử)
+    val warnOn = mutableStateOf(false)                    // nháy đèn khi sắp rẽ
+    val alertDist = mutableIntStateOf(150)                // báo trước bao nhiêu mét
     val navOn = mutableStateOf(false)
     val navDir = mutableStateOf("?")
     val navDist = mutableIntStateOf(-1)
     val navStreet = mutableStateOf("")
-    val speedKmh = mutableFloatStateOf(0f)
-    val alertText = mutableStateOf("")
+    val navApp = mutableStateOf("")
+    val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
+    val signSeen = mutableStateOf("")                     // con số km/h thấy trong thông báo (nếu có)
+    val alertKind = mutableIntStateOf(0)                  // xem AlertBridge
+    val alertPhase = mutableStateOf(false)                // pha sáng / tối của nhịp nháy
 
     fun init(c: Context) {
         if (inited) return
@@ -71,6 +72,8 @@ object S {
         app = c.applicationContext
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert", true)
+        warnOn.value = sp.getBoolean("warnOn", false)
+        alertDist.intValue = sp.getInt("alertDist", 150)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }
         ble = BleLed(app)
@@ -78,6 +81,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert", invert.value)
+            .putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
             .putString("customs", customs.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).apply()
     }
@@ -89,7 +93,7 @@ object S {
 
     fun autoConnect() {
         val m = savedMac
-        if (m.isNotEmpty() && !connected.value && ble.ready) ble.connect(m)
+        try { if (m.isNotEmpty() && !connected.value && !ble.busy && ble.ready) ble.connect(m) } catch (_: Exception) {}
     }
 
     fun onConnected() {}

@@ -20,5 +20,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Đọc thông báo của app dẫn đường (chỉ chạy khi người dùng tự cấp quyền trong Cài đặt máy) -->
+        <service android:name=".NavListener" android:exported="true"
+            android:label="SK Light đọc chỉ đường"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

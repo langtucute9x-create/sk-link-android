@@ -4,7 +4,7 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
-/** Dich vu doc thong bao: loc thong bao cua ung dung ban do roi chuyen sang HUD. */
+/** Dich vu doc thong bao: loc thong bao cua ung dung ban do roi chuyen cho phan canh bao bang den. */
 public class NavListener extends NotificationListenerService {
     private static final String TAG = "SKLight";
     // ten goi ung dung co chua mot trong cac tu nay duoc coi la ung dung ban do
@@ -24,8 +24,14 @@ public class NavListener extends NotificationListenerService {
         return false;
     }
 
+    @Override public void onCreate() {
+        super.onCreate();
+        try { S.INSTANCE.init(this); } catch (Throwable t) { Log.w(TAG, "init", t); }
+    }
+
     @Override public void onListenerConnected() {
         connected = true;
+        try { S.INSTANCE.autoConnect(); } catch (Throwable t) { Log.w(TAG, "auto", t); }
         try {
             StatusBarNotification[] a = getActiveNotifications();
             if (a != null) for (StatusBarNotification s : a) handle(s);
@@ -64,6 +70,7 @@ public class NavListener extends NotificationListenerService {
         if (!Prefs.allApps(this) && !isMapApp(pkg)) return;
         NavState s = NavParser.parse(this, pkg, sbn.getNotification());
         lastRaw = s;
+        AlertBridge.onRaw(s);
         if (!s.on) return;
         navKey = sbn.getKey();
         lastNav = s;

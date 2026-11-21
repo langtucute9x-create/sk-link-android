@@ -32,6 +32,8 @@ class BleLed(private val ctx: Context) {
     private val cccd = u("2902")
 
     val ready get() = adapter?.isEnabled == true
+    /** Đang có kết nối hoặc đang kết nối dở: không mở thêm kết nối thứ hai. */
+    val busy get() = gatt != null
 
     // ---------------- quét ----------------
     private val scanCb = object : ScanCallback() {

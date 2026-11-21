@@ -1,8 +1,13 @@
 package vn.sklight.app
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -49,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
@@ -85,6 +92,7 @@ fun Root() {
             Spacer(Modifier.width(8.dp))
             Tabs(tab, Modifier.weight(1f)) { tab = it }
         }
+        Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
         Column(
             Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -92,6 +100,7 @@ fun Root() {
             when (tab) {
                 0 -> LedPage()
                 1 -> WelcomePage()
+                2 -> NavPage { tab = 1 }
                 else -> SettingsPage { S.ble.scan(); pickDev = true }
             }
         }
@@ -122,7 +131,7 @@ fun PowerBtn() {
 
 @Composable
 fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
-    val items = listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Cài đặt" to Icons.Filled.Settings)
+    val items = listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
     Row(
         modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -466,6 +475,169 @@ fun DirBtn(icon: ImageVector, desc: String, on: Boolean, modifier: Modifier, onC
     ) { Icon(icon, desc, tint = if (on) Color.White else Pink, modifier = Modifier.size(20.dp)) }
 }
 
+// ===================== DẢI MÀU XEM TRƯỚC =====================
+private val RAINBOW = listOf(Color(0xFFFE2B48), Color(0xFFFED119), Color(0xFF40E01E), Color(0xFF1AF4EA), Color(0xFF4E78FF), Color(0xFF8A01FF))
+private val NAME_COLOR = listOf("đỏ" to 0xFE2B48, "vàng" to 0xFFE115, "xanh lá" to 0x40E01E, "xanh lam" to 0x1AF4EA, "xanh dương" to 0x4E78FF, "tím" to 0x8A01FF, "trắng" to 0xFFFFFF)
+private val AMBER = Color(0xFFFF9600)
+private val ALERT_RED = Color(0xFFFE2B48)
+private val DARK = Color(0xFF2A2F3A)
+
+/** Dải màu dưới menu: nửa trái = khu vực 1, nửa phải = khu vực 2; đổi theo màu, chế độ và cảnh báo đang chạy. */
+@Composable
+fun Strip(modifier: Modifier = Modifier) {
+    val uni = S.czone.intValue == 0
+    var l: Brush = SolidColor(rgbColor(if (uni) S.col[0] else S.col[1]))
+    var r: Brush = SolidColor(rgbColor(if (uni) S.col[0] else S.col[2]))
+    val k = S.alertKind.intValue
+    val ph = S.alertPhase.value
+    if (!S.on.value) { l = SolidColor(Color(0xFFD5D9E3)); r = l }
+    else if (k == 3) { l = SolidColor(if (ph) ALERT_RED else DARK); r = l }
+    else if (k != 0) {
+        val c = SolidColor(if (ph) AMBER else DARK)
+        if (AlertBridge.lit(2) || AlertBridge.lit(4)) l = c
+        if (AlertBridge.lit(3) || AlertBridge.lit(5)) r = c
+    } else if (S.mode.intValue != 0) {
+        val e = Effects.byId(S.mode.intValue)
+        val name = (if (e != null) e.subs.getOrNull(S.sub[e.id]) ?: "" else "").lowercase()
+        val hit = NAME_COLOR.firstOrNull { name.endsWith(it.first) }
+        l = if (hit != null) SolidColor(rgbColor(hit.second)) else Brush.horizontalGradient(RAINBOW)
+        if (S.z2.intValue == 1) r = Brush.horizontalGradient(RAINBOW)
+    }
+    Row(modifier.fillMaxWidth().height(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(l).border(1.dp, Bd, RoundedCornerShape(4.dp)))
+        Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(r).border(1.dp, Bd, RoundedCornerShape(4.dp)))
+    }
+}
+
+// ===================== TRANG DẪN ĐƯỜNG (BẢN THỬ) =====================
+private fun listenerOn(ctx: Context): Boolean =
+    (Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners") ?: "").contains(ctx.packageName)
+
+private fun boxText(seg: Int): String {
+    val b = S.boxPos.indexOf(seg)
+    return if (b >= 0) "Hộp phụ ${b + 1}" else "Chưa gán"
+}
+
+@Composable
+fun NavPage(toWelcome: () -> Unit) {
+    val ctx = LocalContext.current
+    var granted by remember { mutableStateOf(listenerOn(ctx)) }
+    LaunchedEffect(Unit) { while (true) { granted = listenerOn(ctx); delay(1000) } }
+    val openAccess = {
+        try { ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        catch (e: Exception) { Toast.makeText(ctx, "Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\".", Toast.LENGTH_LONG).show() }
+    }
+    val k = S.alertKind.intValue
+
+    // ---- đang dẫn đường ----
+    Card {
+        if (!granted) {
+            T("Chưa cấp quyền đọc thông báo", 15, FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            T("App cần quyền này để đọc hướng rẽ và khoảng cách từ thông báo của Google Maps, Vietmap.", 12, color = Grey)
+            Spacer(Modifier.height(12.dp))
+            Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(6.dp)).background(Pink).clickable(onClick = openAccess), contentAlignment = Alignment.Center) {
+                T("Cấp quyền đọc thông báo", 13, FontWeight.Bold, Color.White)
+            }
+        } else if (!S.navOn.value) {
+            T("Chưa có chỉ đường", 15, FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            T("Mở Google Maps hoặc Vietmap, bắt đầu dẫn đường rồi quay lại đây.", 12, color = Grey)
+        } else {
+            val dir = S.navDir.value
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(68.dp).clip(RoundedCornerShape(16.dp)).background(Pink), contentAlignment = Alignment.Center) {
+                    Icon(when (dir) { "L" -> Icons.Filled.TurnLeft; "R" -> Icons.Filled.TurnRight; "U" -> Icons.Filled.UTurnLeft; "O" -> Icons.Filled.RoundaboutRight; "A" -> Icons.Filled.Flag; else -> Icons.Filled.Straight },
+                        null, tint = Color.White, modifier = Modifier.size(40.dp))
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    T("Đang dẫn đường · ${S.navApp.value}", 12, FontWeight.Bold, Color(0xFF2E8B3D))
+                    val d = S.navDist.intValue
+                    T(if (d < 0) "—" else if (d >= 1000) "${d / 100 / 10.0} km" else "$d m", 30, FontWeight.ExtraBold)
+                    val dt = when (dir) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "Chưa rõ hướng" }
+                    T(if (S.navStreet.value.isEmpty()) dt else "$dt · ${S.navStreet.value}", 15, FontWeight.SemiBold)
+                }
+            }
+        }
+        if (k != 0) {
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFE9F6)).border(1.dp, Color(0xFFFF9AD5), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 9.dp)) {
+                T(when (k) { 1 -> "Sắp rẽ trái: các cửa bên trái đang nháy"; 2 -> "Sắp rẽ phải: các cửa bên phải đang nháy"; 3 -> "Quá tốc độ: cả xe đang nháy đỏ"; else -> "Đang thử: ${SEG_NAMES[k - 10]}" }, 13, FontWeight.Bold)
+            }
+        }
+    }
+
+    // ---- cảnh báo rẽ ----
+    Card {
+        GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo rẽ", 16)
+        Spacer(Modifier.height(8.dp))
+        SwitchRow("Nháy đèn khi sắp rẽ", "Rẽ bên nào thì các cửa bên đó nháy", S.warnOn.value) { S.warnOn.value = it; S.saveSettings() }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
+            T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFFED8EF)).border(1.dp, Color(0xFFFF7CC8), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                T("${S.alertDist.intValue} m", 14, FontWeight.ExtraBold, Pink)
+            }
+        }
+        SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, Color(0xFFFED8EF), Pink,
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp)
+        Spacer(Modifier.height(14.dp))
+        Column(Modifier.fillMaxWidth().border(1.dp, Bd, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row { T("Bên trái", 13, FontWeight.Bold, modifier = Modifier.width(78.dp)); T("Cửa trước trái (${boxText(2)}), cửa sau trái (${boxText(4)})", 13, color = SubTxt) }
+            Row { T("Bên phải", 13, FontWeight.Bold, modifier = Modifier.width(78.dp)); T("Cửa trước phải (${boxText(3)}), cửa sau phải (${boxText(5)})", 13, color = SubTxt) }
+        }
+        Box(Modifier.padding(top = 10.dp).heightIn(min = 44.dp).clickable(onClick = toWelcome), contentAlignment = Alignment.CenterStart) {
+            T("Gán hộp phụ vào cửa ở sơ đồ xe", 13, FontWeight.Bold, Pink)
+        }
+    }
+
+    // ---- thử nháy ----
+    Card {
+        GroupTitle(Icons.Filled.AutoAwesome, "Thử nháy 4 giây", 16)
+        Spacer(Modifier.height(12.dp))
+        Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
+        Spacer(Modifier.height(12.dp))
+        Grid(listOf(2, 3, 4, 5), 2, 8.dp) { seg, m ->
+            val on = AlertBridge.lit(seg) && S.alertPhase.value
+            val red = k == 3
+            Column(
+                m.heightIn(min = 46.dp).clip(RoundedCornerShape(8.dp)).background(if (on) (if (red) ALERT_RED else AMBER) else ChipBg)
+                    .border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable { AlertBridge.test(10 + seg) }.padding(vertical = 5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+            ) {
+                T(SEG_NAMES[seg], 12, FontWeight.Bold, if (on && red) Color.White else Txt)
+                T(boxText(seg), 10, color = if (on && red) Color.White else if (on) Txt else Grey)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        T("Chạm một cửa để thử riêng cửa đó. Rẽ trái, rẽ phải và từng cửa dùng lệnh nháy của hộp phụ; quá tốc độ thì cả xe nháy đỏ.", 11, color = Grey)
+    }
+
+    // ---- thông báo app dẫn đường ----
+    Card {
+        GroupTitle(Icons.Filled.Navigation, "Thông báo của app dẫn đường", 16)
+        Spacer(Modifier.height(8.dp))
+        T("Phần kiểm tra: app ghi lại nguyên văn thông báo của Google Maps, Vietmap để biết đọc được những gì (hướng rẽ, khoảng cách, biển báo tốc độ).", 12, color = Grey)
+        Spacer(Modifier.height(8.dp))
+        Kv("Quyền đọc thông báo", if (granted) "Đã cấp" else "Chưa cấp")
+        Kv("Biển báo tốc độ thấy được", if (S.signSeen.value.isEmpty()) "Chưa thấy" else S.signSeen.value)
+        Spacer(Modifier.height(8.dp))
+        if (S.navLog.isEmpty()) T("Chưa ghi được thông báo nào.", 12, color = Grey)
+        for (line in S.navLog) {
+            Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
+            OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.3.0, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                Toast.makeText(ctx, "Đã sao chép ${S.navLog.size} dòng.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}
+
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
 fun SettingsPage(onPick: () -> Unit) {
@@ -501,7 +673,7 @@ fun SettingsPage(onPick: () -> Unit) {
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
     }
-    T("SK Light 0.2.5", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.3.0 (bản thử Dẫn đường)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
