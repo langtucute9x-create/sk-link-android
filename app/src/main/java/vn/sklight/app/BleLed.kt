@@ -129,6 +129,7 @@ class BleLed(private val ctx: Context) {
             S.connected.value = true
             S.devName.value = g.device.name ?: g.device.address
             S.conn.value = "Đã kết nối"
+            android.widget.Toast.makeText(ctx, "Đã kết nối với " + S.devName.value, android.widget.Toast.LENGTH_SHORT).show()
             S.isCzh.value = (g.device.name ?: "").contains("CZH2")
             main.postDelayed({
                 for (f in Protocol.init()) send(f)

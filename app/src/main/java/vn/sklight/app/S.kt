@@ -206,6 +206,14 @@ object S {
         saveSettings()
     }
 
+    /** Giữ lâu một hộp phụ: đưa hộp đó về "Khác" (không gắn ở cửa nào). */
+    fun unassignBox(n: Int) {
+        boxPos[n - 1] = 0
+        pickBox.intValue = 0
+        ble.send(Protocol.door(n, 0x0F))
+        saveSettings()
+    }
+
     fun resetDoors() {
         for (i in 0 until 4) boxPos[i] = -1
         pickBox.intValue = 0

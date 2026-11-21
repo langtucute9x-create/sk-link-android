@@ -83,7 +83,6 @@ fun Root() {
             .systemBarsPadding().verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        StatusRow { S.ble.scan(); pickDev = true }
         if (tab == 0) Hero()
         Tabs(tab) { tab = it }
         when (tab) {
@@ -363,30 +362,18 @@ fun WelcomePage() {
     Card {
         GroupTitle(Icons.Filled.MeetingRoom, "Sơ đồ xe", 16)
         Spacer(Modifier.height(8.dp))
-        T("Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm vào cửa đó trên sơ đồ.", 12, color = Grey)
+        T("Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm vào cửa đó trên sơ đồ. Giữ lâu một hộp để bỏ gán.", 12, color = Grey)
         Spacer(Modifier.height(12.dp))
         Grid(listOf(1, 2, 3, 4), 4, 8.dp) { n, m ->
             val on = S.pickBox.intValue == n
             val p = S.boxPos[n - 1]
             Column(
-                m.height(56.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else ChipBg).border(1.dp, if (on) Pink else Bd, RoundedCornerShape(8.dp)).clickable { S.flashBox(n) },
+                m.height(56.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else ChipBg).border(1.dp, if (on) Pink else Bd, RoundedCornerShape(8.dp))
+                    .pointerInput(n) { detectTapGestures(onLongPress = { S.unassignBox(n) }, onTap = { S.flashBox(n) }) },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
             ) {
                 T("Hộp phụ $n", 12, FontWeight.Bold, if (on) Color.White else Txt)
                 T(if (on) "Đang nháy" else if (p >= 2) SEG_SHORT[p] else if (p == 0) "Khác" else "Chưa gán", 10, color = if (on) Color.White else Grey)
-            }
-        }
-        if (S.pickBox.intValue > 0) {
-            Spacer(Modifier.height(12.dp))
-            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFFFE9F6)).border(1.dp, Color(0xFFFF9AD5), RoundedCornerShape(10.dp)).padding(12.dp)) {
-                T("Hộp phụ ${S.pickBox.intValue} đang nháy", 14, FontWeight.Bold)
-                Spacer(Modifier.height(4.dp))
-                T("Nhìn trong xe xem cửa nào đang nháy, rồi chạm “Đèn nháy ở đây” trên cửa đó.", 12, color = SubTxt)
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlineBtn("Khác (không ở cửa)", Modifier.weight(1f)) { S.assignBox(0) }
-                    OutlineBtn("Hủy", Modifier.weight(1f)) { S.pickBox.intValue = 0 }
-                }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -435,18 +422,15 @@ fun SegTile(i: Int, modifier: Modifier) {
     var edit by remember { mutableStateOf(false) }
     Column(
         modifier.alpha(if (!door && picking) 0.45f else 1f).clip(RoundedCornerShape(10.dp)).background(Color.White)
-            .border(if (door && picking) 2.dp else 1.dp, if (door && picking) Pink else Bd, RoundedCornerShape(10.dp)).padding(8.dp),
+            .border(if (door && picking) 2.dp else 1.dp, if (door && picking) Pink else Bd, RoundedCornerShape(10.dp))
+            .then(if (door && picking) Modifier.clickable { S.assignBox(i) } else Modifier).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = 30.dp)) {
             T(SEG_NAMES[i], 12, FontWeight.Bold, modifier = Modifier.weight(1f))
             if (!door) T("Hộp chính", 10, color = Grey)
+            else if (picking) Box(Modifier.clip(RoundedCornerShape(9.dp)).border(1.dp, Pink, RoundedCornerShape(9.dp)).padding(horizontal = 7.dp, vertical = 2.dp)) { T("Chọn", 10, FontWeight.Bold, Pink) }
             else if (box >= 0) Box(Modifier.clip(RoundedCornerShape(9.dp)).background(Pink).padding(horizontal = 7.dp, vertical = 2.dp)) { T("Hộp ${box + 1}", 10, FontWeight.Bold, Color.White) }
-        }
-        if (door && picking) {
-            Box(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFE9F6)).border(2.dp, Pink, RoundedCornerShape(8.dp)).clickable { S.assignBox(i) }, contentAlignment = Alignment.Center) {
-                T("Đèn nháy ở đây", 12, FontWeight.Bold, Pink)
-            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             RepeatBtn(Icons.Filled.Remove, "Giảm số LED ${SEG_NAMES[i]}") { S.setLed(i, S.leds[i] - 1) }
@@ -517,7 +501,7 @@ fun SettingsPage(onPick: () -> Unit) {
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
     }
-    T("SK Light 0.2.1", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.2.2", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
