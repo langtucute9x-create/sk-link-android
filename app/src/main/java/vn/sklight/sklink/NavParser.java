@@ -56,6 +56,8 @@ final class NavParser {
         s.eta = clean(s.sub);
 
         String all = (s.title + " \n " + s.text + " \n " + s.big).toLowerCase(VI);
+        // "Đến nơi lúc 22:16" / "Arrive at ..." la gio den (ETA), khong phai da toi noi
+        all = all.replaceAll("đến nơi (lúc|vào)[^\\n·]*", " ").replaceAll("arriv(e|al|ing) (at|by)[^\\n·]*", " ");
         char c = dirFromText(all);
         if (c != '?') { s.dir = c; s.dirFrom = "chữ"; }
         if (s.icon != null) {
@@ -101,8 +103,9 @@ final class NavParser {
         int r = first(low.indexOf("phải"), find(EN_RIGHT, low));
         if (l >= 0 && (r < 0 || l < r)) return 'L';
         if (r >= 0) return 'R';
+        if (low.contains("hướng về") || low.contains("head toward") || low.contains("head to ")) return 'S';
         if (low.contains("đến nơi") || low.contains("điểm đến") || low.contains("arrive") || low.contains("destination")) return 'A';
-        if (low.contains("đi thẳng") || low.contains("hướng về") || low.contains("tiếp tục") || low.contains("straight") || low.contains("continue")) return 'S';
+        if (low.contains("đi thẳng") || low.contains("tiếp tục") || low.contains("straight") || low.contains("continue")) return 'S';
         return '?';
     }
 
