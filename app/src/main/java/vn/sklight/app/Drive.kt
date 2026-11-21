@@ -51,7 +51,8 @@ object Night {
 
     fun hm(m: Int) = "%02d:%02d".format(m / 60, m % 60)
 
-    private fun isNight(): Boolean {
+    /** Bây giờ có nằm trong khoảng giờ ban đêm không (dùng cho dịu đèn và giao diện tự động). */
+    fun isNightNow(): Boolean {
         val c = Calendar.getInstance()
         val now = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE)
         val (from, to) = window()
@@ -60,7 +61,7 @@ object Night {
 
     /** Gọi định kỳ và mỗi khi đổi cài đặt. */
     fun tick() {
-        val night = S.nightOn.value && isNight()
+        val night = S.nightOn.value && isNightNow()
         if (night) {
             if (active) return
             active = true

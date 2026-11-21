@@ -20,6 +20,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -55,26 +56,34 @@ import java.io.File
 import java.util.Calendar
 import kotlin.math.roundToInt
 
-private val DeepPink = Color(0xFFC4127F)
+private val DeepPink: Color get() = AccentText
 private val RAINBOW_DOT = listOf(Color(0xFFFE2B48), Color(0xFFFED119), Color(0xFF40E01E), Color(0xFF1AF4EA), Color(0xFF4E78FF), Color(0xFF8A01FF))
 
 private fun sceneBrush(sc: Scene): Brush = if (sc.rainbow) Brush.horizontalGradient(RAINBOW_DOT) else SolidColor(rgbColor(sc.c1))
 
-// ===================== BỐI CẢNH MỘT CHẠM =====================
-/** Hàng bối cảnh ở đầu trang Đèn: chạm để dùng, "Lưu" để giữ cài đặt đang dùng, giữ lâu bối cảnh tự tạo để sửa. */
+// ===================== BỐI CẢNH YÊU THÍCH =====================
+/** Hàng bối cảnh ở đầu trang Đèn: "Thêm" để lưu cài đặt đang dùng và xóa bớt; chạm để dùng; giữ lâu để đổi tên, cập nhật, xóa. */
 @Composable
 fun SceneRow() {
-    val ctx = LocalContext.current
-    var saving by remember { mutableStateOf(false) }
-    var edit by remember { mutableIntStateOf(-1) }           // vị trí trong Scenes.customs đang sửa
+    var manage by remember { mutableStateOf(false) }
+    var edit by remember { mutableIntStateOf(-1) }
     val all = Scenes.all()
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(22.dp))
+                .clickable { manage = true }.padding(start = 10.dp, end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Add, "Thêm hoặc xóa bối cảnh yêu thích", tint = DeepPink, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            T("Thêm", 13, FontWeight.Bold, DeepPink)
+        }
         all.forEachIndexed { i, sc ->
             val on = S.sceneSel.intValue == i
             val tap by rememberUpdatedState({ Scenes.apply(i) })
-            val hold by rememberUpdatedState({ if (sc.custom) edit = i - Scenes.presets.size })
+            val hold by rememberUpdatedState({ edit = i })
             Row(
-                Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(if (on) Color(0xFFFFE9F6) else ChipBg)
+                Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(if (on) tint(0.12f) else ChipBg)
                     .border(1.dp, if (on) Pink else Bd, RoundedCornerShape(22.dp))
                     .pointerInput(Unit) { detectTapGestures(onLongPress = { hold() }, onTap = { tap() }) }
                     .padding(start = 10.dp, end = 14.dp),
@@ -85,34 +94,41 @@ fun SceneRow() {
                 T(sc.name, 13, if (on) FontWeight.ExtraBold else FontWeight.SemiBold)
             }
         }
-        Row(
-            Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(Color.White).border(1.dp, Pink, RoundedCornerShape(22.dp))
-                .clickable { if (Scenes.customs.size >= Scenes.MAX_CUSTOM) Toast.makeText(ctx, "Đã đủ ${Scenes.MAX_CUSTOM} bối cảnh tự tạo. Giữ lâu một bối cảnh để xóa bớt.", Toast.LENGTH_LONG).show() else saving = true }
-                .padding(start = 10.dp, end = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Filled.Add, "Lưu cài đặt đang dùng thành bối cảnh mới", tint = DeepPink, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            T("Lưu", 13, FontWeight.Bold, DeepPink)
-        }
     }
-    if (saving) {
+    if (manage) {
         var name by remember { mutableStateOf("") }
+        val full = all.size >= Scenes.MAX
         AlertDialog(
-            onDismissRequest = { saving = false },
-            confirmButton = { TextButton(onClick = { Scenes.saveCurrent(name); saving = false }) { T("Lưu", 14, FontWeight.Bold, Pink) } },
-            dismissButton = { TextButton(onClick = { saving = false }) { T("Hủy", 14, FontWeight.Bold) } },
-            title = { T("Lưu thành bối cảnh của tôi", 17, FontWeight.Bold) },
+            onDismissRequest = { manage = false },
+            confirmButton = { TextButton(onClick = { manage = false }) { T("Xong", 14, FontWeight.Bold, Pink) } },
+            title = { T("Bối cảnh yêu thích", 17, FontWeight.Bold) },
             text = {
-                Column {
-                    T("Lưu lại màu từng khu vực, chế độ, tốc độ và độ sáng đang dùng.", 13, color = SubTxt)
-                    Spacer(Modifier.height(10.dp))
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    T("Chỉnh màu, chế độ, độ sáng như ý rồi lưu lại thành một bối cảnh để lần sau chạm là có.", 13, color = SubTxt)
                     OutlinedTextField(name, { name = it.take(18) }, singleLine = true, placeholder = { T("Tên bối cảnh, ví dụ: Đi làm", 14, color = Grey) })
+                    Box(
+                        Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(if (full) Grey else Pink).clickable { if (!full && Scenes.saveCurrent(name)) name = "" },
+                        contentAlignment = Alignment.Center
+                    ) { T(if (full) "Đã đủ ${Scenes.MAX} bối cảnh, xóa bớt để thêm" else "Lưu cài đặt đang dùng", 13, FontWeight.Bold, Color.White) }
+                    T("Đang có", 13, FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+                    if (all.isEmpty()) T("Chưa có bối cảnh nào.", 13, color = Grey)
+                    all.forEachIndexed { i, sc ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(16.dp).clip(CircleShape).background(sceneBrush(sc)).border(1.dp, Color(0x26172032), CircleShape))
+                            Spacer(Modifier.width(10.dp))
+                            T(sc.name, 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Box(Modifier.size(44.dp).clip(CircleShape).clickable { Scenes.delete(i) }, contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Close, "Xóa bối cảnh ${sc.name}", tint = Grey, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                    OutlineBtn("Khôi phục 4 bối cảnh có sẵn", Modifier.fillMaxWidth()) { Scenes.restore() }
+                    T("Giữ lâu một bối cảnh ở hàng ngoài để đổi tên hoặc cập nhật.", 11, color = Grey)
                 }
             }
         )
     }
-    val cur = Scenes.customs.getOrNull(edit)
+    val cur = all.getOrNull(edit)
     if (cur != null) {
         var name by remember(edit) { mutableStateOf(cur.name) }
         AlertDialog(
@@ -132,21 +148,12 @@ fun SceneRow() {
 }
 
 // ===================== THẺ "KHI LÁI XE" TRONG CÀI ĐẶT =====================
-private val IDLE_STYLES = listOf("Đồng hồ + tốc độ", "Chỉ đồng hồ", "Tốc độ lớn", "Ảnh của tôi")
-private fun photoFile(ctx: Context) = File(ctx.filesDir, "idle.jpg")
+val IDLE_STYLES = listOf("Đồng hồ + tốc độ", "Chỉ đồng hồ", "Tốc độ lớn", "Ảnh của tôi")
+fun photoFile(ctx: Context) = File(ctx.filesDir, "idle.jpg")
 
 @Composable
 fun DriveCard() {
     val ctx = LocalContext.current
-    val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
-            try {
-                ctx.contentResolver.openInputStream(uri)?.use { inp -> photoFile(ctx).outputStream().use { inp.copyTo(it) } }
-                S.idlePhotoVer.intValue++
-                Toast.makeText(ctx, "Đã đặt ảnh làm màn hình chờ.", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) { Toast.makeText(ctx, "Không đọc được ảnh này.", Toast.LENGTH_SHORT).show() }
-        }
-    }
     Card {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.DirectionsCar, null, tint = Pink, modifier = Modifier.size(22.dp))
@@ -166,7 +173,7 @@ fun DriveCard() {
             listOf("Theo giờ mặt trời lặn và mọc (tự tính theo vị trí)", "Theo giờ tự đặt").forEachIndexed { i, label ->
                 val on = S.nightMode.intValue == i
                 Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { S.nightMode.intValue = i; S.saveSettings(); Night.tick() }, verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Color(0xFFC5CBD9), CircleShape), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
                         if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
                     }
                     Spacer(Modifier.width(10.dp))
@@ -182,11 +189,11 @@ fun DriveCard() {
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
                 T("Độ sáng ban đêm", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Box(Modifier.height(27.dp).widthIn(min = 52.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFFED8EF)).border(1.dp, Color(0xFFFF7CC8), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.height(27.dp).widthIn(min = 52.dp).clip(RoundedCornerShape(6.dp)).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
                     T("${S.nightBri.intValue}%", 14, FontWeight.ExtraBold, DeepPink)
                 }
             }
-            SkSlider((S.nightBri.intValue - 5) / 95f, { Night.setLevel(5 + (it * 19).roundToInt() * 5) }, Pink, Color(0xFFFED8EF), Pink,
+            SkSlider((S.nightBri.intValue - 5) / 95f, { Night.setLevel(5 + (it * 19).roundToInt() * 5) }, Pink, tint(0.2f), Pink,
                 Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 6.dp), 8.dp, 21.dp)
             val w = Night.window()
             val noPlace = S.nightMode.intValue == 0 && Night.sunToday() == null
@@ -196,13 +203,7 @@ fun DriveCard() {
             )
         }
         Divider()
-        SwitchRow("Màn hình chờ khi xe chạy", "Xe đang chạy và 10 giây không chạm thì chuyển sang màn hình chờ", S.idleOn.value) { S.idleOn.value = it; S.saveSettings() }
-        T("Kiểu màn hình chờ", 13, FontWeight.Bold, SubTxt, Modifier.padding(top = 2.dp, bottom = 8.dp))
-        Grid(IDLE_STYLES.indices.toList(), 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)) {
-            if (S.idleStyle.intValue == 3) OutlineBtn("Chọn ảnh", Modifier.weight(1f)) { try { pick.launch("image/*") } catch (e: Exception) { Toast.makeText(ctx, "Máy không có trình chọn ảnh.", Toast.LENGTH_SHORT).show() } }
-            OutlineBtn("Xem thử", Modifier.weight(1f)) { S.idleShow.value = true }
-        }
+        SwitchRow("Màn hình chờ khi xe chạy", "Xe đang chạy và 10 giây không chạm thì chuyển sang màn hình chờ. Chọn kiểu ở Cài đặt giao diện", S.idleOn.value) { S.idleOn.value = it; S.saveSettings() }
         Divider()
         SwitchRow("Nút nổi trên màn hình", "Nút SK nổi trên ứng dụng khác: bật tắt, độ sáng, bối cảnh. Cần cấp quyền hiển thị trên ứng dụng khác", S.floatOn.value) {
             S.floatOn.value = it; S.saveSettings(); S.syncService(ctx)

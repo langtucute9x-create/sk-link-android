@@ -10,11 +10,13 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,7 +73,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         S.init(this)
-        setContent { MaterialTheme(colorScheme = lightColorScheme(primary = Pink)) { Root() } }
+        setContent {
+            val scheme = if (Theme.dark) darkColorScheme(primary = Pink, surface = CardBg, surfaceContainerHigh = CardBg, onSurface = Txt, onSurfaceVariant = SubTxt)
+            else lightColorScheme(primary = Pink)
+            MaterialTheme(colorScheme = scheme) { Root() }
+        }
     }
 
     override fun onStart() { super.onStart(); Gps.start(this); S.syncService(this) }
@@ -95,6 +102,8 @@ fun Root() {
         Gps.start(ctx0); S.syncService(ctx0)
     }
     LaunchedEffect(Unit) { launcher.launch(perms) }
+    // nút Quay lại của máy: thoát màn hình chờ, hoặc ra khỏi trang con
+    BackHandler(enabled = S.idleShow.value || S.subPage.intValue != 0) { if (S.idleShow.value) S.idleShow.value = false else S.subPage.intValue = 0 }
     // xe đang chạy và 10 giây không chạm: tự chuyển sang màn hình chờ
     LaunchedEffect(Unit) {
         while (true) {
@@ -105,7 +114,7 @@ fun Root() {
 
     val cfg = LocalConfiguration.current
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
-    val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB)))).systemBarsPadding()
+    val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Theme.pal.bgTop, Theme.pal.bgBot))).systemBarsPadding()
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
@@ -119,7 +128,7 @@ fun Root() {
         Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.width(54.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn()
-                TabsV(tab) { tab = it }
+                TabsV(tab) { tab = it; S.subPage.intValue = 0 }
                 MicBtn()
                 Spacer(Modifier.weight(1f))
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(48.dp), contentScale = ContentScale.Fit)
@@ -127,7 +136,7 @@ fun Root() {
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Strip()
                 VoicePanel()
-                key(tab) {
+                key(tab, S.subPage.intValue) {
                     when (tab) {
                         0 -> TwoCol(leftW.dp, { SceneRow(); LedMain() }, { LedEffects(cols) })
                         1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
@@ -135,7 +144,8 @@ fun Root() {
                             val (granted, open) = navAccess()
                             TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                         }
-                        else -> TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
+                        else -> if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
+                        else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
                     }
                 }
             }
@@ -146,21 +156,21 @@ fun Root() {
             Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 PowerBtn()
                 Spacer(Modifier.width(8.dp))
-                Tabs(tab, Modifier.weight(1f)) { tab = it }
+                Tabs(tab, Modifier.weight(1f)) { tab = it; S.subPage.intValue = 0 }
                 Spacer(Modifier.width(8.dp))
                 MicBtn()
             }
             Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             Column(
-                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
+                Modifier.weight(1f).verticalScroll(remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 when (tab) {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
-                    else -> SettingsPage(pick)
+                    else -> if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
                 }
                 LogoFooter()
             }
@@ -186,7 +196,7 @@ fun StatusRow(onPick: () -> Unit) {
 fun PowerBtn() {
     val on = S.on.value
     Box(
-        Modifier.size(46.dp).clip(CircleShape).background(if (on) Pink else Color.White).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
+        Modifier.size(46.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
         contentAlignment = Alignment.Center
     ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size(24.dp)) }
 }
@@ -207,7 +217,7 @@ fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composab
 @Composable
 fun TabsV(sel: Int, onPick: (Int) -> Unit) {
     Column(
-        Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
+        Modifier.clip(RoundedCornerShape(10.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         TAB_ITEMS.forEachIndexed { i, (label, icon) ->
@@ -224,7 +234,7 @@ fun TabsV(sel: Int, onPick: (Int) -> Unit) {
 fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
     val items = TAB_ITEMS
     Row(
-        modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
+        modifier.clip(RoundedCornerShape(10.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items.forEachIndexed { i, (label, icon) ->
@@ -255,7 +265,7 @@ fun LedMain() {
             T("Độ sáng", 16, FontWeight.Bold, modifier = Modifier.weight(1f))
             T("${S.bri[S.zone.intValue]}%", 15, FontWeight.ExtraBold, Pink)
         }
-        SkSlider(S.bri[S.zone.intValue] / 100f, { S.setBright((it * 100).roundToInt()) }, Pink, Color(0xFFE6E9F2), Color.White,
+        SkSlider(S.bri[S.zone.intValue] / 100f, { S.setBright((it * 100).roundToInt()) }, Pink, SoftTrack, Color.White,
             Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 10.dp))
         Divider(16.dp, 14.dp)
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -290,7 +300,7 @@ fun LedMain() {
                 listOf("Màu tĩnh", "Màu tự động", "Màu nhấp nháy").forEachIndexed { i, t ->
                     val on = S.z2.intValue == i
                     Row(Modifier.weight(1f).heightIn(min = 40.dp).clickable { S.setZ2(i) }, verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Color(0xFFC5CBD9), CircleShape), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
                             if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
                         }
                         Spacer(Modifier.width(6.dp))
@@ -314,9 +324,9 @@ fun LedEffects(cols: Int) {
             SkSlider((S.speed.intValue - 1) / 9f, { S.setSpeed(1 + (it * 9).roundToInt()) }, Cyan, Color(0xFFD9FBF9), Cyan, m, 8.dp, 21.dp, 10)
         }
         Divider(14.dp, 14.dp)
-        ValueRow(Icons.Filled.GraphicEq, Pink, "Độ nhạy nhịp điệu", S.sens.intValue, Color(0xFFFED8EF), Color(0xFFFF7CC8), Pink)
+        ValueRow(Icons.Filled.GraphicEq, Pink, "Độ nhạy nhịp điệu", S.sens.intValue, tint(0.2f), tint(0.6f), AccentText)
         SliderRow("Thấp", "Cao") { m ->
-            SkSlider(S.sens.intValue / 7f, { S.setSens((it * 7).roundToInt()) }, Pink, Color(0xFFFED8EF), Pink, m, 8.dp, 21.dp, 8)
+            SkSlider(S.sens.intValue / 7f, { S.setSens((it * 7).roundToInt()) }, Pink, tint(0.2f), Pink, m, 8.dp, 21.dp, 8)
         }
     }
 }
@@ -419,7 +429,7 @@ fun Swatches(modifier: Modifier = Modifier) {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 row.forEach { c ->
                     if (c < 0) {
-                        Box(Modifier.size(39.dp).clip(RoundedCornerShape(6.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(6.dp)).clickable { S.addCustom() }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(39.dp).clip(RoundedCornerShape(6.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(6.dp)).clickable { S.addCustom() }, contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.Add, "Thêm màu tùy chỉnh", tint = Txt, modifier = Modifier.size(20.dp))
                         }
                     } else {
@@ -496,7 +506,7 @@ fun WelcomeDiagram() {
         }
         Spacer(Modifier.height(12.dp))
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(64.dp, 64.dp, 24.dp, 24.dp)).background(Color(0xFFFAFBFE))
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(64.dp, 64.dp, 24.dp, 24.dp)).background(ChipBg)
                 .border(2.dp, Bd, RoundedCornerShape(64.dp, 64.dp, 24.dp, 24.dp)).padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
@@ -512,7 +522,7 @@ fun WelcomeDiagram() {
         Grid(STARTS, 2) { (label, code), m -> Chip(label, S.wStart.intValue == code, m, 44.dp, 12) { S.setWStart(code) } }
         Spacer(Modifier.height(16.dp))
         var ask by remember { mutableStateOf(false) }
-        Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(6.dp)).background(Color.White).border(1.dp, Pink, RoundedCornerShape(6.dp)).clickable { ask = true }, contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(6.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(6.dp)).clickable { ask = true }, contentAlignment = Alignment.Center) {
             T("Khôi phục mặc định", 13, FontWeight.Bold, Pink)
         }
         if (ask) AlertDialog(
@@ -527,7 +537,7 @@ fun WelcomeDiagram() {
 
 @Composable
 fun OutlineBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         T(text, 12, FontWeight.SemiBold)
     }
 }
@@ -539,7 +549,7 @@ fun SegTile(i: Int, modifier: Modifier) {
     val box = S.boxPos.indexOf(i)
     var edit by remember { mutableStateOf(false) }
     Column(
-        modifier.alpha(if (!door && picking) 0.45f else 1f).clip(RoundedCornerShape(10.dp)).background(Color.White)
+        modifier.alpha(if (!door && picking) 0.45f else 1f).clip(RoundedCornerShape(10.dp)).background(CardBg)
             .border(if (door && picking) 2.dp else 1.dp, if (door && picking) Pink else Bd, RoundedCornerShape(10.dp))
             .then(if (door && picking) Modifier.clickable { S.assignBox(i) } else Modifier).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -578,8 +588,8 @@ fun SegTile(i: Int, modifier: Modifier) {
 @Composable
 fun DirBtn(icon: ImageVector, desc: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(
-        modifier.height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) Pink else Color(0xFFFFE9F6))
-            .border(1.dp, if (on) Pink else Color(0xFFFF9AD5), RoundedCornerShape(10.dp)).clickable(onClick = onClick),
+        modifier.height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) Pink else tint(0.12f))
+            .border(1.dp, if (on) Pink else tint(0.5f), RoundedCornerShape(10.dp)).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { Icon(icon, desc, tint = if (on) Color.White else Pink, modifier = Modifier.size(20.dp)) }
 }
@@ -685,7 +695,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         }
         if (k != 0) {
             Spacer(Modifier.height(10.dp))
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFE9F6)).border(1.dp, Color(0xFFFF9AD5), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 9.dp)) {
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 9.dp)) {
                 T(when (k) { 1 -> "Sắp rẽ trái: các cửa bên trái đang nháy"; 2 -> "Sắp rẽ phải: các cửa bên phải đang nháy"; 3 -> "Quá tốc độ: cả xe đang nháy đỏ"; else -> "Đang thử: ${SEG_NAMES[k - 10]}" }, 13, FontWeight.Bold)
             }
         }
@@ -698,11 +708,11 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         SwitchRow("Nháy đèn khi sắp rẽ", "Rẽ bên nào thì các cửa bên đó nháy", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
             T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFFED8EF)).border(1.dp, Color(0xFFFF7CC8), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(6.dp)).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
                 T("${S.alertDist.intValue} m", 14, FontWeight.ExtraBold, Pink)
             }
         }
-        SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, Color(0xFFFED8EF), Pink,
+        SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, tint(0.2f), Pink,
             Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp)
         Spacer(Modifier.height(14.dp))
         Column(Modifier.fillMaxWidth().border(1.dp, Bd, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -762,7 +772,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.4.1, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.0, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, "Đã sao chép ${S.navLog.size} dòng.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -807,14 +817,14 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối và quản lý thiết bị hộp phụ", later)
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Cài đặt hướng ánh sáng chạy của từng khu vực", later)
         Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói", later)
-        Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "Tự động", later)
+        Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
             Toast.makeText(ctx, "Nội dung cẩm nang sẽ có khi app hoàn thiện.", Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.4.1 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.0 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
@@ -837,10 +847,10 @@ fun FillBtn(text: String, icon: ImageVector, bg: Color, modifier: Modifier, onCl
 @Composable
 fun Feature(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 76.dp).clickable(onClick = onClick).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = Color(0xFF3F4656), modifier = Modifier.size(22.dp))
+        Icon(icon, null, tint = SubTxt, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) { T(title, 16); T(sub, 13, color = SubTxt) }
-        Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFF3F4656), modifier = Modifier.size(20.dp))
+        Icon(Icons.Filled.ChevronRight, null, tint = SubTxt, modifier = Modifier.size(20.dp))
     }
 }
 

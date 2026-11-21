@@ -99,7 +99,13 @@ object S {
     var appVisible = false
     var userOff = false                                   // người dùng vừa bấm Ngắt kết nối: không tự nối lại
     private val main = Handler(Looper.getMainLooper())
-    private val nightLoop = object : Runnable { override fun run() { try { Night.tick() } catch (_: Exception) {}; main.postDelayed(this, 30000) } }
+    val subPage = mutableIntStateOf(0)                    // trang con trong Cài đặt: 0 không, 1 Cài đặt giao diện
+    private val nightLoop = object : Runnable {
+        override fun run() {
+            try { Theme.nightNow.value = Night.isNightNow(); Night.tick() } catch (_: Exception) {}
+            main.postDelayed(this, 30000)
+        }
+    }
 
     fun init(c: Context) {
         if (inited) return
@@ -123,7 +129,11 @@ object S {
         floatOn.value = sp.getBoolean("floatOn", false)
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
-        Scenes.load(sp.getString("scenes", "") ?: "")
+        Scenes.load(if (sp.contains("scenes2")) sp.getString("scenes2", "") ?: "" else null)
+        Theme.mode.intValue = sp.getInt("themeMode", 0).coerceIn(0, 2)
+        Theme.accent.intValue = sp.getInt("themeAccent", 0).coerceIn(0, Theme.ACCENTS.size - 1)
+        Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
+        Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }
         ble = BleLed(app)
@@ -137,7 +147,9 @@ object S {
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value)
-            .putString("scenes", Scenes.dump())
+            .putString("scenes2", Scenes.dump())
+            .putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
+            .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue)
             .putString("customs", customs.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).apply()
     }
@@ -228,7 +240,7 @@ object S {
         val uni = czone.intValue == 0
         val m = mode.intValue
         return Scene(name, uni, if (uni) col[0] else col[1], if (uni) col[0] else col[2], m, if (m in sub.indices) sub[m] else 0,
-            speed.intValue, if (Night.active) (dayBri?.get(zone.intValue) ?: bri[zone.intValue]) else bri[zone.intValue], z2.intValue, true)
+            speed.intValue, if (Night.active) (dayBri?.get(zone.intValue) ?: bri[zone.intValue]) else bri[zone.intValue], z2.intValue)
     }
 
     fun applyScene(sc: Scene) {

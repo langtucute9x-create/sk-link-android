@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.Font
@@ -32,35 +33,68 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-val Pink = Color(0xFFFE2CAA)
-val Txt = Color(0xFF172032)
-val SubTxt = Color(0xFF4B5568)
-val Grey = Color(0xFF6B7385)
-val ChipBg = Color(0xFFF4F6FC)
-val Bd = Color(0xFFDDE3EF)
-val Div = Color(0xFFEAEEF6)
+/** Bảng màu của một giao diện (sáng hoặc tối). */
+class Pal(val bgTop: Color, val bgBot: Color, val card: Color, val txt: Color, val sub: Color, val grey: Color, val chip: Color, val bd: Color, val div: Color, val soft: Color)
+
+private val LIGHT = Pal(Color(0xFFFCF5F9), Color(0xFFF2F0FB), Color.White, Color(0xFF172032), Color(0xFF4B5568), Color(0xFF6B7385), Color(0xFFF4F6FC), Color(0xFFDDE3EF), Color(0xFFEAEEF6), SoftTrack)
+private val NIGHT = Pal(Color(0xFF0E1118), Color(0xFF12141C), Color(0xFF1A1F2B), Color(0xFFF2F4F8), Color(0xFFC3C9D6), Color(0xFF98A1B3), Color(0xFF242A38), Color(0xFF343C4D), Color(0xFF2A3140), Color(0xFF343C4D))
+
+/** Cài đặt giao diện: chế độ sáng / tối / tự động, màu nhấn, kiểu chữ, cỡ chữ. Mặc định = giao diện gốc (sáng, hồng SK, Inter). */
+object Theme {
+    val mode = mutableIntStateOf(0)        // 0 sáng, 1 tối, 2 tự động theo giờ
+    val accent = mutableIntStateOf(0)
+    val font = mutableIntStateOf(0)
+    val scale = mutableIntStateOf(1)
+    val nightNow = mutableStateOf(false)   // đang là ban đêm (cho chế độ tự động)
+    val MODES = listOf("Sáng", "Tối", "Tự động")
+    val ACCENTS = listOf("Hồng SK" to 0xFE2CAA, "Cam" to 0xE8590C, "Đỏ" to 0xE5334B, "Tím" to 0x7C4DFF, "Xanh dương" to 0x2F6BFF, "Xanh ngọc" to 0x0E9488)
+    val FONTS = listOf("Inter", "Chữ hệ thống", "Chữ có chân")
+    val SCALES = listOf("Nhỏ" to 0.9f, "Vừa" to 1f, "Lớn" to 1.12f, "Rất lớn" to 1.25f)
+    val dark: Boolean get() = mode.intValue == 1 || (mode.intValue == 2 && nightNow.value)
+    val pal: Pal get() = if (dark) NIGHT else LIGHT
+    val scaleF: Float get() = SCALES[scale.intValue.coerceIn(0, SCALES.size - 1)].second
+    fun reset() { mode.intValue = 0; accent.intValue = 0; font.intValue = 0; scale.intValue = 1 }
+}
+
+/** Màu nhấn (tên biến giữ là Pink vì mặc định là hồng SK). */
+val Pink: Color get() = rgbColor(Theme.ACCENTS[Theme.accent.intValue.coerceIn(0, Theme.ACCENTS.size - 1)].second)
+val Txt: Color get() = Theme.pal.txt
+val SubTxt: Color get() = Theme.pal.sub
+val Grey: Color get() = Theme.pal.grey
+val ChipBg: Color get() = Theme.pal.chip
+val Bd: Color get() = Theme.pal.bd
+val Div: Color get() = Theme.pal.div
+val CardBg: Color get() = Theme.pal.card
+val SoftTrack: Color get() = Theme.pal.soft
+/** Chữ màu nhấn đặt trên nền thẻ: đậm hơn ở giao diện sáng, nhạt hơn ở giao diện tối cho dễ đọc. */
+val AccentText: Color get() = if (Theme.dark) lerp(Pink, Color.White, 0.3f) else lerp(Pink, Color.Black, 0.22f)
 val Cyan = Color(0xFF1AF4EA)
 val OkGreen = Color(0xFF4DAE50)
 
-val Inter = FontFamily(
+private val InterFam = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal), Font(R.font.inter_medium, FontWeight.Medium),
     Font(R.font.inter_semibold, FontWeight.SemiBold), Font(R.font.inter_bold, FontWeight.Bold),
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
+/** Kiểu chữ đang chọn (tên biến giữ là Inter vì mặc định là Inter). */
+val Inter: FontFamily get() = when (Theme.font.intValue) { 1 -> FontFamily.Default; 2 -> FontFamily.Serif; else -> InterFam }
 
-/** Pha màu với trắng: k = 1 giữ nguyên, k = 0 thành trắng. */
-fun mix(c: Color, k: Float) = Color(1f - (1f - c.red) * k, 1f - (1f - c.green) * k, 1f - (1f - c.blue) * k)
+/** Pha màu [c] với nền thẻ: k = 1 giữ nguyên, k = 0 thành màu nền thẻ. */
+fun mix(c: Color, k: Float) = lerp(CardBg, c, k)
+/** Màu nhấn pha với nền thẻ theo tỉ lệ [k] (nền ô đang chọn, viền nhạt…). */
+fun tint(k: Float) = lerp(CardBg, Pink, k)
 fun rgbColor(rgb: Int) = Color(0xFF000000 or (rgb.toLong() and 0xFFFFFF))
 
 @Composable
 fun T(text: String, size: Int = 14, weight: FontWeight = FontWeight.Normal, color: Color = Txt, modifier: Modifier = Modifier, align: TextAlign? = null) {
-    Text(text, modifier = modifier, fontSize = size.sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align, lineHeight = (size * 1.25f).sp)
+    val k = Theme.scaleF
+    Text(text, modifier = modifier, fontSize = (size * k).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align, lineHeight = (size * 1.25f * k).sp)
 }
 
 @Composable
 fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color.White)
+        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(CardBg)
             .border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(15.dp),
         content = content
     )

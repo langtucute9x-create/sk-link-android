@@ -14,7 +14,7 @@ class Effect(val id: Int, val name: String, val icon: ImageVector, val color: Co
 class EffectGroup(val name: String, val icon: ImageVector, val items: List<Effect>)
 
 object Effects {
-    private val cRed = Color(0xFFFE2B48); private val cCyan = Color(0xFF1AF4EA); private val cYel = Color(0xFFFED119)
+    private val cPink = Color(0xFFFE2CAA); private val cRed = Color(0xFFFE2B48); private val cCyan = Color(0xFF1AF4EA); private val cYel = Color(0xFFFED119)
     private val cOrange = Color(0xFFFF791B); private val cBlue = Color(0xFF4E78FF); private val cPurple = Color(0xFF8E5CFF)
     private val cNhip = Color(0xFFFE8A01); private val cComet = Color(0xFFFF456B); private val cGreen = Color(0xFF40E01E)
     private val c7 = listOf("đa sắc", "đỏ", "vàng", "xanh lá", "xanh lam", "xanh dương", "tím")
@@ -26,10 +26,10 @@ object Effects {
 
     val groups = listOf(
         EffectGroup("CHẾ ĐỘ CƠ BẢN", Icons.Outlined.LightMode, listOf(
-            Effect(0, "Đơn sắc", Icons.Outlined.Lightbulb, Pink), Effect(1, "Tự động", Icons.Filled.Autorenew, cRed),
+            Effect(0, "Đơn sắc", Icons.Outlined.Lightbulb, cPink), Effect(1, "Tự động", Icons.Filled.Autorenew, cRed),
             Effect(2, "Thở", Icons.Filled.ShowChart, cCyan, pre("Chuyển màu", c7)), Effect(3, "Chớp", Icons.Filled.Bolt, cYel, pre("Nhấp nháy", c8)))),
         EffectGroup("CHẾ ĐỘ HIỆU ỨNG", Icons.Filled.AutoAwesome, listOf(
-            Effect(7, "Ma thuật", Icons.Filled.AutoAwesome, cRed), Effect(8, "Huyền ảo", Icons.Filled.BlurCircular, Pink),
+            Effect(7, "Ma thuật", Icons.Filled.AutoAwesome, cRed), Effect(8, "Huyền ảo", Icons.Filled.BlurCircular, cPink),
             Effect(9, "Ma thuật", Icons.Filled.AutoAwesome, cCyan), Effect(11, "Cuộn màn hình", Icons.Outlined.ViewAgenda, cOrange),
             Effect(14, "Nhảy đa sắc", Icons.Filled.BlurCircular, cBlue),
             Effect(51, "Chiếu sáng năng động", Icons.Filled.Flare, cOrange,
@@ -37,7 +37,7 @@ object Effects {
             Effect(53, "Xếp chồng", Icons.Outlined.Layers, cGreen,
                 listOf("Xếp chồng đỏ-trắng", "Xếp chồng xanh-đỏ", "Xếp chồng đỏ-tím", "Xếp chồng trắng-trắng"), 1))),
         EffectGroup("CHỦ ĐỀ MÙA", Icons.Filled.LocalFlorist, listOf(
-            Effect(15, "Xuân", Icons.Filled.LocalFlorist, Pink), Effect(16, "Hạ", wave, cPurple),
+            Effect(15, "Xuân", Icons.Filled.LocalFlorist, cPink), Effect(16, "Hạ", wave, cPurple),
             Effect(17, "Thu", Icons.Filled.FilterVintage, cNhip), Effect(18, "Đông", Icons.Filled.AcUnit, cRed))),
         EffectGroup("NHỊP NHẠC", nhip, listOf(
             Effect(19, "Nhịp nhạc", nhip, cNhip), Effect(20, "Nhịp phổ", nhip, cNhip), Effect(21, "Nhịp cầu vồng", nhip, cNhip),
