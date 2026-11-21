@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'vn.sklight.sklink'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'vn.sklight.sklink'
+        minSdk 21
+        targetSdk 33
+        versionCode 1
+        versionName '0.1'
+    }
+
+    // Khoa ky co dinh nam trong kho (kho rieng tu) de moi ban build cung chu ky -> cai de len ban cu duoc, khong phai go.
+    signingConfigs {
+        fixed {
+            storeFile file('../sklink.keystore')
+            storePassword 'sklink-hud'
+            keyAlias 'sklink'
+            keyPassword 'sklink-hud'
+        }
+    }
+    buildTypes {
+        debug { signingConfig signingConfigs.fixed }
+        release {
+            signingConfig signingConfigs.fixed
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
