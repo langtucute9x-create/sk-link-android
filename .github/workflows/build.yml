@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [main]
+    branches: [sk-light]
   workflow_dispatch:
 permissions:
   contents: write
@@ -27,5 +27,5 @@ jobs:
       - name: Phat hanh ban latest
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
-          gh release delete latest --yes --cleanup-tag || true
-          gh release create latest sk-light.apk --title "SK Light (ban moi nhat)" --notes "Build tu commit ${GITHUB_SHA::7}"
+          gh release delete sk-light-latest --yes --cleanup-tag || true
+          gh release create sk-light-latest sk-light.apk --target "$GITHUB_SHA" --prerelease --title "SK Light (ban moi nhat)" --notes "Build tu commit ${GITHUB_SHA::7}"
