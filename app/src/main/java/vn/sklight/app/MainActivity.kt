@@ -49,11 +49,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlin.math.atan2
@@ -85,23 +87,54 @@ fun Root() {
     }
     LaunchedEffect(Unit) { launcher.launch(perms) }
 
-    Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB)))).systemBarsPadding()) {
-        // menu cố định trên cùng, nội dung cuộn bên dưới
-        Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            PowerBtn()
-            Spacer(Modifier.width(8.dp))
-            Tabs(tab, Modifier.weight(1f)) { tab = it }
+    val cfg = LocalConfiguration.current
+    val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
+    val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFFFCF5F9), Color(0xFFF2F0FB)))).systemBarsPadding()
+    val pick: () -> Unit = { S.ble.scan(); pickDev = true }
+    if (wide) {
+        // màn ngang (màn hình ô tô): menu dọc bên trái, nội dung chia hai cột cuộn riêng
+        val avail = cfg.screenWidthDp - 24 - 54 - 12
+        val leftW = (avail * 0.43f).coerceIn(346f, 392f)
+        val cols = if (avail - leftW - 12f >= 470f) 4 else 3
+        Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.width(54.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PowerBtn()
+                TabsV(tab) { tab = it }
+            }
+            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Strip()
+                key(tab) {
+                    when (tab) {
+                        0 -> TwoCol(leftW.dp, { LedMain() }, { LedEffects(cols) })
+                        1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
+                        2 -> {
+                            val (granted, open) = navAccess()
+                            TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
+                        }
+                        else -> TwoCol(leftW.dp, { SettingsDevice(pick) }, { SettingsFeatures() })
+                    }
+                }
+            }
         }
-        Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
-        Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            when (tab) {
-                0 -> LedPage()
-                1 -> WelcomePage()
-                2 -> NavPage { tab = 1 }
-                else -> SettingsPage { S.ble.scan(); pickDev = true }
+    } else {
+        Column(frame) {
+            // menu cố định trên cùng, nội dung cuộn bên dưới
+            Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                PowerBtn()
+                Spacer(Modifier.width(8.dp))
+                Tabs(tab, Modifier.weight(1f)) { tab = it }
+            }
+            Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
+            Column(
+                Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                when (tab) {
+                    0 -> LedPage()
+                    1 -> WelcomePage()
+                    2 -> NavPage { tab = 1 }
+                    else -> SettingsPage(pick)
+                }
             }
         }
     }
@@ -129,9 +162,38 @@ fun PowerBtn() {
     ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size(24.dp)) }
 }
 
+private val TAB_ITEMS: List<Pair<String, ImageVector>> =
+    listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
+
+/** Hai cột cuộn riêng cho màn ngang. */
+@Composable
+fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composable () -> Unit) {
+    Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.width(leftW).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
+        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
+    }
+}
+
+/** Menu dọc cho màn ngang. */
+@Composable
+fun TabsV(sel: Int, onPick: (Int) -> Unit) {
+    Column(
+        Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        TAB_ITEMS.forEachIndexed { i, (label, icon) ->
+            val on = sel == i
+            Box(
+                Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
+                contentAlignment = Alignment.Center
+            ) { Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(22.dp)) }
+        }
+    }
+}
+
 @Composable
 fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
-    val items = listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
+    val items = TAB_ITEMS
     Row(
         modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -150,7 +212,11 @@ fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
 
 // ===================== TRANG ĐÈN =====================
 @Composable
-fun LedPage() {
+fun LedPage() { LedMain(); LedEffects(3) }
+
+/** Khu vực + độ sáng + chọn màu. */
+@Composable
+fun LedMain() {
     Card {
         ZoneTabs(S.zone.intValue) { S.setZoneSel(it) }
         Spacer(Modifier.height(12.dp))
@@ -205,7 +271,12 @@ fun LedPage() {
             }
         }
     }
-    for (g in Effects.groups) EffectGroupCard(g)
+}
+
+/** Các nhóm chế độ + thẻ Hiệu ứng. [cols] = số cột của lưới chế độ. */
+@Composable
+fun LedEffects(cols: Int) {
+    for (g in Effects.groups) EffectGroupCard(g, cols)
     Card {
         GroupTitle(Icons.Filled.Tune, "Hiệu ứng", 19)
         Spacer(Modifier.height(14.dp))
@@ -243,11 +314,11 @@ fun SliderRow(left: String, right: String, slider: @Composable (Modifier) -> Uni
 }
 
 @Composable
-fun EffectGroupCard(g: EffectGroup) {
+fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
     Card {
         GroupTitle(g.icon, g.name)
         Spacer(Modifier.height(14.dp))
-        Grid(g.items, 3, 9.dp, 11.dp) { e, m ->
+        Grid(g.items, cols, 9.dp, 11.dp) { e, m ->
             val on = S.mode.intValue == e.id
             Row(
                 m.height(56.dp).clip(RoundedCornerShape(8.dp)).background(if (on) mix(e.color, 0.5f) else ChipBg)
@@ -263,7 +334,7 @@ fun EffectGroupCard(g: EffectGroup) {
         val cur = g.items.firstOrNull { it.id == S.mode.intValue && it.subs.isNotEmpty() }
         if (cur != null) {
             Spacer(Modifier.height(13.dp))
-            Grid(cur.subs.indices.toList(), 3) { i, m ->
+            Grid(cur.subs.indices.toList(), cols) { i, m ->
                 val on = S.sub[cur.id] == i
                 Box(
                     m.height(51.dp).clip(RoundedCornerShape(8.dp)).background(if (on) mix(cur.color, 0.2f) else ChipBg)
@@ -343,7 +414,11 @@ private val SEG_SHORT = listOf("", "", "Trước trái", "Trước phải", "Sau
 private val STARTS = listOf("Bảng đồng hồ trái" to 0, "Bảng đồng hồ phải" to 1, "Cửa trước trái" to 2, "Cửa sau trái" to 4, "Cửa sau phải" to 5)
 
 @Composable
-fun WelcomePage() {
+fun WelcomePage() { WelcomeTop(); WelcomeDiagram() }
+
+/** Công tắc chào mừng + chế độ + tốc độ. */
+@Composable
+fun WelcomeTop() {
     val ctx = LocalContext.current
     val ver = S.blkVer.intValue      // đọc để vẽ lại khi hộp trả lời
     fun needBlock() = Toast.makeText(ctx, "Chưa đọc được cài đặt chào mừng từ hộp (v$ver). Kiểm tra kết nối rồi thử lại.", Toast.LENGTH_SHORT).show()
@@ -368,6 +443,11 @@ fun WelcomePage() {
         Spacer(Modifier.height(12.dp))
         Grid(listOf(0, 1, 2, 3), 4) { v, m -> Chip("Tốc độ ${v + 1}", S.wSpeed.intValue == v, m, 48.dp, 12) { S.setWSpeed(v) } }
     }
+}
+
+/** Sơ đồ xe: ghép hộp phụ, số LED, hướng chạy, vị trí bắt đầu. */
+@Composable
+fun WelcomeDiagram() {
     Card {
         GroupTitle(Icons.Filled.MeetingRoom, "Sơ đồ xe", 16)
         Spacer(Modifier.height(8.dp))
@@ -518,15 +598,29 @@ private fun boxText(seg: Int): String {
     return if (b >= 0) "Hộp phụ ${b + 1}" else "Chưa gán"
 }
 
+/** Quyền đọc thông báo đã cấp chưa (tự kiểm tra lại mỗi giây) + hàm mở trang cấp quyền của máy. */
 @Composable
-fun NavPage(toWelcome: () -> Unit) {
+fun navAccess(): Pair<Boolean, () -> Unit> {
     val ctx = LocalContext.current
     var granted by remember { mutableStateOf(listenerOn(ctx)) }
     LaunchedEffect(Unit) { while (true) { granted = listenerOn(ctx); delay(1000) } }
-    val openAccess = {
+    val open: () -> Unit = {
         try { ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         catch (e: Exception) { Toast.makeText(ctx, "Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\".", Toast.LENGTH_LONG).show() }
     }
+    return granted to open
+}
+
+@Composable
+fun NavPage(toWelcome: () -> Unit) {
+    val (granted, open) = navAccess()
+    NavTop(granted, open, toWelcome)
+    NavBottom(granted, open)
+}
+
+/** Trạng thái dẫn đường + cảnh báo rẽ. */
+@Composable
+fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     val k = S.alertKind.intValue
 
     // ---- đang dẫn đường ----
@@ -591,6 +685,14 @@ fun NavPage(toWelcome: () -> Unit) {
         }
     }
 
+}
+
+/** Thử nháy + thông báo của app dẫn đường. */
+@Composable
+fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
+    val ctx = LocalContext.current
+    val k = S.alertKind.intValue
+
     // ---- thử nháy ----
     Card {
         GroupTitle(Icons.Filled.AutoAwesome, "Thử nháy 4 giây", 16)
@@ -631,7 +733,7 @@ fun NavPage(toWelcome: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.3.0, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.3.1, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, "Đã sao chép ${S.navLog.size} dòng.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -640,8 +742,10 @@ fun NavPage(toWelcome: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) {
-    val ctx = LocalContext.current
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); SettingsFeatures() }
+
+@Composable
+fun SettingsDevice(onPick: () -> Unit) {
     Card {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Bluetooth, null, tint = Pink, modifier = Modifier.size(22.dp))
@@ -658,6 +762,11 @@ fun SettingsPage(onPick: () -> Unit) {
             FillBtn("Chọn lại", Icons.Filled.BluetoothSearching, Color(0xFFFE9700), Modifier.weight(1f), onPick)
         }
     }
+}
+
+@Composable
+fun SettingsFeatures() {
+    val ctx = LocalContext.current
     Card {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Settings, null, tint = Pink, modifier = Modifier.size(22.dp))
@@ -673,7 +782,7 @@ fun SettingsPage(onPick: () -> Unit) {
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", "Thay đổi ngôn ngữ", later)
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
     }
-    T("SK Light 0.3.0 (bản thử Dẫn đường)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.3.1 (bản thử Dẫn đường)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
