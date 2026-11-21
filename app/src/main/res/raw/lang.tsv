@@ -279,3 +279,17 @@ SK Light chạy nền	SK Light background service	SK Light バックグラウン
 Ngôn ngữ	Language	言語	언어	ภาษา	ភាសា	ພາສາ
 Chọn ngôn ngữ hiển thị của app.	Choose the app's display language.	アプリの表示言語を選択します。	앱 표시 언어를 선택하세요.	เลือกภาษาที่แสดงในแอป	ជ្រើសភាសាបង្ហាញរបស់កម្មវិធី។	ເລືອກພາສາທີ່ສະແດງໃນແອັບ.
 Ra lệnh bằng giọng nói hiện chỉ có khi dùng tiếng Việt.	Voice commands are currently available in Vietnamese only.	音声コマンドは現在ベトナム語のみ対応しています。	음성 명령은 현재 베트남어만 지원합니다.	คำสั่งเสียงใช้ได้เฉพาะเมื่อใช้ภาษาเวียดนามเท่านั้น	ការបញ្ជាដោយសំឡេងបច្ចុប្បន្នមានតែពេលប្រើភាសាវៀតណាមប៉ុណ្ណោះ។	ຄຳສັ່ງສຽງໃຊ້ໄດ້ສະເພາະເມື່ອໃຊ້ພາສາຫວຽດນາມເທົ່ານັ້ນ.
+Thử chế độ tự tạo	Custom mode test					
+Xem hộp đèn chuyển màu liên tục có mượt không (bản thử)	Check how smoothly the LED box follows continuous colour changes (test)					
+App tự gửi lệnh đổi màu liên tục trong 20 giây để xem hộp đèn chuyển màu có mượt không. Hết giờ hoặc bấm Dừng thì đèn trở về như cũ.	The app sends colour commands continuously for 20 seconds to see how smoothly the LED box changes colour. When time is up or you tap Stop, the lights return to how they were.					
+Số lệnh mỗi giây	Commands per second					
+Kiểu thử	Test pattern					
+Chuyển dần 3 màu	Fade through 3 colours					
+Thở một màu	Breathe one colour					
+Hai khu vực so le	Two zones alternating					
+Màu app đang gửi (trái: khu vực 1, phải: khu vực 2)	Colour being sent (left: zone 1, right: zone 2)					
+Đang chạy: còn # giây, đã gửi # lệnh	Running: # s left, # commands sent					
+Đã dừng. Đã gửi # lệnh.	Stopped. # commands sent.					
+Chưa chạy.	Not running.					
+Dừng	Stop					
+Thử lần lượt 2, 5, 10, 20 lệnh mỗi giây với từng kiểu. Ghi lại mức nào đèn chuyển mượt, mức nào bị giật, đứng hình hoặc sai màu.	Try 2, 5, 10 and 20 commands per second with each pattern. Note which rates look smooth and which stutter, freeze or show wrong colours.					

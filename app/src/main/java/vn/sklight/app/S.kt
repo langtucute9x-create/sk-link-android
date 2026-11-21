@@ -99,7 +99,7 @@ object S {
     var appVisible = false
     var userOff = false                                   // người dùng vừa bấm Ngắt kết nối: không tự nối lại
     private val main = Handler(Looper.getMainLooper())
-    val subPage = mutableIntStateOf(0)                    // trang con trong Cài đặt: 0 không, 1 Cài đặt giao diện
+    val subPage = mutableIntStateOf(0)                    // trang con trong Cài đặt: 0 không, 1 Cài đặt giao diện, 2 Cài đặt ngôn ngữ, 3 Thử chế độ tự tạo
     private val nightLoop = object : Runnable {
         override fun run() {
             try { Theme.nightNow.value = Night.isNightNow(); Night.tick() } catch (_: Exception) {}

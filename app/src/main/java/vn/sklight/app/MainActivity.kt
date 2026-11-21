@@ -151,7 +151,8 @@ fun Root() {
                             val (granted, open) = navAccess()
                             TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                         }
-                        else -> if (S.subPage.intValue == 2) TwoCol(leftW.dp, { LanguagePage() }, { })
+                        else -> if (S.subPage.intValue == 3) TwoCol(leftW.dp, { CustomTestPage() }, { })
+                        else if (S.subPage.intValue == 2) TwoCol(leftW.dp, { LanguagePage() }, { })
                         else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
                         else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
                     }
@@ -177,7 +178,7 @@ fun Root() {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
-                    else -> if (S.subPage.intValue == 2) LanguagePage() else if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
+                    else -> if (S.subPage.intValue == 3) CustomTestPage() else if (S.subPage.intValue == 2) LanguagePage() else if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
                 }
                 LogoFooter()
             }
@@ -779,7 +780,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.2, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.3, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
             }
         }
@@ -826,12 +827,13 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói", later)
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
+        Feature(Icons.Filled.Science, "Thử chế độ tự tạo", "Xem hộp đèn chuyển màu liên tục có mượt không (bản thử)") { S.subPage.intValue = 3 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như loại xe, chức năng gốc xe, chẩn đoán", later)
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.2 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.3 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
