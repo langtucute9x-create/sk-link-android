@@ -293,3 +293,12 @@ Màu app đang gửi (trái: khu vực 1, phải: khu vực 2)	Colour being sent
 Chưa chạy.	Not running.					
 Dừng	Stop					
 Thử lần lượt 2, 5, 10, 20 lệnh mỗi giây với từng kiểu. Ghi lại mức nào đèn chuyển mượt, mức nào bị giật, đứng hình hoặc sai màu.	Try 2, 5, 10 and 20 commands per second with each pattern. Note which rates look smooth and which stutter, freeze or show wrong colours.					
+Thử riêng khu vực 2	Zone 2 only test					
+Chế độ có sẵn trong hộp	Modes built into the box					
+Hộp có một ô số dành riêng cho chế độ của khu vực 2. App gốc chỉ dùng 0 (tĩnh), 1 (tự động), 2 (nhấp nháy). Bấm từng số và nhìn khu vực 2 xem hộp còn chế độ nào khác không, ví dụ thở.	The box has one number reserved for the mode of zone 2. The original app only uses 0 (static), 1 (auto) and 2 (flashing). Tap each number and watch zone 2 to see whether the box has other modes, for example breathing.					
+Đã gửi số # cho khu vực 2	Sent value # for zone 2					
+Trả về như cũ	Restore					
+App tự điều khiển	Driven by the app					
+App giữ màu khu vực 1, chỉ đổi màu khu vực 2 trong 20 giây. Thử cả lúc khu vực 1 để Đơn sắc và lúc đang chạy một hiệu ứng. Số lệnh mỗi giây lấy theo ô chọn ở thẻ trên.	The app keeps the zone 1 colour and only changes zone 2 for 20 seconds. Try it both with zone 1 in Single colour and while an effect is running. Commands per second follow the choice in the card above.					
+Thở riêng khu vực 2	Breathe zone 2 only					
+Chớp riêng khu vực 2	Flash zone 2 only					

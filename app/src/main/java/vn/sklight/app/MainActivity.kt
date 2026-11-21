@@ -780,7 +780,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.3, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.4, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
             }
         }
@@ -833,7 +833,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.3 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.4 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
