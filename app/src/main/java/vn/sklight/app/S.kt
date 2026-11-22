@@ -73,7 +73,7 @@ object S {
     val navStreet = mutableStateOf("")
     val navApp = mutableStateOf("")
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
-    val speedZone = mutableIntStateOf(1)                  // quá tốc độ: khu nào nháy đỏ (1, 2, 0 = cả xe)
+    val speedZone = mutableIntStateOf(0)                  // quá tốc độ: khu nào nháy đỏ (0 = cả xe, 1, 2). Mặc định cả xe.
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
     val appSpeed = mutableIntStateOf(-1)                  // tốc độ xe đọc từ app dẫn đường, -1 = chưa biết
@@ -136,7 +136,7 @@ object S {
         warnOn.value = sp.getBoolean("warnOn", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
         speedWarn.value = sp.getBoolean("speedWarn", false)
-        speedZone.intValue = sp.getInt("speedZone", 1)
+        speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
         screenAuto.value = sp.getBoolean("screenAuto", false)
         (sp.getString("bri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) bri[i] = v.coerceIn(0, 100) }
         on.value = sp.getBoolean("on", true)
@@ -168,7 +168,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert", invert.value)
-            .putInt("speedZone", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
