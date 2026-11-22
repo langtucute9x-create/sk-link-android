@@ -354,7 +354,6 @@ fun WelcomeColorPage() {
 fun FactoryPage() {
     val ctx = LocalContext.current
     X.ver.intValue; S.blkVer.intValue
-    var confirm by remember { mutableStateOf(false) }
     var reset by remember { mutableIntStateOf(0) }      // 0 không, 1 hỏi lần một, 2 hỏi lần hai
     BackRow(0, "Cài đặt")
     Card {
@@ -385,7 +384,6 @@ fun FactoryPage() {
     }
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
-        Feature(Icons.Filled.Settings, "Cấu hình cửa xe", "Xóa cấu hình gán hộp phụ vào cửa") { confirm = true }
         Feature(Icons.Filled.Refresh, "Khôi phục cài đặt gốc", "Đưa hộp về cài đặt ban đầu của nhà sản xuất") {
             if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else reset = 1
         }
@@ -409,13 +407,6 @@ fun FactoryPage() {
         text = { Text(L.tr("Không hoàn tác được. Giữ nguyên nguồn điện của hộp cho tới khi xong.")) },
         confirmButton = { TextButton({ reset = 0; X.factoryReset() }) { Text(L.tr("Khôi phục")) } },
         dismissButton = { TextButton({ reset = 0 }) { Text(L.tr("Hủy")) } }
-    )
-    if (confirm) AlertDialog(
-        onDismissRequest = { confirm = false },
-        title = { Text(L.tr("Xóa cấu hình cửa xe?")) },
-        text = { Text(L.tr("Các hộp phụ sẽ về trạng thái chưa gán cửa, cần gán lại ở tab Chào mừng.")) },
-        confirmButton = { TextButton({ confirm = false; S.resetDoors() }) { Text(L.tr("Xóa")) } },
-        dismissButton = { TextButton({ confirm = false }) { Text(L.tr("Hủy")) } }
     )
 }
 

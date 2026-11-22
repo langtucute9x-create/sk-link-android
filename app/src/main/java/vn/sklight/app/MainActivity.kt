@@ -773,66 +773,70 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
         }
         Spacer(Modifier.height(6.dp))
-        T("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở phần Đọc chữ trên màn hình bên dưới.", 11, color = Grey)
+        T("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở thẻ Đọc app dẫn đường bên dưới.", 11, color = Grey)
     }
 
-    // ---- thông báo app dẫn đường ----
+    // ---- quyền đọc app dẫn đường + phần kiểm tra (đóng sẵn) ----
     Card {
-        GroupTitle(Icons.Filled.Navigation, "Thông báo của app dẫn đường", 16)
+        GroupTitle(Icons.Filled.Navigation, "Đọc app dẫn đường", 16)
         Spacer(Modifier.height(8.dp))
-        T("Phần kiểm tra: app ghi lại nguyên văn thông báo của Google Maps, Vietmap để biết đọc được những gì (hướng rẽ, khoảng cách, biển báo tốc độ).", 12, color = Grey)
-        Spacer(Modifier.height(8.dp))
+        var accOn by remember { mutableStateOf(false) }
+        var open by remember { mutableStateOf(false) }
+        val openAcc = { try { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {} }
+        LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
         Kv("Quyền đọc thông báo", if (granted) "Đã cấp" else "Chưa cấp")
-        Kv("Biển báo tốc độ thấy được", if (S.signSeen.value.isEmpty()) "Chưa thấy" else S.signSeen.value)
-        Spacer(Modifier.height(8.dp))
-        if (S.navLog.isEmpty()) T("Chưa ghi được thông báo nào.", 12, color = Grey)
-        for (line in S.navLog) {
-            Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
+        Kv("Quyền Hỗ trợ tiếp cận", if (accOn) "Đã bật" else "Chưa bật")
+        if (!granted || !accOn) {
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!granted) OutlineBtn("Cấp quyền thông báo", Modifier.weight(1f), openAccess)
+                if (!accOn) OutlineBtn("Bật Hỗ trợ tiếp cận", Modifier.weight(1f)) { openAcc() }
+            }
         }
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
-            OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
+        SwitchRow("Tự đọc khi dùng Gofa và app bản đồ", "Cho app dẫn đường không có thông báo. Chỉ đọc màn hình của app bản đồ, cần quyền Hỗ trợ tiếp cận.", S.screenAuto.value) { S.screenAuto.value = it; S.saveSettings() }
+        Divider()
+        Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+            T("Kiểm tra (dành cho kỹ thuật)", 14, FontWeight.Bold, modifier = Modifier.weight(1f))
+            Icon(if (open) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = SubTxt, modifier = Modifier.size(22.dp))
+        }
+        if (open) {
+            // thông báo của app dẫn đường
+            T("Thông báo của app dẫn đường", 13, FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Kv("Biển báo tốc độ thấy được", if (S.signSeen.value.isEmpty()) "Chưa thấy" else S.signSeen.value)
+            if (S.navLog.isEmpty()) T("Chưa ghi được thông báo nào.", 12, color = Grey)
+            for (line in S.navLog) {
+                Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
+            }
+            OutlineBtn("Sao chép thông báo để gửi", Modifier.fillMaxWidth()) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
             }
-        }
-    }
-
-    // ---- đọc chữ trên màn hình (app không có thông báo) ----
-    Card {
-        GroupTitle(Icons.Filled.Navigation, "Đọc chữ trên màn hình (thử)", 16)
-        Spacer(Modifier.height(8.dp))
-        T("Dành cho app dẫn đường không có thông báo như Gofa. Bật quyền, bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. Chữ chỉ đọc trên máy, không gửi đi đâu, tự tắt sau 5 phút.", 12, color = Grey)
-        Spacer(Modifier.height(8.dp))
-        var accOn by remember { mutableStateOf(false) }
-        LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
-        Kv("Quyền Hỗ trợ tiếp cận", if (accOn) "Đã bật" else "Chưa bật")
-        SwitchRow("Tự đọc khi dùng Gofa và app bản đồ", "Chỉ đọc màn hình của app bản đồ, các app khác bỏ qua", S.screenAuto.value) { S.screenAuto.value = it; S.saveSettings() }
-        Kv("Đang đọc thử", if (S.screenOn.value) "Có" else "Không")
-        Kv("Đọc được", if (S.screenInfo.value.isEmpty()) "Chưa có" else S.screenInfo.value)
-        Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)
-        Spacer(Modifier.height(8.dp))
-        if (S.screenLines.isEmpty()) T("Chưa đọc được chữ nào.", 12, color = Grey)
-        for (line in S.screenLines.take(80)) {
-            Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
-        }
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f)) {
-                try { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {}
+            Divider(12.dp, 10.dp)
+            // đọc chữ trên màn hình
+            T("Đọc chữ trên màn hình", 13, FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            T("Bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. Chữ chỉ đọc trên máy, không gửi đi đâu, tự tắt sau 5 phút.", 12, color = Grey)
+            Kv("Đang đọc thử", if (S.screenOn.value) "Có" else "Không")
+            Kv("Đọc được", if (S.screenInfo.value.isEmpty()) "Chưa có" else S.screenInfo.value)
+            Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)
+            if (S.screenLines.isEmpty()) T("Chưa đọc được chữ nào.", 12, color = Grey)
+            for (line in S.screenLines.take(80)) {
+                Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
             }
-            OutlineBtn(if (S.screenOn.value) "Dừng đọc" else "Bắt đầu đọc", Modifier.weight(1f)) {
-                if (S.screenOn.value) S.screenOn.value = false
-                else { S.screenUntil = System.currentTimeMillis() + 300_000; S.screenLines.clear(); S.screenOn.value = true }
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlineBtn(if (S.screenOn.value) "Dừng đọc" else "Bắt đầu đọc", Modifier.weight(1f)) {
+                    if (S.screenOn.value) S.screenOn.value = false
+                    else { S.screenUntil = System.currentTimeMillis() + 300_000; S.screenLines.clear(); S.screenOn.value = true }
+                }
+                OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
+                    val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
+                    Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
+                }
             }
-        }
-        Spacer(Modifier.height(6.dp))
-        OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
-            val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
-            Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -865,10 +869,6 @@ fun SettingsDevice(onPick: () -> Unit) {
 fun SettingsFeatures() {
     val ctx = LocalContext.current
     Card {
-        SetTitle(Icons.Filled.Lightbulb, "Hộp đèn")
-        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
-    }
-    Card {
         SetTitle(Icons.Filled.PhoneAndroid, "Ứng dụng")
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
@@ -878,6 +878,7 @@ fun SettingsFeatures() {
     }
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
+        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
         Feature(Icons.Filled.Mic, "Giọng nói AI", "Giọng nói của hộp, cách thông báo và các câu lệnh") { S.subPage.intValue = 4 }
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
