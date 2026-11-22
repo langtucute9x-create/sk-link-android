@@ -708,7 +708,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         if (k != 0) {
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 9.dp)) {
-                T(when (k) { 1 -> "Sắp rẽ trái: các cửa bên trái đang nháy"; 2 -> "Sắp rẽ phải: các cửa bên phải đang nháy"; 3 -> "Quá tốc độ: cả xe đang nháy đỏ"; else -> "Đang thử: ${SEG_NAMES[k - 10]}" }, 13, FontWeight.Bold)
+                T(when (k) { 1 -> "Sắp rẽ trái: các cửa bên trái đang nháy"; 2 -> "Sắp rẽ phải: các cửa bên phải đang nháy"; 3 -> "Quá tốc độ: đang nháy đỏ"; else -> "Đang thử: ${SEG_NAMES[k - 10]}" }, 13, FontWeight.Bold)
             }
         }
     }
@@ -770,7 +770,14 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
     Card {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
         Spacer(Modifier.height(8.dp))
-        SwitchRow("Nháy đỏ khi quá tốc độ", "Cả xe nháy đỏ khi chạy quá giới hạn trên biển báo", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Nháy đỏ khi quá tốc độ", "Nháy đỏ liên tục khi chạy quá giới hạn trên biển báo", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
+        Spacer(Modifier.height(6.dp))
+        T("Khu nháy đỏ khi quá tốc độ (các khu còn lại giữ nguyên màu):", 12, color = Grey)
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
+                Chip(label, S.speedZone.intValue == z, Modifier.weight(1f), 44.dp, 12) { S.speedZone.intValue = z; S.saveSettings() }
+        }
         Spacer(Modifier.height(6.dp))
         Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
         Kv("Giới hạn đọc được", if (S.speedLimit.intValue > 0) "${S.speedLimit.intValue} km/h" else "Chưa có")

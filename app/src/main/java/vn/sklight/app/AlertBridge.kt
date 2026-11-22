@@ -16,6 +16,7 @@ object AlertBridge {
     private var kind = 0
     private var testUntil = 0L
     private var testKind = 0
+    private var idx = 0
     private var flashing = listOf<Int>()          // các hộp phụ đang được cho nháy
     private val SPEED = Pattern.compile("(\\d{2,3})\\s*km\\s*/\\s*h", Pattern.CASE_INSENSITIVE)
 
@@ -106,7 +107,10 @@ object AlertBridge {
             if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         } else {
             flashing = boxesFor(k)
-            for (n in flashing) S.ble.send(Protocol.door(n, 0))
+            idx = 0
+            // Lệnh "04 | hộp << 4 | 0" của hộp là lệnh nháy để nhận biết MỘT hộp: gửi cho hai hộp thì chỉ hộp gửi sau nháy.
+            // Nên các hộp cùng bên được gửi luân phiên trong mỗi nhịp.
+            flashing.firstOrNull()?.let { S.ble.send(Protocol.door(it, 0)) }
         }
         S.alertPhase.value = false
         h.post(tick)
@@ -131,9 +135,19 @@ object AlertBridge {
             S.alertPhase.value = on
             if (kind == 3) {
                 val v = if (on) 0xFF0000 else 0x000000
-                S.ble.send(Protocol.color(true, v, v, S.invert.value), 2)
+                // Chỉ khu được chọn (mặc định khu 1) nháy đỏ, khu còn lại giữ màu đang có
+                val uni = S.czone.intValue == 0
+                val b1 = if (uni) S.col[0] else S.col[1]
+                val b2 = if (uni) S.col[0] else S.col[2]
+                val z = S.speedZone.intValue
+                val c1 = if (z == 0 || z == 1) v else b1
+                val c2 = if (z == 0 || z == 2) v else b2
+                S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
+            } else if (flashing.size > 1) {
+                idx = (idx + 1) % flashing.size
+                S.ble.send(Protocol.door(flashing[idx], 0))
             }
-            h.postDelayed(this, if (kind == 3) 250L else 450L)
+            h.postDelayed(this, if (kind == 3) 250L else if (flashing.size > 1) 700L else 450L)
         }
     }
 
