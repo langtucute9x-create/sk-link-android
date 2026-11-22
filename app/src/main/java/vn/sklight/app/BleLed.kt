@@ -153,7 +153,7 @@ class BleLed(private val ctx: Context) {
             main.postDelayed({
                 val init = Protocol.init()
                 send(init[0])
-                S.sendBright()
+                if (S.on.value) S.sendBright()          // kết nối lại không bao giờ tự tắt đèn của hộp
                 main.postDelayed({ for (f in init.drop(1)) send(f) }, 700)
             }, 800)
         }

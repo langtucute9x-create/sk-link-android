@@ -63,6 +63,8 @@ object S {
 
     // cài đặt
     val invert = mutableStateOf(true)
+    /** Cách đảo màu gửi cho hộp: 0 tự động theo phiên bản hộp (Ảo ảnh = đảo, Toàn màu = không đảo), 1 luôn đảo, 2 không đảo. */
+    val invertMode = mutableIntStateOf(0)
 
     // dẫn đường + cảnh báo (bản thử)
     val warnOn = mutableStateOf(false)                    // nháy đèn khi sắp rẽ
@@ -133,6 +135,8 @@ object S {
         Crash.install(app)
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert", true)
+        invertMode.intValue = sp.getInt("invertMode", 0)
+        if (invertMode.intValue != 0) invert.value = invertMode.intValue == 1
         warnOn.value = sp.getBoolean("warnOn", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
         speedWarn.value = sp.getBoolean("speedWarn", false)
@@ -167,7 +171,7 @@ object S {
     }
 
     fun saveSettings() {
-        sp.edit().putBoolean("invert", invert.value)
+        sp.edit().putBoolean("invert", invert.value).putInt("invertMode", invertMode.intValue)
             .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
@@ -214,8 +218,22 @@ object S {
 
     fun onFactory(b1: Int, b2: Int) {
         fac = intArrayOf(b1, b2)
+        applyInvert()
         z2.intValue = ((b1 shr 3) and 3).coerceAtMost(2)
     }
+
+    /**
+     * Hộp bản "Ảo ảnh" (bit 6 của b1 khối 0D) hiện màu bù của màu gửi đi nên phải đảo 255-x; bản "Toàn màu" thì không.
+     * Chưa đọc được khối 0D thì giữ cách đang dùng. Đổi cách đảo thì gửi lại màu đang đặt.
+     */
+    fun applyInvert() {
+        val want = when (invertMode.intValue) { 1 -> true; 2 -> false; else -> fac?.let { it[0] and 0x40 != 0 } ?: invert.value }
+        if (want == invert.value) return
+        invert.value = want
+        saveSettings()
+        try { if (connected.value && mode.intValue == 0 && !Auto.running()) ble.send(colorFrame(), 2) } catch (e: Exception) {}
+    }
+    fun setInvertMode(m: Int) { invertMode.intValue = m; saveSettings(); applyInvert() }
 
     // ---------- đèn ----------
     fun setPower(v: Boolean) {

@@ -119,6 +119,50 @@ object Voice {
     private fun has(t: String, word: String) = Regex("(^|\\s)" + Regex.escape(word) + "(\\s|$)").containsMatchIn(t)
 
     private fun pick(e: Effect): String { S.pickEffect(e); return "Em đã chuyển sang chế độ ${e.name} rồi" }
+
+    /** Bỏ dấu tiếng Việt, để so tên khi máy nghe sai dấu hoặc sai chữ gần âm ("cuộn" thành "quận", "cuốn"). */
+    private fun fold(x: String): String =
+        java.text.Normalizer.normalize(x.lowercase().replace('đ', 'd'), java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").replace(Regex("\\s+"), " ").trim()
+
+    private fun lev(a: String, b: String): Int {
+        var prev = IntArray(b.length + 1) { it }
+        for (i in 1..a.length) {
+            val cur = IntArray(b.length + 1); cur[0] = i
+            for (j in 1..b.length) cur[j] = minOf(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + if (a[i - 1] == b[j - 1]) 0 else 1)
+            prev = cur
+        }
+        return prev[b.length]
+    }
+
+    /**
+     * Tìm chế độ có tên gần giống nhất với một cụm trong câu [t] (so không dấu, cho sai tối đa khoảng 1/4 số chữ).
+     * Chỉ xét tên dài từ 6 chữ cái trở lên để không bắt nhầm các từ ngắn.
+     */
+    private fun fuzzyMode(t: String): Effect? {
+        val words = fold(t).split(" ").filter { it.isNotEmpty() }
+        if (words.isEmpty()) return null
+        // có chữ "chế độ" / "hiệu ứng" thì cho sai nhiều hơn một chút
+        val joined = words.joinToString(" ")
+        val limit = if (joined.contains("che do") || joined.contains("hieu ung")) 0.26f else 0.2f
+        val cands = ArrayList<Pair<String, Effect>>()
+        for (g in GUIDE) Effects.byId(g.second)?.let { e -> for (n in g.third) cands.add(fold(n) to e) }
+        for (e in Effects.all) cands.add(fold(e.name) to e)
+        var best: Effect? = null; var bestScore = 1f; var bestLen = 0
+        for ((name, e) in cands) {
+            if (name.replace(" ", "").length < 6) continue
+            val k = name.split(" ").size
+            for (n in listOf(k, k - 1, k + 1)) {
+                if (n < 1 || n > words.size) continue
+                for (i in 0..words.size - n) {
+                    val w = words.subList(i, i + n).joinToString(" ")
+                    val d = lev(w, name)
+                    val score = d.toFloat() / name.length
+                    if (d <= 3 && score <= limit && (score < bestScore || (score == bestScore && name.length > bestLen))) { best = e; bestScore = score; bestLen = name.length }
+                }
+            }
+        }
+        return best
+    }
     private fun zn(z: Int) = when (z) { 1 -> " khu vực 1"; 2 -> " khu vực 2"; 0 -> " cả xe"; else -> "" }
     /** Độ sáng hiện tại của khu vực [z] (-1 = khu vực đang chọn trong trang Đèn). */
     private fun curBri(z: Int) = if (z > 0 && S.zone.intValue == 0) S.bri[0] else S.bri[if (z >= 0) z else S.zone.intValue]
@@ -189,6 +233,8 @@ object Voice {
         for (e in Effects.all) { val n = e.name.lowercase(); if (n.contains(' ') && has(t, n)) return pick(e) }
         for (g in GUIDE) if (g.third.any { has(t, it) }) Effects.byId(g.second)?.let { return pick(it) }
         if (has(t, "mùa hè")) Effects.byId(16)?.let { return pick(it) }
+        // máy nghe sai chữ ("quận đủ màu", "cuốn đủ màu", "mai trôi"…): lấy chế độ có tên gần giống nhất
+        if (COLORS.none { c -> c.first.any { has(t, it) } }) fuzzyMode(t)?.let { return pick(it) }      // câu có tên màu thì để phần chọn màu bên dưới xử lý
         if (has(t, "bảy màu") || has(t, "7 màu") || has(t, "đủ màu")) Effects.byId(1)?.let { return pick(it) }
         // màu: cần chữ "màu", có nêu khu vực, hoặc câu rất ngắn
         if (z >= 0 || t.contains("màu") || t.split(" ").size <= 3) for (c in COLORS) if (c.first.any { has(t, it) }) {

@@ -160,6 +160,7 @@ object X {
         val n = f.copyOf(); n[i] = (n[i] and mask.inv()) or (value and mask)
         S.fac = n; ver.intValue++
         if (i == 0) S.z2.intValue = ((n[0] shr 3) and 3).coerceAtMost(2)
+        if (i == 0) S.applyInvert()
         S.ble.send(Protocol.factory(n[0], n[1]), 22, true)
         return true
     }
@@ -381,6 +382,15 @@ fun FactoryPage() {
         }
         Spacer(Modifier.height(6.dp))
         T("Đổi phiên bản có thể làm hộp hiện màu khác, chỉ đổi khi biết hộp thuộc loại nào.", 12, color = SubTxt)
+        Divider(10.dp, 10.dp)
+        T("Màu gửi cho hộp", 15, FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            for ((label, m) in listOf("Tự động" to 0, "Đảo màu" to 1, "Không đảo" to 2))
+                Chip(label, S.invertMode.intValue == m, Modifier.weight(1f), 44.dp, 13) { S.setInvertMode(m) }
+        }
+        Spacer(Modifier.height(6.dp))
+        T("Đang dùng: ${if (S.invert.value) "đảo màu" else "không đảo"}. Nếu chọn đỏ mà đèn ra xanh băng (màu bị ngược) thì đổi mục này.", 12, color = SubTxt)
     }
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
