@@ -193,7 +193,11 @@ object X {
     fun pickWelcome(reverse: Boolean, idx: Int, argb: Int): Boolean {
         val p = (p09 ?: run { S.ble.send(Protocol.query(0x09)); return false }).copyOf()
         val o = if (reverse) 4 else 0
-        p[o] = idx + 1; p[o + 1] = (argb shr 16) and 0xFF; p[o + 2] = (argb shr 8) and 0xFF; p[o + 3] = argb and 0xFF
+        // Hộp này hiện màu bù của màu gửi đi (như lệnh màu 01), nên đảo 255-x khi S.invert. 00 00 00 = tắt nên tránh.
+        var r = (argb shr 16) and 0xFF; var g = (argb shr 8) and 0xFF; var b = argb and 0xFF
+        if (S.invert.value) { r = 255 - r; g = 255 - g; b = 255 - b }
+        if (r == 0 && g == 0 && b == 0) { r = 1; g = 1; b = 1 }
+        p[o] = idx + 1; p[o + 1] = r; p[o + 2] = g; p[o + 3] = b
         p09 = p; ver.intValue++
         send09()
         return true
@@ -201,7 +205,7 @@ object X {
 }
 
 // 10 màu chào mừng của app gốc: giá trị gửi cho hộp (đã cân theo LED) và màu hiện trên màn hình
-private val PRE = intArrayOf(0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0x8C01FC, 0xFF0020, 0x501000, 0x808080)
+private val PRE = intArrayOf(0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0x8C01FC, 0xFF0020, 0xFF5000, 0xFFFFFF)
 private val PRE_SHOW = intArrayOf(0xFF0000, 0xFFE600, 0x00D93A, 0x00D5E6, 0x1E4BFF, 0xFF2CD6, 0x8C01FC, 0xFF2E63, 0xFF7A00, 0xFFFFFF)
 
 private fun need(ctx: Context) {
@@ -459,7 +463,8 @@ fun CarFuncPage() {
             val (i, mask, title) = k
             Divider()
             SwitchRow(title, sub, S.blkBit(i, mask)) { if (!S.setBlk(i, mask, if (it) mask else 0)) need(ctx) }
-        }        Divider()
+        }
+        Divider()
         SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
     }
     val groups = listOf(
