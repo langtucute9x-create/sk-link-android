@@ -120,7 +120,24 @@ object X {
     }
     fun onReset() { if (resetState == 1) resetState = 2 }
 
-    fun paired() = if (pairRaw < 0) -1 else
+    // Thử hỏi hộp vị trí cửa của hộp phụ (7C 04). App gốc không có lệnh đọc này, nên chỉ ghi lại hộp trả lời gì.
+    var doorProbe by mutableStateOf("")
+    private var probing = false
+    fun probeDoor() {
+        probing = true; acked = false; doorProbe = "Đang hỏi hộp…"
+        S.ble.send(Protocol.query(0x04))
+        h.postDelayed({ if (probing) { probing = false; doorProbe = if (acked) "Hộp chỉ báo đã nhận (FF), không gửi vị trí." else "Hộp không trả lời." } }, 1500)
+    }
+    fun onDoorRaw(d: ByteArray) { if (probing) { probing = false; doorProbe = hex(d) } }
+    private var acked = false
+    fun onNack(b: Int) {
+        if (!probing) return
+        if (b == 0xFF) { acked = true; return }           // FF = đã nhận, chờ tiếp khung dữ liệu
+        probing = false
+        doorProbe = (if (b == 0xF3) "Hộp báo không hỗ trợ lệnh này" else if (b == 0xFC) "Hộp báo đang bận" else "Hộp báo lỗi") + " (%02X).".format(b)
+    }
+
+    fun paired() = if (pairRaw < 0 || (pairRaw and 0xC0) shr 6 > 1) -1 else
         (pairRaw and 1) or (((pairRaw shr 1) and 1) shl 1) or (((pairRaw shr 2) and 1) shl 2) or (((pairRaw shr 5) and 1) shl 3)
     fun pairState() = if (pairRaw < 0) -1 else (pairRaw and 0xC0) shr 6
 
@@ -238,13 +255,24 @@ fun PairPage() {
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Vị trí các hộp phụ", 16)
         Spacer(Modifier.height(6.dp))
-        val names = listOf("Chưa gán", "Khác", "", "", "Trước trái", "Trước phải", "Sau trái", "Sau phải")
         for (i in 0 until 4) {
             val p = S.boxPos[i]
-            Kv("Hộp phụ ${i + 1}", when { p == -1 -> "Chưa gán"; p == 0 -> "Khác"; p in 2..5 -> listOf("Trước trái", "Trước phải", "Sau trái", "Sau phải")[p - 2]; else -> names[0] })
+            Kv("Hộp phụ ${i + 1}", when { p == 0 -> "Khác"; p in 2..5 -> listOf("Trước trái", "Trước phải", "Sau trái", "Sau phải")[p - 2]; else -> "Theo hộp" })
         }
         Spacer(Modifier.height(6.dp))
-        T("Gán hộp vào cửa ở tab Chào mừng (chạm hộp phụ trên sơ đồ xe).", 12, color = SubTxt)
+        T("Vị trí cửa đã học được lưu trong hộp điều khiển. Cài lại app hoặc đổi điện thoại thì hộp vẫn chạy đúng như đã học, app chỉ hiện \"Theo hộp\" vì không đọc lại được. Chỉ gán lại (tab Chào mừng, chạm hộp phụ trên sơ đồ xe) khi muốn đổi.", 12, color = SubTxt)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FillBtn("Hỏi hộp vị trí cửa (thử)", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) {
+                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.probeDoor()
+            }
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("door", "SK Light, hỏi 7C 04: ${X.doorProbe} | ghép nối: ${if (X.pairRaw < 0) "?" else "%02X".format(X.pairRaw)} | 0D: ${S.fac?.joinToString(" ") { "%02X".format(it) } ?: "?"}"))
+                Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
+            }
+        }
+        if (X.doorProbe.isNotEmpty()) { Spacer(Modifier.height(6.dp)); T(X.doorProbe, 12, FontWeight.SemiBold, SubTxt) }
     }
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },

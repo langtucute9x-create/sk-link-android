@@ -519,7 +519,7 @@ fun WelcomeDiagram() {
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
             ) {
                 T("Hộp phụ $n", 12, FontWeight.Bold, if (on) Color.White else Txt)
-                T(if (on) "Đang nháy" else if (p >= 2) SEG_SHORT[p] else if (p == 0) "Khác" else "Chưa gán", 10, color = if (on) Color.White else Grey)
+                T(if (on) "Đang nháy" else if (p >= 2) SEG_SHORT[p] else if (p == 0) "Khác" else "Theo hộp", 10, color = if (on) Color.White else Grey)
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -652,7 +652,7 @@ private fun listenerOn(ctx: Context): Boolean =
 
 private fun boxText(seg: Int): String {
     val b = S.boxPos.indexOf(seg)
-    return if (b >= 0) "Hộp phụ ${b + 1}" else "Chưa gán"
+    return if (b >= 0) "Hộp phụ ${b + 1}" else "Theo hộp"
 }
 
 /** Quyền đọc thông báo đã cấp chưa (tự kiểm tra lại mỗi giây) + hàm mở trang cấp quyền của máy. */
@@ -904,7 +904,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.19 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.20 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

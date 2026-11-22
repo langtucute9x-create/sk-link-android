@@ -182,7 +182,10 @@ class BleLed(private val ctx: Context) {
 
     // ---------------- nhận ----------------
     /** Một lần báo có thể chứa nhiều khung dính nhau (danh sách loại xe, chẩn đoán): tách theo byte độ dài. */
-    private fun rx(all: ByteArray) {
+    private fun rx(raw: ByteArray) {
+        // 1 byte: FF = hộp đã nhận, F0 sai tổng kiểm, F3 không hỗ trợ, FC đang bận. FF có thể dính ngay trước khung dữ liệu.
+        if (raw.size == 1) { val b = raw[0].toInt() and 0xFF; main.post { X.onNack(b) }; return }
+        val all = if (raw.size > 4 && (raw[0].toInt() and 0xFF) == 0xFF && (raw[1].toInt() and 0xFF) == 0x2E) raw.copyOfRange(1, raw.size) else raw
         var o = 0
         while (o + 4 <= all.size && (all[o].toInt() and 0xFF) == 0x2E) {
             val n = (all[o + 2].toInt() and 0xFF) + 4
@@ -198,6 +201,7 @@ class BleLed(private val ctx: Context) {
             val t = d[1].toInt() and 0xFF
             if (t == 0x8C) { main.post { X.onCarFrame(d) }; return }
             if (t == 0xAC) { main.post { X.onDiagFrame(d) }; return }
+            if (t == 0x7C && (d[3].toInt() and 0xFF) == 0x04) { main.post { X.onDoorRaw(d) }; return }
             if (t != 0x8D && (d[3].toInt() and 0xFF) == 0x0E && d.size >= 6 && (d[4].toInt() and 0xFF) == 0xF1) { main.post { X.onReset() }; return }
         }
         if (d.size < 6 || (d[0].toInt() and 0xFF) != 0x2E || (d[1].toInt() and 0xFF) != 0x7C) return
