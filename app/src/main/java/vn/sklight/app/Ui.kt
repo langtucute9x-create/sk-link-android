@@ -36,24 +36,51 @@ import kotlinx.coroutines.launch
 /** Bảng màu của một giao diện (sáng hoặc tối). */
 class Pal(val bgTop: Color, val bgBot: Color, val card: Color, val txt: Color, val sub: Color, val grey: Color, val chip: Color, val bd: Color, val div: Color, val soft: Color)
 
-private val LIGHT = Pal(Color(0xFFFCF5F9), Color(0xFFF2F0FB), Color.White, Color(0xFF172032), Color(0xFF4B5568), Color(0xFF6B7385), Color(0xFFF4F6FC), Color(0xFFDDE3EF), Color(0xFFEAEEF6), Color(0xFFE6E9F2))
-private val NIGHT = Pal(Color(0xFF0E1118), Color(0xFF12141C), Color(0xFF1A1F2B), Color(0xFFF2F4F8), Color(0xFFC3C9D6), Color(0xFF98A1B3), Color(0xFF242A38), Color(0xFF343C4D), Color(0xFF2A3140), Color(0xFF343C4D))
+private fun pal(vararg c: Long) = Pal(Color(c[0]), Color(c[1]), Color(c[2]), Color(c[3]), Color(c[4]), Color(c[5]), Color(c[6]), Color(c[7]), Color(c[8]), Color(c[9]))
+// Mỗi phong cách có một bảng màu sáng và một bảng màu tối. Thứ tự: nền trên, nền dưới, thẻ, chữ, chữ phụ, chữ xám, ô, viền, vạch chia, rãnh trượt.
+private val LIGHTS = listOf(
+    pal(0xFFFCF5F9, 0xFFF2F0FB, 0xFFFFFFFF, 0xFF172032, 0xFF4B5568, 0xFF6B7385, 0xFFF4F6FC, 0xFFDDE3EF, 0xFFEAEEF6, 0xFFE6E9F2),      // Mặc định (giao diện gốc)
+    pal(0xFFFFFFFF, 0xFFF7F8FA, 0xFFFFFFFF, 0xFF111827, 0xFF4B5563, 0xFF6B7280, 0xFFF3F4F6, 0xFFE5E7EB, 0xFFEEF0F3, 0xFFE5E7EB),      // Tinh khôi
+    pal(0xFFFBF6EE, 0xFFF5EEE2, 0xFFFFFDF8, 0xFF2B2118, 0xFF5C5046, 0xFF7A6E63, 0xFFF6EFE4, 0xFFE6DCCB, 0xFFEFE7DA, 0xFFEADFCD),      // Kem ấm
+    pal(0xFFF1F6FB, 0xFFE8F0F8, 0xFFFFFFFF, 0xFF12202F, 0xFF465669, 0xFF66768A, 0xFFF0F5FA, 0xFFD5E0EC, 0xFFE4ECF4, 0xFFDDE7F1),      // Xanh băng
+    pal(0xFFF3F8F3, 0xFFE9F2EA, 0xFFFFFFFF, 0xFF15251A, 0xFF46594C, 0xFF68796D, 0xFFF0F6F1, 0xFFD6E3D8, 0xFFE4EEE6, 0xFFDDE9DF)       // Lá non
+)
+private val DARKS = listOf(
+    pal(0xFF0E1118, 0xFF12141C, 0xFF1A1F2B, 0xFFF2F4F8, 0xFFC3C9D6, 0xFF98A1B3, 0xFF242A38, 0xFF343C4D, 0xFF2A3140, 0xFF343C4D),      // Mặc định
+    pal(0xFF000000, 0xFF000000, 0xFF0E0F12, 0xFFF4F5F7, 0xFFC5C9D2, 0xFF9AA1AE, 0xFF17191E, 0xFF2A2D35, 0xFF1F2228, 0xFF2A2D35),      // Đen tuyền
+    pal(0xFF14100C, 0xFF18130E, 0xFF211A14, 0xFFF6EFE6, 0xFFD2C6B8, 0xFFA99C8D, 0xFF2B231B, 0xFF40352A, 0xFF332A21, 0xFF40352A),      // Nâu ấm
+    pal(0xFF0A1220, 0xFF0C1626, 0xFF131E31, 0xFFEEF3FA, 0xFFBECADB, 0xFF93A2B8, 0xFF1B2940, 0xFF2C3D58, 0xFF233349, 0xFF2C3D58),      // Xanh đêm
+    pal(0xFF0B1410, 0xFF0D1813, 0xFF14211A, 0xFFEEF6F0, 0xFFBDD0C3, 0xFF93A89A, 0xFF1C2C23, 0xFF2D4236, 0xFF24362C, 0xFF2D4236)       // Rừng đêm
+)
 
-/** Cài đặt giao diện: chế độ sáng / tối / tự động, màu nhấn, kiểu chữ, cỡ chữ. Mặc định = giao diện gốc (sáng, hồng SK, Inter). */
+/** Cài đặt giao diện: chế độ sáng / tối / tự động, phong cách nền, màu nhấn, bo góc, kiểu chữ, cỡ chữ. Mặc định = giao diện gốc (sáng, hồng SK, Inter). */
 object Theme {
     val mode = mutableIntStateOf(0)        // 0 sáng, 1 tối, 2 tự động theo giờ
+    val style = mutableIntStateOf(0)       // phong cách nền
     val accent = mutableIntStateOf(0)
+    val corner = mutableIntStateOf(1)      // 0 vuông, 1 vừa (gốc), 2 tròn
     val font = mutableIntStateOf(0)
     val scale = mutableIntStateOf(1)
     val nightNow = mutableStateOf(false)   // đang là ban đêm (cho chế độ tự động)
     val MODES = listOf("Sáng", "Tối", "Tự động")
-    val ACCENTS = listOf("Hồng SK" to 0xFE2CAA, "Cam" to 0xE8590C, "Đỏ" to 0xE5334B, "Tím" to 0x7C4DFF, "Xanh dương" to 0x2F6BFF, "Xanh ngọc" to 0x0E9488)
-    val FONTS = listOf("Inter", "Chữ hệ thống", "Chữ có chân")
+    /** Tên phong cách: (khi sáng, khi tối). */
+    val STYLES = listOf("Mặc định" to "Mặc định", "Tinh khôi" to "Đen tuyền", "Kem ấm" to "Nâu ấm", "Xanh băng" to "Xanh đêm", "Lá non" to "Rừng đêm")
+    // 6 màu đầu giữ nguyên thứ tự cũ (số thứ tự đã lưu trong máy người dùng)
+    val ACCENTS = listOf(
+        "Hồng SK" to 0xFE2CAA, "Cam" to 0xE8590C, "Đỏ" to 0xE5334B, "Tím" to 0x7C4DFF, "Xanh dương" to 0x2F6BFF, "Xanh ngọc" to 0x0E9488,
+        "Xanh lá" to 0x2E9E44, "Xanh lơ" to 0x0891B2, "Chàm" to 0x4F46E5, "Tím hồng" to 0xC026D3, "Hổ phách" to 0xD98A00, "Xám thép" to 0x526079
+    )
+    val CORNERS = listOf("Vuông", "Vừa", "Tròn")
+    // 3 kiểu đầu giữ nguyên thứ tự cũ. Các kiểu sau là phông có đủ dấu tiếng Việt, đóng sẵn trong app (giấy phép OFL, xem assets/font-licenses.txt).
+    val FONTS = listOf("Inter", "Chữ hệ thống", "Chữ có chân", "Be Vietnam Pro", "Nunito", "Montserrat", "Quicksand", "Lexend", "Oswald", "Lora", "Baloo 2")
     val SCALES = listOf("Nhỏ" to 0.9f, "Vừa" to 1f, "Lớn" to 1.12f, "Rất lớn" to 1.25f)
     val dark: Boolean get() = mode.intValue == 1 || (mode.intValue == 2 && nightNow.value)
-    val pal: Pal get() = if (dark) NIGHT else LIGHT
+    val pal: Pal get() = (if (dark) DARKS else LIGHTS)[style.intValue.coerceIn(0, LIGHTS.size - 1)]
+    fun palOf(style: Int, dark: Boolean): Pal = (if (dark) DARKS else LIGHTS)[style.coerceIn(0, LIGHTS.size - 1)]
     val scaleF: Float get() = SCALES[scale.intValue.coerceIn(0, SCALES.size - 1)].second
-    fun reset() { mode.intValue = 0; accent.intValue = 0; font.intValue = 0; scale.intValue = 1 }
+    /** Bán kính bo góc theo kiểu đang chọn; [base] là bán kính của giao diện gốc. */
+    fun r(base: Int): Dp = when (corner.intValue) { 0 -> minOf(base, 3).dp; 2 -> (base * 1.8f).dp; else -> base.dp }
+    fun reset() { mode.intValue = 0; style.intValue = 0; accent.intValue = 0; corner.intValue = 1; font.intValue = 0; scale.intValue = 1 }
 }
 
 /** Màu nhấn (tên biến giữ là Pink vì mặc định là hồng SK). */
@@ -76,8 +103,24 @@ private val InterFam = FontFamily(
     Font(R.font.inter_semibold, FontWeight.SemiBold), Font(R.font.inter_bold, FontWeight.Bold),
     Font(R.font.inter_extrabold, FontWeight.ExtraBold)
 )
+private fun fam(vararg f: Pair<Int, Int>) = FontFamily(f.map { Font(it.first, FontWeight(it.second)) })
+private val FAMS: List<FontFamily> by lazy {
+    listOf(
+        InterFam, FontFamily.Default, FontFamily.Serif,
+        fam(R.font.bevietnam_400 to 400, R.font.bevietnam_500 to 500, R.font.bevietnam_600 to 600, R.font.bevietnam_700 to 700, R.font.bevietnam_800 to 800),
+        fam(R.font.nunito_400 to 400, R.font.nunito_500 to 500, R.font.nunito_600 to 600, R.font.nunito_700 to 700, R.font.nunito_800 to 800),
+        fam(R.font.montserrat_400 to 400, R.font.montserrat_500 to 500, R.font.montserrat_600 to 600, R.font.montserrat_700 to 700, R.font.montserrat_800 to 800),
+        fam(R.font.quicksand_400 to 400, R.font.quicksand_500 to 500, R.font.quicksand_600 to 600, R.font.quicksand_700 to 700),
+        fam(R.font.lexend_400 to 400, R.font.lexend_500 to 500, R.font.lexend_600 to 600, R.font.lexend_700 to 700, R.font.lexend_800 to 800),
+        fam(R.font.oswald_400 to 400, R.font.oswald_500 to 500, R.font.oswald_600 to 600, R.font.oswald_700 to 700),
+        fam(R.font.lora_400 to 400, R.font.lora_500 to 500, R.font.lora_600 to 600, R.font.lora_700 to 700),
+        fam(R.font.baloo_400 to 400, R.font.baloo_500 to 500, R.font.baloo_600 to 600, R.font.baloo_700 to 700, R.font.baloo_800 to 800)
+    )
+}
+/** Phông chữ thứ [i] trong Theme.FONTS (để vẽ ô xem thử). */
+fun fontFam(i: Int): FontFamily = FAMS.getOrElse(i) { InterFam }
 /** Kiểu chữ đang chọn (tên biến giữ là Inter vì mặc định là Inter). */
-val Inter: FontFamily get() = when (Theme.font.intValue) { 1 -> FontFamily.Default; 2 -> FontFamily.Serif; else -> InterFam }
+val Inter: FontFamily get() = fontFam(Theme.font.intValue)
 
 /** Pha màu [c] với nền thẻ: k = 1 giữ nguyên, k = 0 thành màu nền thẻ. */
 fun mix(c: Color, k: Float) = lerp(CardBg, c, k)
@@ -94,8 +137,8 @@ fun T(text: String, size: Int = 14, weight: FontWeight = FontWeight.Normal, colo
 @Composable
 fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(CardBg)
-            .border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(15.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(CardBg)
+            .border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(15.dp),
         content = content
     )
 }
@@ -112,8 +155,8 @@ fun GroupTitle(icon: ImageVector, text: String, size: Int = 17) {
 @Composable
 fun Chip(text: String, sel: Boolean, modifier: Modifier = Modifier, h: Dp = 41.dp, size: Int = 13, onClick: () -> Unit) {
     Box(
-        modifier.height(h).clip(RoundedCornerShape(8.dp)).background(if (sel) Pink else ChipBg)
-            .border(1.dp, if (sel) Pink else Bd, RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp),
+        modifier.height(h).clip(RoundedCornerShape(Theme.r(8))).background(if (sel) Pink else ChipBg)
+            .border(1.dp, if (sel) Pink else Bd, RoundedCornerShape(Theme.r(8))).clickable(onClick = onClick).padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) { T(text, size, if (sel) FontWeight.Bold else FontWeight.SemiBold, if (sel) Color.White else Txt, align = TextAlign.Center) }
 }
@@ -169,7 +212,7 @@ fun RepeatBtn(icon: ImageVector, desc: String, modifier: Modifier = Modifier, on
     val cb by rememberUpdatedState(onStep)
     val scope = rememberCoroutineScope()
     Box(
-        modifier.size(44.dp, 40.dp).clip(RoundedCornerShape(8.dp)).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(8.dp))
+        modifier.size(44.dp, 40.dp).clip(RoundedCornerShape(Theme.r(8))).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(8)))
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
                     cb()

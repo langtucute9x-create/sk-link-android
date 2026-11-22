@@ -122,7 +122,7 @@ fun CustomTestPage() {
         val run = SeqTest.kind.intValue != 0
         T("Màu app đang gửi (trái: khu vực 1, phải: khu vực 2)", 11, color = Grey)
         Spacer(Modifier.height(6.dp))
-        Row(Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(8.dp)).border(1.dp, Bd, RoundedCornerShape(8.dp))) {
+        Row(Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(Theme.r(8))).border(1.dp, Bd, RoundedCornerShape(Theme.r(8)))) {
             Box(Modifier.weight(1f).fillMaxHeight().background(if (run) rgbColor(SeqTest.c1.intValue) else ChipBg))
             Box(Modifier.weight(1f).fillMaxHeight().background(if (run) rgbColor(SeqTest.c2.intValue) else ChipBg))
         }

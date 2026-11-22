@@ -15,9 +15,11 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FormatSize
+import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // ===================== CÀI ĐẶT GIAO DIỆN =====================
 @Composable
@@ -44,13 +47,38 @@ fun AppearanceTheme() {
         T("Tự động: giao diện tối từ ${Night.hm(w.first)} đến ${Night.hm(w.second)}, ngoài giờ đó là giao diện sáng. Giờ lấy theo mục Tự dịu đèn ban đêm.", 11, color = Grey)
     }
     Card {
+        GroupTitle(Icons.Filled.Style, "Phong cách", 16)
+        Spacer(Modifier.height(12.dp))
+        Grid(Theme.STYLES.indices.toList(), 3) { i, m ->
+            val on = Theme.style.intValue == i
+            val p = Theme.palOf(i, Theme.dark)
+            Column(
+                m.clip(RoundedCornerShape(Theme.r(8))).background(p.bgBot).border(if (on) 2.dp else 1.dp, if (on) Pink else Bd, RoundedCornerShape(Theme.r(8)))
+                    .clickable { Theme.style.intValue = i; S.saveSettings() }.padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // ô xem thử: một "thẻ" nhỏ có vạch chữ và chấm màu nhấn
+                Row(Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(Theme.r(6))).background(p.card).border(1.dp, p.bd, RoundedCornerShape(Theme.r(6))).padding(horizontal = 7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(Pink))
+                    Spacer(Modifier.width(6.dp))
+                    Box(Modifier.weight(1f).height(5.dp).clip(RoundedCornerShape(3.dp)).background(p.txt))
+                }
+                T(if (Theme.dark) Theme.STYLES[i].second else Theme.STYLES[i].first, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, p.txt)
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        T("Bo góc", 13, FontWeight.Bold, SubTxt)
+        Spacer(Modifier.height(8.dp))
+        Grid(Theme.CORNERS.indices.toList(), 3) { i, m -> Chip(Theme.CORNERS[i], Theme.corner.intValue == i, m, 44.dp, 12) { Theme.corner.intValue = i; S.saveSettings() } }
+    }
+    Card {
         GroupTitle(Icons.Outlined.Palette, "Màu nhấn", 16)
         Spacer(Modifier.height(12.dp))
         Grid(Theme.ACCENTS.indices.toList(), 3) { i, m ->
             val on = Theme.accent.intValue == i
             val c = rgbColor(Theme.ACCENTS[i].second)
             Row(
-                m.height(48.dp).clip(RoundedCornerShape(8.dp)).background(if (on) mix(c, 0.14f) else ChipBg).border(if (on) 2.dp else 1.dp, if (on) c else Bd, RoundedCornerShape(8.dp))
+                m.height(48.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(c, 0.14f) else ChipBg).border(if (on) 2.dp else 1.dp, if (on) c else Bd, RoundedCornerShape(Theme.r(8)))
                     .clickable { Theme.accent.intValue = i; S.saveSettings() }.padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -63,7 +91,18 @@ fun AppearanceTheme() {
     Card {
         GroupTitle(Icons.Filled.FormatSize, "Kiểu chữ", 16)
         Spacer(Modifier.height(12.dp))
-        Grid(Theme.FONTS.indices.toList(), 3) { i, m -> Chip(Theme.FONTS[i], Theme.font.intValue == i, m, 44.dp, 12) { Theme.font.intValue = i; S.saveSettings() } }
+        // mỗi ô viết bằng chính phông đó để xem trước
+        Grid(Theme.FONTS.indices.toList(), 2) { i, m ->
+            val on = Theme.font.intValue == i
+            Column(
+                m.heightIn(min = 58.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) tint(0.12f) else ChipBg).border(if (on) 2.dp else 1.dp, if (on) Pink else Bd, RoundedCornerShape(Theme.r(8)))
+                    .clickable { Theme.font.intValue = i; S.saveSettings() }.padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(L.tr(Theme.FONTS[i]), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (on) AccentText else Txt, fontFamily = fontFam(i), maxLines = 1)
+                Text("Đèn viền nội thất 123", fontSize = 12.sp, color = SubTxt, fontFamily = fontFam(i), maxLines = 1)
+            }
+        }
         Spacer(Modifier.height(14.dp))
         T("Cỡ chữ", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(8.dp))

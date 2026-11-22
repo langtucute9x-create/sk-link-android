@@ -577,8 +577,8 @@ fun VoicePanel(modifier: Modifier = Modifier) {
     LaunchedEffect(st, tick) { if (st == 2) { delay(2000); if (S.voiceState.intValue == 2) S.voiceState.intValue = 0 } }
     val again = { if (micAllowed(ctx)) Voice.start(ctx) else Voice.close() }
     Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if (st == 1) tint(0.06f) else CardBg)
-            .border(1.dp, if (st == 1) tint(0.5f) else Bd, RoundedCornerShape(10.dp)).padding(12.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(if (st == 1) tint(0.06f) else CardBg)
+            .border(1.dp, if (st == 1) tint(0.5f) else Bd, RoundedCornerShape(Theme.r(10))).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         when (st) {

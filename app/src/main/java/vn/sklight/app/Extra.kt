@@ -216,7 +216,7 @@ private fun need(ctx: Context) {
 @Composable
 fun BackRow(to: Int, label: String) {
     Row(
-        Modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable { S.subPage.intValue = to }.padding(start = 10.dp, end = 14.dp),
+        Modifier.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable { S.subPage.intValue = to }.padding(start = 10.dp, end = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Filled.ArrowBack, null, tint = Txt, modifier = Modifier.size(18.dp))
@@ -334,8 +334,8 @@ fun WelcomeColors() {
         Grid(PRE.indices.toList(), 5) { i, m ->
             val on = num == i + 1
             Box(
-                m.height(40.dp).clip(RoundedCornerShape(6.dp)).background(rgbColor(PRE_SHOW[i]))
-                    .border(if (on) 3.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(6.dp))
+                m.height(40.dp).clip(RoundedCornerShape(Theme.r(6))).background(rgbColor(PRE_SHOW[i]))
+                    .border(if (on) 3.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(Theme.r(6)))
                     .clickable { if (!X.pickWelcome(rev, i, PRE[i])) need(ctx) },
                 contentAlignment = Alignment.Center
             ) { if (on) Icon(Icons.Filled.Check, null, tint = if (i == 1 || i == 9) Color(0xFF14142B) else Color.White, modifier = Modifier.size(20.dp)) }
@@ -591,8 +591,8 @@ fun BoxVoiceCard() {
             for ((male, face, label) in listOf(Triple(false, "👩", "Giọng nữ tiêu chuẩn"), Triple(true, "👨", "Giọng nam tiêu chuẩn"))) {
                 val on = known && X.voiceBit(0x02) == male
                 Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (on) tint(0.1f) else ChipBg)
-                        .border(if (on) 2.dp else 1.dp, if (on) Pink else Bd, RoundedCornerShape(10.dp))
+                    Modifier.weight(1f).clip(RoundedCornerShape(Theme.r(10))).background(if (on) tint(0.1f) else ChipBg)
+                        .border(if (on) 2.dp else 1.dp, if (on) Pink else Bd, RoundedCornerShape(Theme.r(10)))
                         .clickable { if (!X.setVoiceBit(0x02, male)) need(ctx) }.padding(vertical = 10.dp, horizontal = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

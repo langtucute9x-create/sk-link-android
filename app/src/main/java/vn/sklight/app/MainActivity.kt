@@ -228,13 +228,13 @@ fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composab
 @Composable
 fun TabsV(sel: Int, onPick: (Int) -> Unit) {
     Column(
-        Modifier.clip(RoundedCornerShape(10.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
+        Modifier.clip(RoundedCornerShape(Theme.r(10))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         TAB_ITEMS.forEachIndexed { i, (label, icon) ->
             val on = sel == i
             Box(
-                Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
+                Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
                 contentAlignment = Alignment.Center
             ) { Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(22.dp)) }
         }
@@ -245,13 +245,13 @@ fun TabsV(sel: Int, onPick: (Int) -> Unit) {
 fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
     val items = TAB_ITEMS
     Row(
-        modifier.clip(RoundedCornerShape(10.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(10.dp)).padding(4.dp),
+        modifier.clip(RoundedCornerShape(Theme.r(10))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items.forEachIndexed { i, (label, icon) ->
             val on = sel == i
             Row(
-                Modifier.weight(1f).height(40.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
+                Modifier.weight(1f).height(40.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
             ) {
                 Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(22.dp))
@@ -283,7 +283,7 @@ fun LedMain() {
             Icon(Icons.Outlined.Palette, null, tint = Pink, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(10.dp))
             T("Chọn màu", 17, FontWeight.Bold, modifier = Modifier.weight(1f))
-            Box(Modifier.size(35.dp, 22.dp).clip(RoundedCornerShape(6.dp)).background(rgbColor(S.col[S.czone.intValue])).border(1.dp, Bd, RoundedCornerShape(6.dp)))
+            Box(Modifier.size(35.dp, 22.dp).clip(RoundedCornerShape(Theme.r(6))).background(rgbColor(S.col[S.czone.intValue])).border(1.dp, Bd, RoundedCornerShape(Theme.r(6))))
         }
         Spacer(Modifier.height(12.dp))
         ZoneTabs(S.czone.intValue) { S.setColorZone(it) }
@@ -300,7 +300,7 @@ fun LedMain() {
             T("Màu hiện tại: RGB(${(c shr 16) and 255}, ${(c shr 8) and 255}, ${c and 255})", 12, color = Grey)
         }
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.fillMaxWidth().border(1.dp, Bd, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 11.dp)) {
+        Column(Modifier.fillMaxWidth().border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).padding(horizontal = 12.dp, vertical = 11.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.GraphicEq, null, tint = Pink, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
@@ -355,7 +355,7 @@ fun ValueRow(icon: ImageVector, iconTint: Color, title: String, value: Int, boxB
         Icon(icon, null, tint = iconTint, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(10.dp))
         T(title, 15, FontWeight.Bold, modifier = Modifier.weight(1f))
-        Box(Modifier.size(36.dp, 27.dp).clip(RoundedCornerShape(6.dp)).background(boxBg).border(1.dp, boxBd, RoundedCornerShape(6.dp)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(36.dp, 27.dp).clip(RoundedCornerShape(Theme.r(6))).background(boxBg).border(1.dp, boxBd, RoundedCornerShape(Theme.r(6))), contentAlignment = Alignment.Center) {
             T("$value", 14, FontWeight.ExtraBold, numColor)
         }
     }
@@ -378,8 +378,8 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
         Grid(g.items, cols, 9.dp, 11.dp) { e, m ->
             val on = S.mode.intValue == e.id
             Row(
-                m.height(56.dp).clip(RoundedCornerShape(8.dp)).background(if (on) mix(e.color, 0.5f) else ChipBg)
-                    .border(if (on) 2.dp else 1.dp, if (on) e.color else Bd, RoundedCornerShape(8.dp)).clickable { S.pickEffect(e) }
+                m.height(56.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(e.color, 0.5f) else ChipBg)
+                    .border(if (on) 2.dp else 1.dp, if (on) e.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickEffect(e) }
                     .padding(start = 10.dp, end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -394,8 +394,8 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
             Grid(cur.subs.indices.toList(), cols) { i, m ->
                 val on = S.sub[cur.id] == i
                 Box(
-                    m.height(51.dp).clip(RoundedCornerShape(8.dp)).background(if (on) mix(cur.color, 0.2f) else ChipBg)
-                        .border(if (on) 2.dp else 1.dp, if (on) cur.color else Bd, RoundedCornerShape(8.dp)).clickable { S.pickSub(cur, i) }.padding(horizontal = 6.dp),
+                    m.height(51.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(cur.color, 0.2f) else ChipBg)
+                        .border(if (on) 2.dp else 1.dp, if (on) cur.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickSub(cur, i) }.padding(horizontal = 6.dp),
                     contentAlignment = Alignment.Center
                 ) { T(cur.subs[i], 11, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, align = TextAlign.Center) }
             }
@@ -447,14 +447,14 @@ fun Swatches(modifier: Modifier = Modifier) {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 row.forEach { c ->
                     if (c < 0) {
-                        Box(Modifier.size(39.dp).clip(RoundedCornerShape(6.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(6.dp)).clickable { S.addCustom() }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(39.dp).clip(RoundedCornerShape(Theme.r(6))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(6))).clickable { S.addCustom() }, contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.Add, "Thêm màu tùy chỉnh", tint = Txt, modifier = Modifier.size(20.dp))
                         }
                     } else {
                         val on = c == cur
                         Box(
-                            Modifier.size(39.dp).clip(RoundedCornerShape(6.dp)).background(rgbColor(c))
-                                .border(if (on) 2.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(6.dp))
+                            Modifier.size(39.dp).clip(RoundedCornerShape(Theme.r(6))).background(rgbColor(c))
+                                .border(if (on) 2.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(Theme.r(6)))
                                 .pointerInput(c) { detectTapGestures(onLongPress = { if (!PRESETS.contains(c)) S.removeCustom(c) }, onTap = { S.setColor(c) }) },
                             contentAlignment = Alignment.Center
                         ) { if (on) Icon(Icons.Filled.Check, null, tint = if (c == 0xFFFFFF) Txt else Color.White, modifier = Modifier.size(20.dp)) }
@@ -515,7 +515,7 @@ fun WelcomeDiagram() {
             val on = S.pickBox.intValue == n
             val p = S.boxPos[n - 1]
             Column(
-                m.height(56.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Pink else ChipBg).border(1.dp, if (on) Pink else Bd, RoundedCornerShape(8.dp))
+                m.height(56.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else ChipBg).border(1.dp, if (on) Pink else Bd, RoundedCornerShape(Theme.r(8)))
                     .pointerInput(n) { detectTapGestures(onLongPress = { S.unassignBox(n) }, onTap = { S.flashBox(n) }) },
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
             ) {
@@ -541,7 +541,7 @@ fun WelcomeDiagram() {
         Grid(STARTS, 2) { (label, code), m -> Chip(label, S.wStart.intValue == code, m, 44.dp, 12) { S.setWStart(code) } }
         Spacer(Modifier.height(16.dp))
         var ask by remember { mutableStateOf(false) }
-        Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(6.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(6.dp)).clickable { ask = true }, contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(CardBg).border(1.dp, Pink, RoundedCornerShape(Theme.r(6))).clickable { ask = true }, contentAlignment = Alignment.Center) {
             T("Khôi phục mặc định", 13, FontWeight.Bold, Pink)
         }
         if (ask) AlertDialog(
@@ -556,7 +556,7 @@ fun WelcomeDiagram() {
 
 @Composable
 fun OutlineBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(modifier.height(44.dp).clip(RoundedCornerShape(8.dp)).background(CardBg).border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+    Box(modifier.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         T(text, 12, FontWeight.SemiBold)
     }
 }
@@ -568,8 +568,8 @@ fun SegTile(i: Int, modifier: Modifier) {
     val box = S.boxPos.indexOf(i)
     var edit by remember { mutableStateOf(false) }
     Column(
-        modifier.alpha(if (!door && picking) 0.45f else 1f).clip(RoundedCornerShape(10.dp)).background(CardBg)
-            .border(if (door && picking) 2.dp else 1.dp, if (door && picking) Pink else Bd, RoundedCornerShape(10.dp))
+        modifier.alpha(if (!door && picking) 0.45f else 1f).clip(RoundedCornerShape(Theme.r(10))).background(CardBg)
+            .border(if (door && picking) 2.dp else 1.dp, if (door && picking) Pink else Bd, RoundedCornerShape(Theme.r(10)))
             .then(if (door && picking) Modifier.clickable { S.assignBox(i) } else Modifier).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -607,8 +607,8 @@ fun SegTile(i: Int, modifier: Modifier) {
 @Composable
 fun DirBtn(icon: ImageVector, desc: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Box(
-        modifier.height(44.dp).clip(RoundedCornerShape(10.dp)).background(if (on) Pink else tint(0.12f))
-            .border(1.dp, if (on) Pink else tint(0.5f), RoundedCornerShape(10.dp)).clickable(onClick = onClick),
+        modifier.height(44.dp).clip(RoundedCornerShape(Theme.r(10))).background(if (on) Pink else tint(0.12f))
+            .border(1.dp, if (on) Pink else tint(0.5f), RoundedCornerShape(Theme.r(10))).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { Icon(icon, desc, tint = if (on) Color.White else Pink, modifier = Modifier.size(20.dp)) }
 }
@@ -687,7 +687,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             T("App cần quyền này để đọc hướng rẽ và khoảng cách từ thông báo của Google Maps, Vietmap.", 12, color = Grey)
             Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(6.dp)).background(Pink).clickable(onClick = openAccess), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(Pink).clickable(onClick = openAccess), contentAlignment = Alignment.Center) {
                 T("Cấp quyền đọc thông báo", 13, FontWeight.Bold, Color.White)
             }
         } else if (!S.navOn.value) {
@@ -713,7 +713,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         }
         if (k != 0) {
             Spacer(Modifier.height(10.dp))
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 9.dp)) {
+            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(Theme.r(8))).padding(horizontal = 12.dp, vertical = 9.dp)) {
                 T(when (k) { 1 -> "Sắp rẽ trái: đèn đang nháy vàng"; 2 -> "Sắp rẽ phải: đèn đang nháy vàng"; else -> "Quá tốc độ: đang nháy đỏ" }, 13, FontWeight.Bold, AccentText)
             }
         }
@@ -726,7 +726,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         SwitchRow("Nháy đèn khi sắp rẽ", "Cả xe nháy vàng khi sắp tới chỗ rẽ trái hoặc rẽ phải", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
             T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(6.dp)).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
                 T("${S.alertDist.intValue} m", 14, FontWeight.ExtraBold, Pink)
             }
         }
@@ -806,7 +806,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             Kv("Biển báo tốc độ thấy được", if (S.signSeen.value.isEmpty()) "Chưa thấy" else S.signSeen.value)
             if (S.navLog.isEmpty()) T("Chưa ghi được thông báo nào.", 12, color = Grey)
             for (line in S.navLog) {
-                Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
+                Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(Theme.r(6))).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
             }
             OutlineBtn("Sao chép thông báo để gửi", Modifier.fillMaxWidth()) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -823,7 +823,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)
             if (S.screenLines.isEmpty()) T("Chưa đọc được chữ nào.", 12, color = Grey)
             for (line in S.screenLines.take(80)) {
-                Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
+                Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(Theme.r(6))).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
             }
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -907,7 +907,7 @@ fun Kv(k: String, v: String) {
 
 @Composable
 fun FillBtn(text: String, icon: ImageVector, bg: Color, modifier: Modifier, onClick: () -> Unit) {
-    Row(modifier.height(43.dp).clip(RoundedCornerShape(6.dp)).background(bg).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+    Row(modifier.height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(bg).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
         Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
         T(text, 13, FontWeight.Bold, Color.White)

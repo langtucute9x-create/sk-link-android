@@ -36,6 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -48,13 +51,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import java.io.File
 import java.util.Calendar
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 private val DeepPink: Color get() = AccentText
 private val RAINBOW_DOT = listOf(Color(0xFFFE2B48), Color(0xFFFED119), Color(0xFF40E01E), Color(0xFF1AF4EA), Color(0xFF4E78FF), Color(0xFF8A01FF))
@@ -107,7 +114,7 @@ fun SceneRow() {
                     T("Chỉnh màu, chế độ, độ sáng như ý rồi lưu lại thành một bối cảnh để lần sau chạm là có.", 13, color = SubTxt)
                     OutlinedTextField(name, { name = it.take(18) }, singleLine = true, placeholder = { T("Tên bối cảnh, ví dụ: Đi làm", 14, color = Grey) })
                     Box(
-                        Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(8.dp)).background(if (full) Grey else Pink).clickable { if (!full && Scenes.saveCurrent(name)) name = "" },
+                        Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (full) Grey else Pink).clickable { if (!full && Scenes.saveCurrent(name)) name = "" },
                         contentAlignment = Alignment.Center
                     ) { T(if (full) "Đã đủ ${Scenes.MAX} bối cảnh, xóa bớt để thêm" else "Lưu cài đặt đang dùng", 13, FontWeight.Bold, Color.White) }
                     T("Đang có", 13, FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
@@ -148,7 +155,8 @@ fun SceneRow() {
 }
 
 // ===================== THẺ "KHI LÁI XE" TRONG CÀI ĐẶT =====================
-val IDLE_STYLES = listOf("Đồng hồ + tốc độ", "Chỉ đồng hồ", "Tốc độ lớn", "Ảnh của tôi")
+// 4 kiểu đầu giữ nguyên thứ tự cũ (số thứ tự đã lưu trong máy người dùng)
+val IDLE_STYLES = listOf("Đồng hồ + tốc độ", "Chỉ đồng hồ", "Tốc độ lớn", "Ảnh của tôi", "Đồng hồ kim", "Vòng tốc độ", "Dẫn đường", "Nhạc đang phát", "Tối giản")
 fun photoFile(ctx: Context) = File(ctx.filesDir, "idle.jpg")
 
 @Composable
@@ -189,7 +197,7 @@ fun DriveCard() {
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
                 T("Độ sáng ban đêm", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                Box(Modifier.height(27.dp).widthIn(min = 52.dp).clip(RoundedCornerShape(6.dp)).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.height(27.dp).widthIn(min = 52.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
                     T("${S.nightBri.intValue}%", 14, FontWeight.ExtraBold, DeepPink)
                 }
             }
@@ -230,15 +238,98 @@ private fun loadPhoto(ctx: Context): Bitmap? = try {
     }
 } catch (e: Throwable) { null }
 
+private val LimitRed = Color(0xFFE5202E)
+
 @Composable
-private fun Big(text: String, size: Float) {
-    Text(text, fontSize = size.sp, lineHeight = size.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, fontFamily = Inter, maxLines = 1)
+private fun Big(text: String, size: Float, color: Color = Color.White) {
+    Text(text, fontSize = size.sp, lineHeight = size.sp, fontWeight = FontWeight.ExtraBold, color = color, fontFamily = Inter, maxLines = 1)
 }
 
 private fun dirIcon(d: String): ImageVector = when (d) {
     "L" -> Icons.Filled.TurnLeft; "R" -> Icons.Filled.TurnRight; "U" -> Icons.Filled.UTurnLeft; "O" -> Icons.Filled.RoundaboutRight; "A" -> Icons.Filled.Flag; else -> Icons.Filled.Straight
 }
 private fun dirText(d: String) = when (d) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "" }
+
+/** Biển giới hạn tốc độ: vòng tròn viền đỏ. */
+@Composable
+private fun LimitSign(limit: Int, d: Dp) {
+    Box(Modifier.size(d).clip(CircleShape).background(Color.White).border(d / 9, LimitRed, CircleShape), contentAlignment = Alignment.Center) {
+        Text("$limit", fontSize = (d.value * 0.4f).sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF14161C), fontFamily = Inter, maxLines = 1)
+    }
+}
+
+/** Thẻ chỉ đường trên màn hình chờ, hiện khi app bản đồ đang dẫn đường. [hero] = bản lớn của kiểu "Dẫn đường". */
+@Composable
+private fun NavCard(hero: Boolean, wide: Boolean) {
+    val d = S.navDist.intValue
+    val dist = if (d < 0) "—" else if (d >= 1000) "${d / 100 / 10.0} km" else "$d m"
+    val box = if (hero) (if (wide) 120.dp else 100.dp) else 60.dp
+    val turn = L.tr(dirText(S.navDir.value))
+    val line = listOf(turn, S.navStreet.value).filter { it.isNotEmpty() }.joinToString(" · ")
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0x1FFFFFFF)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp)).padding(if (hero) 18.dp else 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(box).clip(RoundedCornerShape(box / 4)).background(Pink), contentAlignment = Alignment.Center) {
+            Icon(dirIcon(S.navDir.value), null, tint = Color.White, modifier = Modifier.size(box * 0.62f))
+        }
+        Spacer(Modifier.width(if (hero) 18.dp else 14.dp))
+        Column(Modifier.weight(1f)) {
+            val fs = if (hero) (if (wide) 64 else 50) else 30
+            Text(dist, fontSize = fs.sp, lineHeight = fs.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, fontFamily = Inter, maxLines = 1)
+            if (line.isNotEmpty()) Text(line, fontSize = (if (hero) 22 else 16).sp, fontWeight = FontWeight.SemiBold, color = Color.White, fontFamily = Inter, maxLines = if (hero) 2 else 1, overflow = TextOverflow.Ellipsis)
+            if (hero && S.navApp.value.isNotEmpty()) Text(S.navApp.value, fontSize = 13.sp, color = DimTxt, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (S.speedLimit.intValue > 0) { Spacer(Modifier.width(10.dp)); LimitSign(S.speedLimit.intValue, if (hero) 76.dp else 52.dp) }
+    }
+}
+
+/** Đồng hồ kim. */
+@Composable
+private fun AnalogClock(cal: Calendar, d: Dp, accent: Color) {
+    val hh = cal.get(Calendar.HOUR); val mm = cal.get(Calendar.MINUTE); val ss = cal.get(Calendar.SECOND)
+    Canvas(Modifier.size(d)) {
+        val c = center
+        val r = size.minDimension / 2f
+        fun pt(deg: Double, k: Float): Offset { val a = Math.toRadians(deg - 90.0); return Offset(c.x + (cos(a) * r * k).toFloat(), c.y + (sin(a) * r * k).toFloat()) }
+        drawCircle(Color(0x14FFFFFF), r, c)
+        drawCircle(Color(0x59FFFFFF), r * 0.99f, c, style = Stroke(r * 0.02f))
+        for (i in 0 until 60) {
+            val five = i % 5 == 0
+            drawLine(if (five) Color.White else Color(0x80FFFFFF), pt(i * 6.0, if (five) 0.84f else 0.9f), pt(i * 6.0, 0.94f), strokeWidth = r * (if (five) 0.024f else 0.01f), cap = StrokeCap.Round)
+        }
+        drawLine(Color.White, c, pt((hh + mm / 60.0) * 30.0, 0.5f), strokeWidth = r * 0.05f, cap = StrokeCap.Round)
+        drawLine(Color.White, c, pt((mm + ss / 60.0) * 6.0, 0.74f), strokeWidth = r * 0.032f, cap = StrokeCap.Round)
+        drawLine(accent, pt(ss * 6.0 + 180.0, 0.12f), pt(ss * 6.0, 0.82f), strokeWidth = r * 0.013f, cap = StrokeCap.Round)
+        drawCircle(accent, r * 0.045f, c)
+    }
+}
+
+/** Vòng tốc độ 0..160 km/h, có vạch đỏ ở mức giới hạn nếu biết. */
+@Composable
+private fun SpeedGauge(spd: Int, limit: Int, d: Dp, cA: Color, cB: Color) {
+    val over = limit > 0 && spd > limit
+    Box(Modifier.size(d), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val sw = size.minDimension * 0.07f
+            val tl = Offset(sw, sw)
+            val sz = Size(size.width - sw * 2, size.height - sw * 2)
+            drawArc(Color(0x26FFFFFF), 150f, 240f, false, tl, sz, style = Stroke(sw, cap = StrokeCap.Round))
+            val f = (spd / 160f).coerceIn(0f, 1f)
+            if (f > 0.005f) drawArc(if (over) SolidColor(LimitRed) else Brush.horizontalGradient(listOf(cA, cB)), 150f, 240f * f, false, tl, sz, style = Stroke(sw, cap = StrokeCap.Round))
+            if (limit in 1..160) {
+                val a = Math.toRadians(150.0 + 240.0 * limit / 160.0)
+                val r = size.minDimension / 2f
+                val c = center
+                drawLine(LimitRed, Offset(c.x + (cos(a) * (r - sw * 2.2f)).toFloat(), c.y + (sin(a) * (r - sw * 2.2f)).toFloat()), Offset(c.x + (cos(a) * (r - sw * 0.3f)).toFloat(), c.y + (sin(a) * (r - sw * 0.3f)).toFloat()), strokeWidth = sw * 0.35f, cap = StrokeCap.Round)
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Big("$spd", d.value * 0.34f, if (over) LimitRed else Color.White)
+            T("km/h", 18, FontWeight.SemiBold, DimTxt)
+        }
+    }
+}
 
 @Composable
 fun IdleScreen(wide: Boolean) {
@@ -255,17 +346,22 @@ fun IdleScreen(wide: Boolean) {
     val time = "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
     val date = L.tr(DAYS[cal.get(Calendar.DAY_OF_WEEK) - 1]) + ", %02d/%02d".format(cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1)
     val style = S.idleStyle.intValue
+    val plain = style == 8                               // tối giản: nền đen, không nút, không hàng bối cảnh
     val photo = remember(S.idlePhotoVer.intValue, style) { if (style == 3) loadPhoto(ctx) else null }
     val uni = S.czone.intValue == 0
     val fx = S.mode.intValue != 0                       // đang chạy hiệu ứng nhiều màu: dùng hai màu nhấn cố định
     val cL = if (!S.on.value) Color(0xFF3A4050) else if (fx) Color(0xFFFE2B48) else rgbColor(if (uni) S.col[0] else S.col[1])
     val cR = if (!S.on.value) Color(0xFF3A4050) else if (fx) Color(0xFF4E78FF) else rgbColor(if (uni) S.col[0] else S.col[2])
     val exit = { S.idleShow.value = false; S.lastTouch = System.currentTimeMillis() }
-    Box(Modifier.fillMaxSize().background(Color(0xFF0D0F15)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = exit)) {
+    val nav = S.navOn.value
+    val spd = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else S.speedKmh.floatValue.roundToInt()
+    val limit = S.speedLimit.intValue
+    val spdColor = if (limit > 0 && spd > limit) LimitRed else Color.White
+    Box(Modifier.fillMaxSize().background(if (plain) Color.Black else Color(0xFF0D0F15)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = exit)) {
         if (photo != null) {
             Image(photo.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             Box(Modifier.fillMaxSize().background(Color(0x73000000)))
-        } else Canvas(Modifier.fillMaxSize()) {
+        } else if (!plain) Canvas(Modifier.fillMaxSize()) {
             val r = size.minDimension * 0.8f
             val a = Offset(0f, size.height * 0.6f)
             val b = Offset(size.width, size.height * 0.6f)
@@ -273,7 +369,7 @@ fun IdleScreen(wide: Boolean) {
             drawCircle(Brush.radialGradient(listOf(cR.copy(alpha = 0.55f), Color.Transparent), b, r), r, b)
         }
         Column(Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = if (wide) 40.dp else 20.dp, vertical = 22.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (!plain) Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(painterResource(R.drawable.sk_logo), "SK Ambient Light", Modifier.height(if (wide) 34.dp else 26.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.width(14.dp))
                 T(date, if (wide) 16 else 13, FontWeight.SemiBold, DimTxt, Modifier.weight(1f))
@@ -283,35 +379,67 @@ fun IdleScreen(wide: Boolean) {
                 ) { T(if (wide) "Về trang điều khiển" else "Điều khiển", 14, FontWeight.Bold, Color.White) }
             }
             val big = if (wide) cfg.screenHeightDp * 0.27f else cfg.screenWidthDp * 0.26f
-            val spd = S.speedKmh.floatValue.roundToInt()
+            val round = (if (wide) cfg.screenHeightDp * 0.5f else cfg.screenWidthDp * 0.68f).dp       // cỡ đồng hồ kim / vòng tốc độ
+            val accent = if (S.on.value) cL else Pink
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 when {
                     style == 1 || style == 3 -> Big(time, big * 1.2f)
-                    style == 2 -> Column(horizontalAlignment = Alignment.CenterHorizontally) { Big("$spd", big * 1.2f); T("km/h", 20, FontWeight.SemiBold, DimTxt) }
+                    style == 2 -> Column(horizontalAlignment = Alignment.CenterHorizontally) { Big("$spd", big * 1.2f, spdColor); T("km/h", 20, FontWeight.SemiBold, DimTxt) }
+                    style == 4 -> if (wide) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        AnalogClock(cal, round, accent)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) { Big("$spd", big * 0.72f, spdColor); T("km/h", 20, FontWeight.SemiBold, DimTxt) }
+                    } else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        AnalogClock(cal, round, accent); Spacer(Modifier.height(14.dp)); Big("$spd", big * 0.5f, spdColor); T("km/h", 16, FontWeight.SemiBold, DimTxt)
+                    }
+                    style == 5 -> {
+                        val a = if (S.on.value) cL else Color.White
+                        val b = if (S.on.value) cR else Color.White
+                        if (wide) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) { SpeedGauge(spd, limit, round, a, b); Big(time, big * 0.8f) }
+                        else Column(horizontalAlignment = Alignment.CenterHorizontally) { SpeedGauge(spd, limit, round, a, b); Spacer(Modifier.height(10.dp)); Big(time, big * 0.5f) }
+                    }
+                    style == 6 && nav -> Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
+                        NavCard(true, wide)
+                        Spacer(Modifier.height(18.dp))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Big(time, big * 0.42f)
+                            Spacer(Modifier.weight(1f))
+                            Big("$spd", big * 0.42f, spdColor)
+                            Spacer(Modifier.width(8.dp))
+                            T("km/h", 16, FontWeight.SemiBold, DimTxt)
+                        }
+                    }
+                    style == 7 -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.MusicNote, null, tint = accent, modifier = Modifier.size(if (wide) 56.dp else 46.dp))
+                        Spacer(Modifier.height(10.dp))
+                        val fs = if (wide) 40 else 28
+                        Text(if (S.song.value.isEmpty()) L.tr("Chưa phát nhạc") else S.song.value, fontSize = fs.sp, lineHeight = (fs * 1.2f).sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = Inter, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(16.dp))
+                        Big(time, big * 0.5f, Color(0xD9FFFFFF))
+                    }
+                    style == 8 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Big(time, big * 0.8f, Color(0xB3FFFFFF))
+                        Spacer(Modifier.height(6.dp))
+                        T(date, 15, FontWeight.Medium, Color(0xFF8A919E))
+                        if (spd > 0) { Spacer(Modifier.height(10.dp)); Text("$spd km/h", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = if (spdColor == LimitRed) LimitRed else Color(0xFF8A919E), fontFamily = Inter) }
+                    }
                     wide -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Big(time, big)
-                        Column(horizontalAlignment = Alignment.End) { Big("$spd", big * 0.72f); T("km/h", 20, FontWeight.SemiBold, DimTxt) }
+                        Column(horizontalAlignment = Alignment.End) { Big("$spd", big * 0.72f, spdColor); T("km/h", 20, FontWeight.SemiBold, DimTxt) }
                     }
-                    else -> Column(horizontalAlignment = Alignment.CenterHorizontally) { Big(time, big); Spacer(Modifier.height(10.dp)); Big("$spd", big * 0.62f); T("km/h", 18, FontWeight.SemiBold, DimTxt) }
+                    else -> Column(horizontalAlignment = Alignment.CenterHorizontally) { Big(time, big); Spacer(Modifier.height(10.dp)); Big("$spd", big * 0.62f, spdColor); T("km/h", 18, FontWeight.SemiBold, DimTxt) }
                 }
             }
-            if (S.navOn.value) {
-                val d = S.navDist.intValue
-                val dist = if (d < 0) "" else if (d >= 1000) "${d / 100 / 10.0} km · " else "$d m · "
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
-                    Icon(dirIcon(S.navDir.value), null, tint = Color.White, modifier = Modifier.size(28.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(dist + L.tr(dirText(S.navDir.value)) + (if (S.navStreet.value.isEmpty()) "" else " · " + S.navStreet.value), fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            if (S.song.value.isNotEmpty()) {
+            if (style == 6 && !nav) T("Chưa có chỉ đường. Mở app bản đồ và bắt đầu dẫn đường, chỉ dẫn sẽ hiện lớn ở đây.", 13, color = DimTxt, modifier = Modifier.padding(bottom = 10.dp))
+            // app bản đồ đang dẫn đường: mọi kiểu đều có thẻ chỉ đường (kiểu "Dẫn đường" đã hiện bản lớn ở trên)
+            if (nav && style != 6) { NavCard(false, wide); Spacer(Modifier.height(10.dp)) }
+            if (S.song.value.isNotEmpty() && style != 7 && !plain) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
                     Icon(Icons.Filled.MusicNote, null, tint = DimTxt, modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(12.dp))
                     Text(S.song.value, fontSize = 16.sp, color = DimTxt, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            Row(Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (!plain) Row(Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Scenes.all().forEachIndexed { i, sc ->
                     val on = S.sceneSel.intValue == i
                     Row(
