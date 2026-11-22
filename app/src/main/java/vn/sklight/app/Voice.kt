@@ -1,11 +1,14 @@
 package vn.sklight.app
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -24,6 +27,8 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +45,11 @@ import kotlinx.coroutines.delay
  */
 object Voice {
     private var sr: SpeechRecognizer? = null
+    private val h = Handler(Looper.getMainLooper())
+    private var gen = 0                              // lượt nghe hiện tại; trả lời của lượt cũ bị bỏ qua
+    val phase = mutableIntStateOf(0)                 // 0 đang mở micro, 1 sẵn sàng nghe, 2 đang nghe thấy tiếng, 3 đang xử lý
+    val level = mutableFloatStateOf(0f)              // độ lớn tiếng thu được, 0..1
+    var engine = ""                                  // gói của bộ nhận giọng nói đang dùng (để báo khi lỗi)
 
     // tên dài đứng trước để "xanh lá" không bị hiểu thành "xanh"
     private val COLORS: List<Triple<List<String>, Int, String>> = listOf(
@@ -87,9 +97,18 @@ object Voice {
     }
 
     fun close() {
+        gen++
+        h.removeCallbacksAndMessages(null)
         try { sr?.cancel(); sr?.destroy() } catch (_: Exception) {}
         sr = null
         S.voiceState.intValue = 0
+    }
+
+    /** Các bộ nhận giọng nói có trong máy, của Google đứng trước (bộ mặc định của một số máy không phản hồi). */
+    private fun engines(c: Context): List<ComponentName> {
+        val l = try { c.packageManager.queryIntentServices(Intent("android.speech.RecognitionService"), 0) } catch (e: Exception) { emptyList() }
+        return l.mapNotNull { it.serviceInfo?.let { s -> ComponentName(s.packageName, s.name) } }
+            .sortedByDescending { it.packageName.startsWith("com.google") }
     }
 
     private fun show(state: Int, heard: String = "", msg: String = "") {
@@ -97,44 +116,74 @@ object Voice {
         S.voiceState.intValue = state; S.voiceTick.intValue++
     }
 
-    /** Bắt đầu nghe (gọi trên luồng chính, đã có quyền micro). */
-    fun start(ctx: Context) {
+    /** Bắt đầu nghe (gọi trên luồng chính, đã có quyền micro). [attempt] = thứ tự bộ nhận giọng nói đang thử. */
+    fun start(ctx: Context, attempt: Int = 0) {
         val c = ctx.applicationContext
+        val my = ++gen
+        h.removeCallbacksAndMessages(null)
         try { sr?.cancel(); sr?.destroy() } catch (_: Exception) {}
         sr = null
         if (!try { SpeechRecognizer.isRecognitionAvailable(c) } catch (e: Exception) { false }) { show(5); return }
+        val list = engines(c)
+        val comp = list.getOrNull(attempt)
+        engine = comp?.packageName ?: "mặc định của máy"
+        phase.intValue = 0; level.floatValue = 0f
         try {
-            val r = SpeechRecognizer.createSpeechRecognizer(c)
+            val r = if (comp != null) SpeechRecognizer.createSpeechRecognizer(c, comp) else SpeechRecognizer.createSpeechRecognizer(c)
             r.setRecognitionListener(object : RecognitionListener {
                 override fun onResults(b: Bundle?) {
-                    val list = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) ?: arrayListOf()
-                    for (cand in list) { val m = run(cand); if (m != null) { show(2, cand, m); return } }
-                    if (list.isEmpty()) show(6, msg = "Không nghe thấy câu lệnh.") else show(3, list[0])
+                    if (my != gen) return
+                    h.removeCallbacksAndMessages(null)
+                    val list2 = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) ?: arrayListOf()
+                    for (cand in list2) { val m = run(cand); if (m != null) { show(2, cand, m); return } }
+                    if (list2.isEmpty()) show(6, msg = "Không nghe thấy câu lệnh.") else show(3, list2[0])
                 }
                 override fun onError(code: Int) {
+                    if (my != gen) return
+                    h.removeCallbacksAndMessages(null)
                     show(6, msg = when (code) {
                         SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Không nghe thấy câu lệnh."
                         SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Cần có mạng để nhận giọng nói."
-                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Chưa cấp quyền micro cho SK Light."
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Bộ nhận giọng nói chưa có quyền micro. Vào Cài đặt máy, mục Ứng dụng, chọn Google, bật quyền Micro."
                         12, 13 -> "Bộ nhận giọng nói của máy chưa có tiếng Việt."
                         else -> "Bộ nhận giọng nói báo lỗi (mã $code)."
                     })
                 }
-                override fun onReadyForSpeech(p: Bundle?) {}
-                override fun onBeginningOfSpeech() {}
-                override fun onRmsChanged(v: Float) {}
+                override fun onReadyForSpeech(p: Bundle?) { if (my == gen) phase.intValue = 1 }
+                override fun onBeginningOfSpeech() { if (my == gen) phase.intValue = 2 }
+                override fun onRmsChanged(v: Float) { if (my == gen) level.floatValue = ((v + 2f) / 12f).coerceIn(0f, 1f) }
                 override fun onBufferReceived(b: ByteArray?) {}
-                override fun onEndOfSpeech() {}
-                override fun onPartialResults(b: Bundle?) {}
+                override fun onEndOfSpeech() { if (my == gen) { phase.intValue = 3; level.floatValue = 0f } }
+                override fun onPartialResults(b: Bundle?) {
+                    if (my != gen) return
+                    val t = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: return
+                    if (t.isNotBlank()) { S.voiceHeard.value = t; if (phase.intValue < 2) phase.intValue = 2 }
+                }
                 override fun onEvent(t: Int, b: Bundle?) {}
             })
             r.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN")
                 .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, c.packageName))
             sr = r
             show(1)
+            // Bộ nhận không báo "sẵn sàng" sau 3 giây: thử bộ kế tiếp, hết thì báo lỗi (trước đây thẻ đứng mãi ở "Đang nghe").
+            h.postDelayed({
+                if (my != gen || phase.intValue != 0) return@postDelayed
+                if (attempt + 1 < list.size) start(c, attempt + 1)
+                else { close(); show(6, msg = "Bộ nhận giọng nói của máy không phản hồi. Mở app Google một lần, cho phép dùng micro, rồi thử lại.") }
+            }, 3000)
+            // Quá 12 giây chưa có kết quả: bảo bộ nhận chốt lại; thêm 4 giây nữa vẫn không có thì dừng.
+            h.postDelayed({ if (my == gen) try { r.stopListening() } catch (_: Exception) {} }, 12000)
+            h.postDelayed({
+                if (my != gen) return@postDelayed
+                val heard = S.voiceHeard.value
+                close()
+                if (heard.isNotBlank()) { val m = run(heard); if (m != null) show(2, heard, m) else show(3, heard) }
+                else show(6, msg = "Không nghe thấy câu lệnh.")
+            }, 16000)
         } catch (e: Exception) { show(6, msg = "Không mở được bộ nhận giọng nói của máy.") }
     }
 }
@@ -176,11 +225,23 @@ fun VoicePanel(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         when (st) {
-            1 -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(44.dp).clip(CircleShape).background(Pink), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Mic, null, tint = Color.White, modifier = Modifier.size(24.dp)) }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) { T("Đang nghe…", 16, FontWeight.ExtraBold); T("Nói: “màu đỏ”, “sáng hơn”, “chế độ thở”", 12, color = SubTxt) }
-                OutlineBtn("Hủy", Modifier.width(64.dp)) { Voice.close() }
+            1 -> {
+                val ph = Voice.phase.intValue
+                val heard = S.voiceHeard.value
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(44.dp).clip(CircleShape).background(if (ph == 0) Grey else Pink), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Mic, null, tint = Color.White, modifier = Modifier.size(24.dp)) }
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        T(when (ph) { 0 -> "Đang mở micro…"; 2 -> "Đang nghe thấy tiếng…"; 3 -> "Đang xử lý…"; else -> "Mời nói" }, 16, FontWeight.ExtraBold)
+                        if (heard.isNotBlank()) T("Nghe được: “$heard”", 12, color = SubTxt)
+                        else T("Nói: “màu đỏ”, “sáng hơn”, “chế độ thở”", 12, color = SubTxt)
+                    }
+                    OutlineBtn("Hủy", Modifier.width(64.dp)) { Voice.close() }
+                }
+                // thanh báo độ lớn tiếng micro đang thu: nói mà thanh không nhúc nhích là máy chưa nghe thấy
+                Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Bd)) {
+                    Box(Modifier.fillMaxWidth(Voice.level.floatValue.coerceIn(0.02f, 1f)).fillMaxHeight().background(Pink))
+                }
             }
             2 -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(44.dp).clip(CircleShape).background(Color(0xFFE3F5E6)), contentAlignment = Alignment.Center) { Icon(Icons.Filled.Check, null, tint = Color(0xFF2E8B3D), modifier = Modifier.size(24.dp)) }
@@ -226,6 +287,7 @@ fun VoicePanel(modifier: Modifier = Modifier) {
             }
             else -> {
                 T(S.voiceMsg.value, 15, FontWeight.Bold)
+                T("Bộ nhận giọng nói: ${Voice.engine}", 11, color = Grey)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlineBtn("Nói lại", Modifier.weight(1f), again)
                     OutlineBtn("Xem các câu lệnh", Modifier.weight(1.6f)) { S.voiceState.intValue = 4 }
