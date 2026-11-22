@@ -26,16 +26,28 @@ class ScreenReader : AccessibilityService() {
             if (now > S.screenUntil) { S.screenOn.value = false; return }
             if (now - last < 1000) return
             val pkg = e.packageName?.toString() ?: return
-            if (pkg == packageName || pkg == "com.android.systemui" || pkg.contains("inputmethod") || pkg.contains("launcher")) return
+            if (skip(pkg)) return
             last = now
-            val root = rootInActiveWindow ?: return
+            // Đọc từng cửa sổ trên màn hình (kể cả khi chia đôi màn hình, cửa sổ đang chạm là SK Light)
             val out = LinkedHashSet<String>()
-            walk(root, out, 0)
-            S.screenPkg.value = pkg
+            var shown = ""
+            for (w in windows) {
+                val r = w.root ?: continue
+                val p = r.packageName?.toString() ?: continue
+                if (skip(p)) continue
+                if (shown.isEmpty()) shown = p
+                out.add("=== $p ===")
+                walk(r, out, 0)
+            }
+            if (out.isEmpty()) return
+            S.screenPkg.value = shown.ifEmpty { pkg }
             S.screenLines.clear()
-            S.screenLines.addAll(out.take(60))
+            S.screenLines.addAll(out.take(80))
         } catch (t: Throwable) { /* bỏ qua một lần đọc lỗi */ }
     }
+
+    private fun skip(p: String) = p == packageName || p == "com.android.systemui" || p == "com.android.settings" ||
+        p.contains("inputmethod") || p.contains("launcher")
 
     private fun walk(n: AccessibilityNodeInfo?, out: MutableSet<String>, depth: Int) {
         if (n == null || depth > 40 || out.size >= 80 || !n.isVisibleToUser) return

@@ -802,7 +802,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)
         Spacer(Modifier.height(8.dp))
         if (S.screenLines.isEmpty()) T("Chưa đọc được chữ nào.", 12, color = Grey)
-        for (line in S.screenLines.take(40)) {
+        for (line in S.screenLines.take(80)) {
             Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
         }
         Spacer(Modifier.height(6.dp))
@@ -818,7 +818,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.10, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
+            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.11, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
             Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
         }
     }
