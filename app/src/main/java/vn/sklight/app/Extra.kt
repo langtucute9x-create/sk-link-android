@@ -96,8 +96,8 @@ object X {
     }
     fun carName(key: Int): String {
         if (key < 0) return "—"
-        val sName = cars.firstOrNull { it.first == key shr 8 && it.second == 0 }?.third ?: ""
-        val mName = if (key and 0xFF == 0) "" else cars.firstOrNull { it.first == key shr 8 && it.second == key and 0xFF }?.third ?: ""
+        val sName = CarNames.tr(cars.firstOrNull { it.first == key shr 8 && it.second == 0 }?.third ?: "")
+        val mName = if (key and 0xFF == 0) "" else CarNames.tr(cars.firstOrNull { it.first == key shr 8 && it.second == key and 0xFF }?.third ?: "")
         val t = listOf(sName, mName).filter { it.isNotEmpty() }.joinToString(" · ")
         return if (t.isEmpty()) "hãng ${key shr 8}, dòng ${key and 0xFF}" else t
     }
@@ -119,6 +119,10 @@ object X {
         h.postDelayed({ pairRaw = -1; carCur = -1; S.refreshBlocks(); S.ble.send(Protocol.query(0x03)) }, 2000)
     }
     fun onReset() { if (resetState == 1) resetState = 2 }
+
+    /** Hộp báo xe hỗ trợ chức năng gốc nào (trả lời 9C 01): b1 cùng thứ tự bit với b1 khối 05; b2: bit4 đèn khẩn cấp, bit3 điều hòa, bit2 chào mừng, bit1 điểm mù, bit0 áp suất lốp. */
+    var sup: IntArray? = null
+    fun onSup(b1: Int, b2: Int) { sup = intArrayOf(b1, b2); ver.intValue++ }
 
     // Thử hỏi hộp vị trí cửa của hộp phụ (7C 04). App gốc không có lệnh đọc này, nên chỉ ghi lại hộp trả lời gì.
     var doorProbe by mutableStateOf("")
@@ -409,52 +413,64 @@ fun CarFuncPage() {
     val ctx = LocalContext.current
     S.blkVer.intValue
     BackRow(8, "Cài đặt nhà máy")
+    X.ver.intValue
+    LaunchedEffect(Unit) { if (S.connected.value) S.ble.send(Protocol.frame(Protocol.T_READ, 0x9C, 0x01)) }
+    val sup = X.sup
+    // Giống app gốc: chỉ hiện chức năng mà hộp báo xe này hỗ trợ. Chưa đọc được thì hiện hết.
+    fun ok(i: Int, mask: Int): Boolean = when {
+        sup == null -> true
+        i == 0 -> sup[0] and mask != 0
+        mask == 0x20 -> sup[0] and 0x10 != 0            // ẩn đèn gốc: đi kèm "đèn theo đèn xe"
+        else -> sup[1] and mask != 0
+    }
+    val rows = listOf(
+        Triple(0, 0x80, "Cảnh báo xi nhan") to "Nháy đèn theo xi nhan",
+        Triple(1, 0x10, "Đèn khẩn cấp") to "Nháy theo đèn khẩn cấp (hazard)",
+        Triple(0, 0x40, "Cảnh báo phanh tay") to "Báo khi chưa nhả phanh tay",
+        Triple(0, 0x20, "Cảnh báo dây an toàn") to "Báo khi chưa cài dây",
+        Triple(0, 0x08, "Cảnh báo cửa") to "Báo khi cửa chưa đóng",
+        Triple(0, 0x04, "Cảnh báo radar") to "Báo khi gần vật cản",
+        Triple(1, 0x02, "Cảnh báo điểm mù") to "Báo khi có xe trong điểm mù",
+        Triple(0, 0x01, "Cảnh báo quá tốc độ") to "Báo khi vượt ngưỡng tốc độ bên dưới",
+        Triple(1, 0x01, "Cảnh báo áp suất lốp") to "Báo khi lốp thiếu hơi",
+        Triple(0, 0x02, "Hiệu ứng vòng tua") to "Đèn chạy theo vòng tua máy",
+        Triple(1, 0x08, "Điều hòa") to "Đèn đổi màu theo nhiệt độ điều hòa",
+        Triple(0, 0x10, "Đèn theo đèn xe") to "Đèn hộp sáng theo đèn pha/đèn vị trí",
+        Triple(1, 0x20, "Ẩn đèn gốc của xe") to "Ẩn đèn gốc khi hộp đang chạy"
+    ).filter { ok(it.first.first, it.first.second) }
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Chức năng gốc xe", 16)
         Spacer(Modifier.height(4.dp))
-        T("Hộp tự báo bằng đèn khi nhận tín hiệu CAN từ xe.", 12, color = SubTxt)
-        val rows = listOf(
-            Triple(0, 0x80, "Cảnh báo xi nhan") to "Nháy đèn theo xi nhan",
-            Triple(0, 0x40, "Cảnh báo phanh tay") to "Báo khi chưa nhả phanh tay",
-            Triple(0, 0x20, "Cảnh báo dây an toàn") to "Báo khi chưa cài dây",
-            Triple(0, 0x10, "Đèn theo đèn xe") to "Đèn hộp sáng theo đèn pha/đèn vị trí",
-            Triple(0, 0x08, "Cảnh báo cửa") to "Báo khi cửa chưa đóng",
-            Triple(0, 0x04, "Cảnh báo radar") to "Báo khi gần vật cản",
-            Triple(0, 0x02, "Hiệu ứng vòng tua") to "Đèn chạy theo vòng tua máy",
-            Triple(0, 0x01, "Cảnh báo quá tốc độ") to "Báo khi vượt ngưỡng tốc độ bên dưới",
-            Triple(1, 0x20, "Ẩn đèn gốc của xe") to "Ẩn đèn gốc khi hộp đang chạy",
-            Triple(1, 0x10, "Nháy đôi") to "Nháy hai lần mỗi nhịp",
-            Triple(1, 0x08, "Điều hòa") to "Đèn đổi màu theo nhiệt độ điều hòa",
-            Triple(1, 0x02, "Cảnh báo điểm mù") to "Báo khi có xe trong điểm mù",
-            Triple(1, 0x01, "Cảnh báo áp suất lốp") to "Báo khi lốp thiếu hơi"
-        )
+        T(if (sup == null) "Hộp tự báo bằng đèn khi nhận tín hiệu từ xe. Chưa đọc được xe hỗ trợ gì nên đang hiện tất cả; mục xe không hỗ trợ thì bật cũng không có tác dụng."
+          else if (rows.isEmpty()) "Hộp báo xe này (theo loại xe đang đặt) không hỗ trợ chức năng gốc nào."
+          else "Chỉ hiện các chức năng mà hộp báo xe này hỗ trợ (theo loại xe đang đặt).", 12, color = SubTxt)
         for ((k, sub) in rows) {
             val (i, mask, title) = k
             Divider()
             SwitchRow(title, sub, S.blkBit(i, mask)) { if (!S.setBlk(i, mask, if (it) mask else 0)) need(ctx) }
         }
     }
-    Card {
+    val groups = listOf(
+        Triple("Kiểu cảnh báo cửa", 2, 4) to 3,
+        Triple("Kiểu cảnh báo radar", 2, 0) to 3,
+        Triple("Kiểu cảnh báo xi nhan", 5, 4) to 1,
+        Triple("Kiểu cảnh báo quá tốc độ", 5, 0) to 3
+    ).filter { (g, _) -> when (g.first) { "Kiểu cảnh báo cửa" -> ok(0, 0x08); "Kiểu cảnh báo radar" -> ok(0, 0x04); "Kiểu cảnh báo xi nhan" -> ok(0, 0x80); else -> ok(0, 0x01) } }
+    if (groups.isNotEmpty()) Card {
         T("Kiểu hiển thị", 15, FontWeight.Bold)
         val known = S.blk != null
-        val groups = listOf(
-            Triple("Kiểu cảnh báo cửa", 2, 4) to 3,
-            Triple("Kiểu cảnh báo radar", 2, 0) to 3,
-            Triple("Kiểu cảnh báo xi nhan", 5, 4) to 1,
-            Triple("Kiểu cảnh báo quá tốc độ", 5, 0) to 3
-        )
         for ((g, maxV) in groups) {
             val (title, idx, shift) = g
             val base = if (idx == 5 && shift == 4) 1 else 0   // xi nhan: app gốc dùng giá trị 1 và 2
             Spacer(Modifier.height(10.dp))
             T(title, 13, FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
-            val mask = (if (idx == 1) 0x03 else 0x0F) shl shift
+            val mask = 0x0F shl shift
             val cur = if (known) ((S.blk!![idx] and mask) shr shift) else -1
             Grid((0..maxV).toList(), 4) { v, m -> Chip("Kiểu ${v + 1}", cur == v + base, m, 42.dp, 12) { if (!S.setBlk(idx, mask, (v + base) shl shift)) need(ctx) } }
         }
     }
-    Card {
+    if (ok(0, 0x01)) Card {
         GroupTitle(Icons.Filled.Speed, "Ngưỡng quá tốc độ của hộp", 16)
         Spacer(Modifier.height(6.dp))
         val v = (S.blk?.get(4) ?: 0).coerceIn(30, 180)
@@ -504,14 +520,14 @@ fun CarModelPage() {
         val series = X.cars.count { it.second == 0 }
         Kv("Danh sách", if (X.carLoading) "Đang đọc từ hộp…" else if (X.cars.isEmpty()) "Hộp chưa gửi danh sách" else "$series hãng, ${X.cars.size - series} dòng xe")
         Spacer(Modifier.height(4.dp))
-        T("Danh sách này nằm trong hộp đang kết nối: mỗi loại hộp hỗ trợ một nhóm xe riêng.", 12, color = SubTxt)
+        T("Danh sách này nằm trong hộp đang kết nối: mỗi loại hộp hỗ trợ một nhóm xe riêng. Hộp gửi tên tiếng Trung, app đổi sang tên quốc tế; tên nào còn chữ Trung thì bấm Sao chép gửi SK để bổ sung.", 12, color = SubTxt)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FillBtn("Đọc lại", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) {
                 if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.readCars()
             }
             FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
-                val lines = X.cars.map { "${it.first}/${it.second}: ${it.third}" } + listOf("đang đặt: ${X.carCur}", "--- khung thô ---") + X.carRaw
+                val lines = X.cars.map { "${it.first}/${it.second}: ${it.third} = ${CarNames.tr(it.third)}" } + listOf("đang đặt: ${X.carCur}", "--- khung thô ---") + X.carRaw
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("cars", lines.joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
@@ -522,7 +538,7 @@ fun CarModelPage() {
     if (ids.isNotEmpty()) Card {
         for ((n, sId) in ids.withIndex()) {
             if (n > 0) Divider()
-            val name = X.cars.firstOrNull { it.first == sId && it.second == 0 }?.third?.ifEmpty { null } ?: "Hãng $sId"
+            val name = X.cars.firstOrNull { it.first == sId && it.second == 0 }?.third?.ifEmpty { null }?.let { CarNames.tr(it) } ?: "Hãng $sId"
             val models = X.cars.filter { it.first == sId && it.second != 0 }
             val cur = X.carCur >= 0 && X.carCur shr 8 == sId
             Row(
@@ -539,7 +555,7 @@ fun CarModelPage() {
                     Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { ask = (sId shl 8) or m.second }.padding(start = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    T(m.third.ifEmpty { "Dòng ${m.second}" }, 14, if (on) FontWeight.Bold else FontWeight.Normal, if (on) Pink else Txt, Modifier.weight(1f))
+                    T(if (m.third.isEmpty()) "Dòng ${m.second}" else CarNames.tr(m.third), 14, if (on) FontWeight.Bold else FontWeight.Normal, if (on) Pink else Txt, Modifier.weight(1f))
                     if (on) Icon(Icons.Filled.Check, null, tint = Pink, modifier = Modifier.size(20.dp))
                 }
             }
