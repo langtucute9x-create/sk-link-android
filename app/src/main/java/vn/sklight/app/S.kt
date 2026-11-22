@@ -42,6 +42,10 @@ object S {
     val z2 = mutableIntStateOf(0)                         // chế độ màu vùng 2: 0 tĩnh, 1 tự động, 2 nhấp nháy (bit 3-4 của khối 0D)
     var fac: IntArray? = null                             // khối 0D (cài đặt nhà máy) đọc từ hộp: b1, b2; null = chưa đọc được
     var m1 = 0                                            // ô mode1 của lệnh hiệu ứng: giữ nguyên giá trị hộp trả về
+    var p07: IntArray? = null                             // khối 07 đọc từ hộp: bit hướng ánh sáng chạy | giọng nói của hộp | hướng hộp 7..14
+    var ttsVoice: String                                  // giọng đọc tiếng Việt đã chọn bằng lệnh "đổi giọng nói"
+        get() = sp.getString("ttsVoice", "") ?: ""
+        set(v) { sp.edit().putString("ttsVoice", v).apply() }
 
     // chào mừng. Thứ tự đoạn trên sơ đồ: 0 bảng đồng hồ trái, 1 bảng đồng hồ phải, 2 trước trái, 3 trước phải, 4 sau trái, 5 sau phải
     var blk: IntArray? = null
@@ -357,5 +361,14 @@ object S {
         saveSettings()
     }
 
-    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x08, 0x0D)) ble.send(Protocol.query(q)) }
+    /** Lệnh giọng nói "đổi hướng": đảo hướng ánh sáng chạy của mọi đoạn (khối 07, đọc-sửa-ghi; byte giữa giữ nguyên). */
+    fun flipDir(): Boolean {
+        val p = p07 ?: run { ble.send(Protocol.query(0x07)); return false }
+        val n = intArrayOf(p[0] xor 0xFF, p[1], p[2] xor 0xFF)
+        p07 = n
+        ble.send(Protocol.block07(n[0], n[1], n[2]), 23, true)
+        return true
+    }
+
+    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x07, 0x08, 0x0D)) ble.send(Protocol.query(q)) }
 }

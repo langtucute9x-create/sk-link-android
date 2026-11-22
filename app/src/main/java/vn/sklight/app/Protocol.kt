@@ -48,6 +48,9 @@ object Protocol {
     fun block08(data1: Int, speed: Int, start: Int, data3: Int) =
         frame(T_WRITE, 0x08, data1, ((speed and 3) shl 3) or (start and 7), data3)
 
+    /** Khối 07: hướng ánh sáng chạy (bit theo đoạn, cùng thứ tự khối 08) | bit0 loa của hộp, bit1 kiểu giọng | hướng hộp 7..14. */
+    fun block07(data1: Int, mid: Int, data3: Int) = frame(T_WRITE, 0x07, data1, mid, data3)
+
     /** Số LED: 06 | táp-lô giữa | trước trái | trước phải | sau trái | sau phải | đồng hồ | hộp 5..14. */
     fun leds(raw: IntArray) = frame(T_WRITE, 0x06, *raw)
 
@@ -64,7 +67,7 @@ object Protocol {
     fun init() = listOf(
         frame(0x81, 0x01),
         query(0x90), query(0x8F), query(0x00), query(0x02), query(0x03),
-        query(0x05), query(0x06), query(0x08), query(0x09), query(0x0A), query(0x0D),
+        query(0x05), query(0x06), query(0x07), query(0x08), query(0x09), query(0x0A), query(0x0D),
         frame(T_READ, 0x9C, 0x01)
     )
 }
