@@ -30,6 +30,9 @@ object AlertBridge {
         }
     }
 
+    /** Tính lại cảnh báo khi tốc độ hoặc giới hạn thay đổi. */
+    @JvmStatic fun refresh() { h.post { evaluate() } }
+
     @JvmStatic fun onNavOff() { h.post { S.navOn.value = false; S.navDist.intValue = -1; evaluate() } }
 
     /** Ghi lại thông báo thô của app dẫn đường để xem trong trang Dẫn đường. */
@@ -82,6 +85,12 @@ object AlertBridge {
         if (S.warnOn.value && S.navOn.value && d in 0..S.alertDist.intValue) {
             if (S.navDir.value == "L") return 1
             if (S.navDir.value == "R") return 2
+        }
+        // Quá tốc độ: vượt giới hạn quá 3 km/h thì báo, xuống bằng giới hạn thì tắt
+        val lim = S.speedLimit.intValue
+        if (S.speedWarn.value && lim > 0) {
+            val v = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
+            if (v > (if (kind == 3) lim else lim + 3)) return 3
         }
         return 0
     }

@@ -73,6 +73,11 @@ object S {
     val navStreet = mutableStateOf("")
     val navApp = mutableStateOf("")
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
+    val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
+    val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
+    val appSpeed = mutableIntStateOf(-1)                  // tốc độ xe đọc từ app dẫn đường, -1 = chưa biết
+    val screenAuto = mutableStateOf(false)                // tự đọc màn hình app bản đồ
+    val screenInfo = mutableStateOf("")                   // kết quả đọc gần nhất, để kiểm tra
     val screenOn = mutableStateOf(false)                  // đang đọc chữ trên màn hình (tự tắt sau 5 phút)
     @Volatile var screenUntil = 0L
     val screenPkg = mutableStateOf("")                    // app đang hiện trên màn hình lần đọc gần nhất
@@ -127,6 +132,8 @@ object S {
         invert.value = sp.getBoolean("invert", true)
         warnOn.value = sp.getBoolean("warnOn", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
+        speedWarn.value = sp.getBoolean("speedWarn", false)
+        screenAuto.value = sp.getBoolean("screenAuto", false)
         (sp.getString("bri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) bri[i] = v.coerceIn(0, 100) }
         on.value = sp.getBoolean("on", true)
         dayBri = (sp.getString("dayBri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { if (it.size == 3) it.toIntArray() else null }
@@ -157,7 +164,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert", invert.value)
-            .putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
+            .putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
@@ -291,7 +298,7 @@ object S {
     fun syncService(ctx: Context = app) {
         val c = ctx.applicationContext
         try {
-            if (!(autoBoot.value || floatOn.value || warnOn.value)) { c.stopService(Intent(c, KeepService::class.java)); return }
+            if (!(autoBoot.value || floatOn.value || warnOn.value || speedWarn.value)) { c.stopService(Intent(c, KeepService::class.java)); return }
             if (Build.VERSION.SDK_INT >= 31 && c.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return
             c.startForegroundService(Intent(c, KeepService::class.java))
         } catch (_: Exception) {}

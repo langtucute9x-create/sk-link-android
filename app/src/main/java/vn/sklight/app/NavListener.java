@@ -9,7 +9,7 @@ public class NavListener extends NotificationListenerService {
     private static final String TAG = "SKLight";
     // ten goi ung dung co chua mot trong cac tu nay duoc coi la ung dung ban do
     private static final String[] MAP_HINTS = {"maps", "vietmap", "waze", "navitel", "osmand", "sygic", "navi", "here.app",
-            "organicmaps", "magicearth", "tomtom", "goong", "map4d", "mapbox", "amap", "autonavi", "baidu.baidumap", "petal"};
+            "organicmaps", "magicearth", "tomtom", "goong", "map4d", "mapbox", "amap", "autonavi", "baidu.baidumap", "petal", "gofa"};
 
     static volatile boolean connected;
     static volatile NavState lastNav;     // lan chi duong gan nhat (da gui sang HUD)

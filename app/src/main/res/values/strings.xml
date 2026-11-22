@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">SK Light</string>
-    <string name="screen_reader_desc">Cho SK Light đọc chữ hiện trên màn hình của app dẫn đường không có thông báo (khoảng cách, tên đường, biển tốc độ) để nháy đèn cảnh báo. Chữ chỉ được xử lý ngay trên máy, không gửi đi đâu.</string>
+    <string name="screen_reader_desc">Cho SK Light đọc chữ trên màn hình của app dẫn đường không có thông báo (khoảng cách, tên đường, tốc độ) và chụp ảnh màn hình chỉ để nhận ra mũi tên rẽ và biển giới hạn tốc độ, rồi nháy đèn cảnh báo. Mọi thứ xử lý ngay trên máy, không lưu ảnh, không gửi đi đâu.</string>
 </resources>

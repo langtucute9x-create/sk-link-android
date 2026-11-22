@@ -765,6 +765,18 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         T("Chạm một cửa để thử riêng cửa đó. Rẽ trái, rẽ phải và từng cửa dùng lệnh nháy của hộp phụ; quá tốc độ thì cả xe nháy đỏ.", 11, color = Grey)
     }
 
+    // ---- cảnh báo quá tốc độ ----
+    Card {
+        GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
+        Spacer(Modifier.height(8.dp))
+        SwitchRow("Nháy đỏ khi quá tốc độ", "Cả xe nháy đỏ khi chạy quá giới hạn trên biển báo", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
+        Spacer(Modifier.height(6.dp))
+        Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
+        Kv("Giới hạn đọc được", if (S.speedLimit.intValue > 0) "${S.speedLimit.intValue} km/h" else "Chưa có")
+        Spacer(Modifier.height(6.dp))
+        T("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở phần Đọc chữ trên màn hình bên dưới.", 11, color = Grey)
+    }
+
     // ---- thông báo app dẫn đường ----
     Card {
         GroupTitle(Icons.Filled.Navigation, "Thông báo của app dẫn đường", 16)
@@ -798,7 +810,9 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         var accOn by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
         Kv("Quyền Hỗ trợ tiếp cận", if (accOn) "Đã bật" else "Chưa bật")
-        Kv("Đang đọc", if (S.screenOn.value) "Có" else "Không")
+        SwitchRow("Tự đọc khi dùng Gofa và app bản đồ", "Chỉ đọc màn hình của app bản đồ, các app khác bỏ qua", S.screenAuto.value) { S.screenAuto.value = it; S.saveSettings() }
+        Kv("Đang đọc thử", if (S.screenOn.value) "Có" else "Không")
+        Kv("Đọc được", if (S.screenInfo.value.isEmpty()) "Chưa có" else S.screenInfo.value)
         Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)
         Spacer(Modifier.height(8.dp))
         if (S.screenLines.isEmpty()) T("Chưa đọc được chữ nào.", 12, color = Grey)
@@ -818,7 +832,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.11, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
+            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.12, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
             Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
         }
     }
