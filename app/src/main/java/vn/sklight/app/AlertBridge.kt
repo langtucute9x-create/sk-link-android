@@ -6,18 +6,15 @@ import android.widget.Toast
 import java.util.regex.Pattern
 
 /**
- * Cảnh báo bằng đèn (bản thử).
- * Rẽ trái / rẽ phải: cho các hộp phụ gắn ở cửa bên đó nháy bằng lệnh "nháy hộp phụ" (04 | hộp << 4 | 0),
- * hết cảnh báo thì gửi lại mã vị trí của hộp. Quá tốc độ: cả xe nháy đỏ bằng lệnh màu.
- * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ, 12..15 = thử riêng một cửa (10 + đoạn trên sơ đồ).
+ * Cảnh báo bằng đèn, chỉ dùng lệnh màu (01).
+ * Sắp rẽ trái / phải: cả xe nháy vàng (hộp không có lệnh màu riêng từng cửa). Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
+ * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ.
  */
 object AlertBridge {
     private val h = Handler(Looper.getMainLooper())
     private var kind = 0
     private var testUntil = 0L
     private var testKind = 0
-    private var idx = 0
-    private var flashing = listOf<Int>()          // các hộp phụ đang được cho nháy
     private val SPEED = Pattern.compile("(\\d{2,3})\\s*km\\s*/\\s*h", Pattern.CASE_INSENSITIVE)
 
     @JvmStatic fun onNav(s: NavState) {
@@ -61,18 +58,10 @@ object AlertBridge {
         h.postDelayed({ evaluate() }, 4100)
     }
 
-    /** Các hộp phụ (1..4) gắn ở những cửa thuộc loại cảnh báo [k]. Đoạn trên sơ đồ: 2 trước trái, 3 trước phải, 4 sau trái, 5 sau phải. */
-    fun boxesFor(k: Int): List<Int> {
-        val segs = when (k) { 1 -> listOf(2, 4); 2 -> listOf(3, 5); in 12..15 -> listOf(k - 10); else -> emptyList() }
-        return (1..4).filter { S.boxPos[it - 1] in segs }
-    }
-
-    /** Cửa [seg] (2..5) có đang nằm trong cảnh báo hiện tại không. */
-    fun lit(seg: Int): Boolean = when (val k = S.alertKind.intValue) {
-        1 -> seg == 2 || seg == 4
-        2 -> seg == 3 || seg == 5
-        3 -> true
-        in 12..15 -> seg == k - 10
+    /** Khu [zone] (1 hoặc 2) có đang nháy trong cảnh báo hiện tại không. */
+    fun lit(zone: Int): Boolean = when (S.alertKind.intValue) {
+        1, 2 -> true
+        3 -> S.speedZone.intValue == 0 || S.speedZone.intValue == zone
         else -> false
     }
 
@@ -110,7 +99,6 @@ object AlertBridge {
         h.removeCallbacks(tick)
         S.alertPhase.value = false
         if (S.mode.intValue != 0) S.sendEffect() else S.ble.send(S.colorFrame(), 2)
-        flashing = emptyList()
     }
 
     private val tick = object : Runnable {

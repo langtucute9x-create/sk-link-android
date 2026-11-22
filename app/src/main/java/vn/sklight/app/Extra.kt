@@ -285,18 +285,6 @@ fun PairPage() {
         }
         Spacer(Modifier.height(6.dp))
         T("Vị trí cửa đã học được lưu trong hộp điều khiển. Cài lại app hoặc đổi điện thoại thì hộp vẫn chạy đúng như đã học, app chỉ hiện \"Theo hộp\" vì không đọc lại được. Chỉ gán lại (tab Chào mừng, chạm hộp phụ trên sơ đồ xe) khi muốn đổi.", 12, color = SubTxt)
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FillBtn("Hỏi hộp vị trí cửa (thử)", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) {
-                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.probeDoor()
-            }
-            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
-                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("door", "SK Light, hỏi 7C 04: ${X.doorProbe} | ghép nối: ${if (X.pairRaw < 0) "?" else "%02X".format(X.pairRaw)} | 0D: ${S.fac?.joinToString(" ") { "%02X".format(it) } ?: "?"}"))
-                Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
-            }
-        }
-        if (X.doorProbe.isNotEmpty()) { Spacer(Modifier.height(6.dp)); T(X.doorProbe, 12, FontWeight.SemiBold, SubTxt) }
     }
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },
@@ -476,24 +464,25 @@ fun CarFuncPage() {
         Divider()
         SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
     }
+    // Theo app gốc: mỗi cảnh báo có 2 kiểu (ghi 0 / 1 vào nửa byte tương ứng); "đèn theo đèn xe" có 4 kiểu (2 bit cao của b2).
+    // (tên, vị trí byte, số bit dịch, mặt nạ, số kiểu) + điều kiện hiện
     val groups = listOf(
-        Triple("Kiểu cảnh báo cửa", 2, 4) to 3,
-        Triple("Kiểu cảnh báo radar", 2, 0) to 3,
-        Triple("Kiểu cảnh báo xi nhan", 5, 4) to 1,
-        Triple("Kiểu cảnh báo quá tốc độ", 5, 0) to 3
-    ).filter { (g, _) -> when (g.first) { "Kiểu cảnh báo cửa" -> ok(0, 0x08); "Kiểu cảnh báo radar" -> ok(0, 0x04); "Kiểu cảnh báo xi nhan" -> ok(0, 0x80); else -> ok(0, 0x01) } }
+        listOf("Kiểu cảnh báo xi nhan", 5, 4, 0xF0, 2) to ok(0, 0x80),
+        listOf("Kiểu cảnh báo cửa", 2, 4, 0xF0, 2) to ok(0, 0x08),
+        listOf("Kiểu cảnh báo radar", 2, 0, 0x0F, 2) to ok(0, 0x04),
+        listOf("Kiểu cảnh báo quá tốc độ", 5, 0, 0x0F, 2) to ok(0, 0x01),
+        listOf("Kiểu đèn theo đèn xe", 1, 6, 0xC0, 4) to ok(0, 0x10)
+    ).filter { it.second }.map { it.first }
     if (groups.isNotEmpty()) Card {
         T("Kiểu hiển thị", 15, FontWeight.Bold)
         val known = S.blk != null
-        for ((g, maxV) in groups) {
-            val (title, idx, shift) = g
-            val base = if (idx == 5 && shift == 4) 1 else 0   // xi nhan: app gốc dùng giá trị 1 và 2
+        for (g in groups) {
+            val title = g[0] as String; val idx = g[1] as Int; val shift = g[2] as Int; val mask = g[3] as Int; val n = g[4] as Int
             Spacer(Modifier.height(10.dp))
             T(title, 13, FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
-            val mask = 0x0F shl shift
             val cur = if (known) ((S.blk!![idx] and mask) shr shift) else -1
-            Grid((0..maxV).toList(), 4) { v, m -> Chip("Kiểu ${v + 1}", cur == v + base, m, 42.dp, 12) { if (!S.setBlk(idx, mask, (v + base) shl shift)) need(ctx) } }
+            Grid((0 until n).toList(), 4) { v, m -> Chip("Kiểu ${v + 1}", cur == v, m, 42.dp, 12) { if (!S.setBlk(idx, mask, v shl shift)) need(ctx) } }
         }
     }
     if (ok(0, 0x01)) Card {

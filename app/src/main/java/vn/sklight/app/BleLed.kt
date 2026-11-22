@@ -154,7 +154,7 @@ class BleLed(private val ctx: Context) {
                 val init = Protocol.init()
                 send(init[0])
                 if (S.on.value) S.sendBright()          // kết nối lại không bao giờ tự tắt đèn của hộp
-                main.postDelayed({ for (f in init.drop(1)) send(f) }, 700)
+                main.postDelayed({ S.syncUntil = System.currentTimeMillis() + 4000; send(Protocol.query(0x01)); for (f in init.drop(1)) send(f) }, 700)
             }, 800)
         }
     }
@@ -220,7 +220,8 @@ class BleLed(private val ctx: Context) {
                 sub == 0x03 && len >= 2 && v.size >= 5 -> X.onPair(v[4])
                 sub == 0x09 && len >= 9 && v.size >= 13 -> X.on09(IntArray(8) { v[4 + it] })
                 sub == 0x0F && len >= 3 && v.size >= 6 -> X.onCarCur(v[4], v[5])
-                sub == 0x02 && len >= 5 && v.size >= 8 -> S.m1 = v[4] and 0x0F
+                sub == 0x02 && len >= 5 && v.size >= 8 -> S.onEffect(v[4], v[5], v[6], v[7])
+                sub == 0x01 && len >= 8 && v.size >= 11 -> S.onColor(v[4], (v[5] shl 16) or (v[6] shl 8) or v[7], (v[8] shl 16) or (v[9] shl 8) or v[10])
                 sub == 0x00 && len >= 4 && v.size >= 7 -> S.onBright(v[4], v[5], v[6])
             }
         }

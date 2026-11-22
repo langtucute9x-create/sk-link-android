@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
+    const val VER = "0.5.29"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -195,6 +196,35 @@ object S {
     fun onConnected() {}
 
     // ---------- nhận từ hộp ----------
+    /** Chỉ lấy màu và chế độ từ hộp trong vài giây sau khi kết nối (để app hiện đúng cái hộp đang chạy); ngoài lúc đó bỏ qua để không đè lên thao tác của người dùng. */
+    @Volatile var syncUntil = 0L
+    private fun syncing() = System.currentTimeMillis() < syncUntil && !Auto.running() && alertKind.intValue == 0
+
+    /** Trả lời 7C 01: cờ (08 = đồng nhất) + màu khu 1 + màu khu 2. */
+    fun onColor(flag: Int, c1: Int, c2: Int) {
+        if (!syncing()) return
+        fun fix(c: Int) = if (invert.value) c xor 0xFFFFFF else c
+        fun dark(c: Int) = ((c shr 16) and 255) + ((c shr 8) and 255) + (c and 255) <= 3      // 00 00 00 / 01 01 01 = tắt, không lấy làm màu
+        if (flag and 0x08 != 0) { if (!dark(c1)) { col[0] = fix(c1); czone.intValue = 0 } }
+        else {
+            if (!dark(c1)) col[1] = fix(c1)
+            if (!dark(c2)) col[2] = fix(c2)
+            if (czone.intValue == 0) czone.intValue = 1
+        }
+    }
+
+    /** Trả lời 7C 02: (độ nhạy << 4 | mode1) | id hiệu ứng | kiểu con | tốc độ. */
+    fun onEffect(b1: Int, id: Int, param: Int, spd: Int) {
+        m1 = b1 and 0x0F
+        if (!syncing()) return
+        val e = Effects.byId(id) ?: return
+        if (id >= 100) return
+        mode.intValue = id
+        if (e.subs.isNotEmpty()) sub[id] = (param - e.base).coerceIn(0, e.subs.size - 1)
+        if (spd in 1..10) speed.intValue = spd
+        sens.intValue = (b1 shr 4) and 7
+    }
+
     fun onBright(flag: Int, b1: Int, b2: Int) {
         on.value = (flag and 0x40) != 0
         if ((flag and 0x08) != 0) { bri[0] = b1.coerceIn(0, 100) }
@@ -228,8 +258,7 @@ object S {
 
     // ---------- đèn ----------
     fun setPower(v: Boolean) {
-        on.value = v
-        if (!v) Auto.stop()
+        on.value = v                                          // chế độ tự tạo tự nghỉ khi tắt và chạy lại khi bật (xem Auto.step)
         if (v) sendBright() else ble.send(Protocol.bright(false, true, 100, 100), 1, true)
         saveSettings()
     }
@@ -252,13 +281,14 @@ object S {
         else Protocol.color(false, col[1], col[2], invert.value)
 
     fun setColor(rgb: Int) {
+        if (Auto.running() && Auto.usesBase()) { col[czone.intValue] = rgb; on.value = true; sceneSel.intValue = -1; return }   // chế độ tự tạo chạy tiếp với màu mới
         if (Auto.running()) { Auto.leave(); if (mode.intValue >= 100) mode.intValue = 0 }
         col[czone.intValue] = rgb
         on.value = true; sceneSel.intValue = -1
         ble.send(colorFrame(), 2, true)
     }
 
-    fun setColorZone(z: Int) { czone.intValue = z; ble.send(colorFrame(), 2, true) }
+    fun setColorZone(z: Int) { czone.intValue = z; if (!Auto.running()) ble.send(colorFrame(), 2, true) }
 
     fun addCustom() {
         val c = col[czone.intValue]
@@ -320,8 +350,9 @@ object S {
             c.startForegroundService(Intent(c, KeepService::class.java))
         } catch (_: Exception) {}
     }
-    fun setSpeed(v: Int) { if (v != speed.intValue) { speed.intValue = v; sendEffect() } }
-    fun setSens(v: Int) { if (v != sens.intValue) { sens.intValue = v; sendEffect() } }
+    // chế độ tự tạo (id >= 100) đọc tốc độ trực tiếp, không cần gửi lại lệnh hiệu ứng
+    fun setSpeed(v: Int) { if (v != speed.intValue) { speed.intValue = v; if (mode.intValue < 100) sendEffect() } }
+    fun setSens(v: Int) { if (v != sens.intValue) { sens.intValue = v; if (mode.intValue < 100) sendEffect() } }
 
     /** Chế độ màu vùng 2: đọc-sửa-ghi khối 0D, chỉ đổi bit 3-4 của b1. Trả về false nếu chưa đọc được khối từ hộp (không gửi mò). */
     fun setZ2(v: Int): Boolean {
@@ -375,7 +406,7 @@ object S {
         if (seg >= 2) for (i in 0 until 4) if (boxPos[i] == seg) boxPos[i] = -1
         boxPos[n - 1] = seg
         pickBox.intValue = 0
-        ble.send(Protocol.door(n, if (seg >= 2) seg - 1 else 0x0F))
+        ble.send(Protocol.door(n, if (seg >= 2) seg - 1 else 0))      // "Khác" = mã 0, đúng như app gốc
         saveSettings()
     }
 
@@ -383,7 +414,7 @@ object S {
     fun unassignBox(n: Int) {
         boxPos[n - 1] = 0
         pickBox.intValue = 0
-        ble.send(Protocol.door(n, 0x0F))
+        ble.send(Protocol.door(n, 0))
         saveSettings()
     }
 

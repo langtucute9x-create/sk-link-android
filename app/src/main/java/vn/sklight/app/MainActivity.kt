@@ -629,11 +629,10 @@ fun Strip(modifier: Modifier = Modifier) {
     val k = S.alertKind.intValue
     val ph = S.alertPhase.value
     if (!S.on.value) { l = SolidColor(Color(0xFFD5D9E3)); r = l }
-    else if (k == 3) { l = SolidColor(if (ph) ALERT_RED else DARK); r = l }
-    else if (k != 0) {
-        val c = SolidColor(if (ph) AMBER else DARK)
-        if (AlertBridge.lit(2) || AlertBridge.lit(4)) l = c
-        if (AlertBridge.lit(3) || AlertBridge.lit(5)) r = c
+    else if (k != 0) {          // hai thanh = khu vực 1 và khu vực 2
+        val c = SolidColor(if (ph) (if (k == 3) ALERT_RED else AMBER) else DARK)
+        if (AlertBridge.lit(1)) l = c
+        if (AlertBridge.lit(2)) r = c
     } else if (S.mode.intValue != 0) {
         val e = Effects.byId(S.mode.intValue)
         val name = (if (e != null) e.subs.getOrNull(S.sub.getOrElse(e.id) { 0 }) ?: "" else "").lowercase()
@@ -715,7 +714,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         if (k != 0) {
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 9.dp)) {
-                T(when (k) { 1 -> "Sắp rẽ trái: các cửa bên trái đang nháy"; 2 -> "Sắp rẽ phải: các cửa bên phải đang nháy"; 3 -> "Quá tốc độ: đang nháy đỏ"; else -> "Đang thử: ${SEG_NAMES[k - 10]}" }, 13, FontWeight.Bold)
+                T(when (k) { 1 -> "Sắp rẽ trái: đèn đang nháy vàng"; 2 -> "Sắp rẽ phải: đèn đang nháy vàng"; else -> "Quá tốc độ: đang nháy đỏ" }, 13, FontWeight.Bold, AccentText)
             }
         }
     }
@@ -724,7 +723,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     Card {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo rẽ", 16)
         Spacer(Modifier.height(8.dp))
-        SwitchRow("Nháy đèn khi sắp rẽ", "Rẽ bên nào thì các cửa bên đó nháy", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Nháy đèn khi sắp rẽ", "Cả xe nháy vàng khi sắp tới chỗ rẽ trái hoặc rẽ phải", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
             T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(6.dp)).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(6.dp)).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
@@ -733,14 +732,6 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         }
         SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, tint(0.2f), Pink,
             Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp)
-        Spacer(Modifier.height(14.dp))
-        Column(Modifier.fillMaxWidth().border(1.dp, Bd, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row { T("Bên trái", 13, FontWeight.Bold, modifier = Modifier.width(78.dp)); T("Cửa trước trái (${boxText(2)}), cửa sau trái (${boxText(4)})", 13, color = SubTxt) }
-            Row { T("Bên phải", 13, FontWeight.Bold, modifier = Modifier.width(78.dp)); T("Cửa trước phải (${boxText(3)}), cửa sau phải (${boxText(5)})", 13, color = SubTxt) }
-        }
-        Box(Modifier.padding(top = 10.dp).heightIn(min = 44.dp).clickable(onClick = toWelcome), contentAlignment = Alignment.CenterStart) {
-            T("Gán hộp phụ vào cửa ở sơ đồ xe", 13, FontWeight.Bold, Pink)
-        }
     }
 
 }
@@ -756,21 +747,8 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         GroupTitle(Icons.Filled.AutoAwesome, "Thử nháy 4 giây", 16)
         Spacer(Modifier.height(12.dp))
         Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
-        Spacer(Modifier.height(12.dp))
-        Grid(listOf(2, 3, 4, 5), 2, 8.dp) { seg, m ->
-            val on = AlertBridge.lit(seg) && S.alertPhase.value
-            val red = k == 3
-            Column(
-                m.heightIn(min = 46.dp).clip(RoundedCornerShape(8.dp)).background(if (on) (if (red) ALERT_RED else AMBER) else ChipBg)
-                    .border(1.dp, Bd, RoundedCornerShape(8.dp)).clickable { AlertBridge.test(10 + seg) }.padding(vertical = 5.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
-            ) {
-                T(SEG_NAMES[seg], 12, FontWeight.Bold, if (on && red) Color.White else Txt)
-                T(boxText(seg), 10, color = if (on && red) Color.White else if (on) Txt else Grey)
-            }
-        }
         Spacer(Modifier.height(8.dp))
-        T("Chạm một cửa để thử riêng cửa đó. Rẽ trái, rẽ phải và từng cửa dùng lệnh nháy của hộp phụ; quá tốc độ thì cả xe nháy đỏ.", 11, color = Grey)
+        T("Rẽ trái, rẽ phải: cả xe nháy vàng. Quá tốc độ: nháy đỏ theo khu chọn bên dưới. Hết 4 giây đèn trở về như cũ.", 11, color = Grey)
     }
 
     // ---- cảnh báo quá tốc độ ----
@@ -816,7 +794,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f), openAccess)
             OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.4, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
             }
         }
@@ -853,7 +831,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.12, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
+            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
             Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
         }
     }
@@ -905,7 +883,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
     }
-    T("SK Light 0.5.28 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light ${S.VER} (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

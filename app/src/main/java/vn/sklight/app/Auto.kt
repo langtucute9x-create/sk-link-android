@@ -20,6 +20,10 @@ object Auto {
     private val tick = object : Runnable { override fun run() { step() } }
 
     fun running() = main.intValue != 0 || z2.intValue != 0
+    private var wasConn = false
+
+    /** Chế độ lấy màu đang chọn làm gốc: đổi màu thì chế độ vẫn chạy với màu mới. */
+    fun usesBase() = main.intValue == 101 || main.intValue == 102 || z2.intValue == 1 || z2.intValue == 2 || z2.intValue == 4
 
     /** Bắt đầu chế độ tự tạo [id]: đưa hộp về Đơn sắc để lệnh màu có tác dụng. */
     fun startMain(id: Int) {
@@ -29,13 +33,15 @@ object Auto {
         kick()
     }
 
+    /** Kiểu riêng cho khu vực 2. Chế độ màu vùng 2 của hộp (tự động / nhấp nháy) phải về Tĩnh, nếu không hộp sẽ đè lên màu app gửi. */
     fun startZ2(k: Int) {
         if (main.intValue != 0) { main.intValue = 0; if (S.mode.intValue >= 100) S.mode.intValue = 0 }
+        if (S.z2.intValue != 0) S.setZ2(0)
         z2.intValue = k
         kick()
     }
 
-    private fun kick() { t0 = System.currentTimeMillis(); h.removeCallbacks(tick); h.post(tick) }
+    private fun kick() { t0 = System.currentTimeMillis(); wasConn = S.connected.value; h.removeCallbacks(tick); h.post(tick) }
 
     /** Rời chế độ tự tạo vì sắp gửi lệnh khác (không gửi lại màu). */
     fun leave() {
@@ -57,7 +63,13 @@ object Auto {
 
     private fun step() {
         if (!running()) return
-        if (!S.connected.value) { leave(); return }
+        // mất kết nối hoặc đang tắt đèn: giữ chế độ, chờ rồi chạy tiếp
+        if (!S.connected.value) { wasConn = false; h.postDelayed(tick, 1000); return }
+        if (!wasConn) {          // vừa nối lại: hộp có thể đang ở hiệu ứng khác
+            wasConn = true
+            if (main.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
+        }
+        if (!S.on.value) { h.postDelayed(tick, 500); return }
         val el = System.currentTimeMillis() - t0
         val sp = 0.4 + S.speed.intValue * 0.2
         val t = (el * sp).toLong()
@@ -74,9 +86,9 @@ object Auto {
                 106 -> { val f = wave(t, 8000); a = mix(0x0040FF, 0x00FFD0, f); b = mix(0x00FFD0, 0x0040FF, f) }
                 107 -> {
                     val cols = intArrayOf(0xFF6A00, 0xFF2CAA, 0x8E5CFF)
-                    val p = (t % 9000).toInt(); val i = p / 3000; val i2 = ((p + 4500) % 9000) / 3000
+                    val p = (t % 9000).toInt(); val i = p / 3000
                     a = mix(cols[i], cols[(i + 1) % 3], (p % 3000) / 3000f)
-                    val p2 = (p + 4500) % 9000
+                    val p2 = (p + 4500) % 9000; val i2 = p2 / 3000
                     b = mix(cols[i2], cols[(i2 + 1) % 3], (p2 % 3000) / 3000f)
                 }
             }
@@ -88,7 +100,8 @@ object Auto {
                 4 -> { val x = base1(); b = ((255 - ((x shr 16) and 255)) shl 16) or ((255 - ((x shr 8) and 255)) shl 8) or (255 - (x and 255)) }
             }
         }
-        if (S.alertKind.intValue == 0) S.ble.send(Protocol.color(uni, a, b, S.invert.value), 2, true)
+        // Không đánh dấu là "lệnh đặt": nếu đánh dấu, mọi câu trả lời của hộp bị bỏ qua suốt lúc chế độ này chạy và các trang Cài đặt không đọc được hộp.
+        if (S.alertKind.intValue == 0) S.ble.send(Protocol.color(uni, a, b, S.invert.value), 2)
         h.postDelayed(tick, 200)
     }
 
