@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.graphics.asImageBitmap
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -774,6 +775,11 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
         Kv("Giới hạn đọc được", if (S.speedLimit.intValue > 0) "${S.speedLimit.intValue} km/h" else "Chưa có")
         if (S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
+        S.signThumb.value?.let { bmp ->
+            Spacer(Modifier.height(6.dp))
+            T("Ảnh biển app đang đọc:", 11, color = Grey)
+            androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
+        }
         Spacer(Modifier.height(6.dp))
         T("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở phần Đọc chữ trên màn hình bên dưới.", 11, color = Grey)
     }

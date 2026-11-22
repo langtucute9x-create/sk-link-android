@@ -95,7 +95,13 @@ class ScreenReader : AccessibilityService() {
             lastShot = now
             shoot(pkg, f.arrow, f.sign, f.road, dist)
         }
-        S.screenInfo.value = "khoảng cách ${dist} m, đường \"${f.road}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ ${S.appSpeed.intValue}"
+        lastDist = dist
+        info()
+    }
+
+    private var lastDist = -1
+    private fun info() {
+        S.screenInfo.value = "khoảng cách ${lastDist} m, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ ${S.appSpeed.intValue}"
     }
 
     private fun pushNav(pkg: String, dist: Int, road: String) {
@@ -120,7 +126,7 @@ class ScreenReader : AccessibilityService() {
                     if (bmp == null) return
                     if (arrow != null) crop(bmp, arrow)?.let { c ->
                         val d = NavParser.analyseIcon(Bitmap.createScaledBitmap(c, 64, 64, true), NavState())
-                        if (d != '?') { dirNow = d; dirRoad = road; pushNav(pkg, dist, road) }
+                        if (d != '?') { dirNow = d; dirRoad = road; pushNav(pkg, dist, road); info() }
                     }
                     if (sign != null) {
                         S.ocrNote.value = "vùng biển ${sign.width()}x${sign.height()}, màn hình ${bmp.width}x${bmp.height}"
@@ -142,10 +148,11 @@ class ScreenReader : AccessibilityService() {
             val c = crop(bmp, tries[i]) ?: return attempt(i + 1)
             val k = (240f / c.height).coerceIn(1f, 4f)
             val big = Bitmap.createScaledBitmap(c, (c.width * k).toInt(), (c.height * k).toInt(), true)
+            if (i == 0) S.signThumb.value = big
             recognizer.process(InputImage.fromBitmap(big, 0)).addOnSuccessListener { t ->
                 val v = Regex("\\d{2,3}").findAll(t.text).mapNotNull { it.value.toIntOrNull() }.firstOrNull { it in 5..130 }
                 if (v != null) {
-                    S.speedLimit.intValue = v; AlertBridge.refresh()
+                    S.speedLimit.intValue = v; AlertBridge.refresh(); info()
                     S.ocrNote.value = "đọc được $v (lần ${i + 1})"
                 } else {
                     S.ocrNote.value += " · lần ${i + 1} thấy \"${t.text.replace('\n', ' ').take(20)}\""
