@@ -377,10 +377,9 @@ fun FactoryPage() {
         }
         Spacer(Modifier.height(6.dp))
         T("Đổi phiên bản có thể làm hộp hiện màu khác, chỉ đổi khi biết hộp thuộc loại nào.", 12, color = SubTxt)
-        Divider(10.dp, 0.dp)
-        SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
     }
     Card {
+        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
         Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc thông tin chẩn đoán từ hộp") { S.subPage.intValue = 10 }
     }
     Card {
@@ -460,7 +459,8 @@ fun CarFuncPage() {
             val (i, mask, title) = k
             Divider()
             SwitchRow(title, sub, S.blkBit(i, mask)) { if (!S.setBlk(i, mask, if (it) mask else 0)) need(ctx) }
-        }
+        }        Divider()
+        SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
     }
     val groups = listOf(
         Triple("Kiểu cảnh báo cửa", 2, 4) to 3,
@@ -524,7 +524,7 @@ fun CarModelPage() {
     var ask by remember { mutableIntStateOf(-1) }        // (hãng << 8) | dòng đang hỏi xác nhận
     LaunchedEffect(Unit) { if (S.connected.value) X.readCars() }
     LaunchedEffect(X.carTick) { delay(1500); X.carLoading = false }      // hết 1,5 giây không có khung mới = xong, như app gốc
-    BackRow(0, "Cài đặt")
+    BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Chọn loại xe", 16)
         Spacer(Modifier.height(6.dp))
