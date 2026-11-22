@@ -43,6 +43,16 @@
             </intent-filter>
         </service>
 
+        <!-- Đọc chữ trên màn hình app dẫn đường không có thông báo (chỉ chạy khi người dùng tự bật trong Hỗ trợ tiếp cận) -->
+        <service android:name=".ScreenReader" android:exported="true"
+            android:label="SK Light đọc chữ trên màn hình"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/screen_reader" />
+        </service>
+
         <!-- Giữ kết nối với hộp đèn khi app không mở, và giữ nút nổi -->
         <service android:name=".KeepService" android:exported="false" android:foregroundServiceType="connectedDevice" />
         <receiver android:name=".BootReceiver" android:exported="true">

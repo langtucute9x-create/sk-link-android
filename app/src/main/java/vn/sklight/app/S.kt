@@ -73,6 +73,10 @@ object S {
     val navStreet = mutableStateOf("")
     val navApp = mutableStateOf("")
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
+    val screenOn = mutableStateOf(false)                  // đang đọc chữ trên màn hình (tự tắt sau 5 phút)
+    @Volatile var screenUntil = 0L
+    val screenPkg = mutableStateOf("")                    // app đang hiện trên màn hình lần đọc gần nhất
+    val screenLines = mutableStateListOf<String>()        // chữ đọc được, để kiểm tra
     val signSeen = mutableStateOf("")                     // con số km/h thấy trong thông báo (nếu có)
     val alertKind = mutableIntStateOf(0)                  // xem AlertBridge
     val alertPhase = mutableStateOf(false)                // pha sáng / tối của nhịp nháy

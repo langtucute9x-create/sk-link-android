@@ -788,6 +788,40 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             }
         }
     }
+
+    // ---- đọc chữ trên màn hình (app không có thông báo) ----
+    Card {
+        GroupTitle(Icons.Filled.Navigation, "Đọc chữ trên màn hình (thử)", 16)
+        Spacer(Modifier.height(8.dp))
+        T("Dành cho app dẫn đường không có thông báo như Gofa. Bật quyền, bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. Chữ chỉ đọc trên máy, không gửi đi đâu, tự tắt sau 5 phút.", 12, color = Grey)
+        Spacer(Modifier.height(8.dp))
+        var accOn by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
+        Kv("Quyền Hỗ trợ tiếp cận", if (accOn) "Đã bật" else "Chưa bật")
+        Kv("Đang đọc", if (S.screenOn.value) "Có" else "Không")
+        Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)
+        Spacer(Modifier.height(8.dp))
+        if (S.screenLines.isEmpty()) T("Chưa đọc được chữ nào.", 12, color = Grey)
+        for (line in S.screenLines.take(40)) {
+            Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlineBtn("Mở cài đặt quyền", Modifier.weight(1f)) {
+                try { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {}
+            }
+            OutlineBtn(if (S.screenOn.value) "Dừng đọc" else "Bắt đầu đọc", Modifier.weight(1f)) {
+                if (S.screenOn.value) S.screenOn.value = false
+                else { S.screenUntil = System.currentTimeMillis() + 300_000; S.screenLines.clear(); S.screenOn.value = true }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
+            val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light 0.5.10, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
+            Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 // ===================== TRANG CÀI ĐẶT =====================
