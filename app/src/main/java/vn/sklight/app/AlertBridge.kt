@@ -56,10 +56,6 @@ object AlertBridge {
     /** Thử nháy trong 4 giây. */
     fun test(k: Int) {
         if (!S.connected.value) { toast("Chưa kết nối hộp đèn."); return }
-        if (k != 3 && boxesFor(k).isEmpty()) {
-            toast("Chưa gán hộp phụ nào vào cửa này. Gán ở Sơ đồ xe trong trang Chào mừng trước.")
-            return
-        }
         testKind = k; testUntil = System.currentTimeMillis() + 4000
         evaluate()
         h.postDelayed({ evaluate() }, 4100)
@@ -103,15 +99,8 @@ object AlertBridge {
         kind = k
         S.alertKind.intValue = k
         if (k == 0) return
-        if (k == 3) {
-            if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
-        } else {
-            flashing = boxesFor(k)
-            idx = 0
-            // Lệnh "04 | hộp << 4 | 0" của hộp là lệnh nháy để nhận biết MỘT hộp: gửi cho hai hộp thì chỉ hộp gửi sau nháy.
-            // Nên các hộp cùng bên được gửi luân phiên trong mỗi nhịp.
-            flashing.firstOrNull()?.let { S.ble.send(Protocol.door(it, 0)) }
-        }
+        // Không dùng lệnh cấu hình cửa (04) để nháy: nó làm lệch đồng bộ hộp với xe. Chỉ dùng lệnh màu như quá tốc độ.
+        if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         S.alertPhase.value = false
         h.post(tick)
     }
@@ -120,11 +109,7 @@ object AlertBridge {
     private fun stop() {
         h.removeCallbacks(tick)
         S.alertPhase.value = false
-        if (kind == 3) {
-            if (S.mode.intValue != 0) S.sendEffect() else S.ble.send(S.colorFrame(), 2)
-        } else {
-            for (n in flashing) { val seg = S.boxPos[n - 1]; if (seg >= 2) S.ble.send(Protocol.door(n, seg - 1)) }
-        }
+        if (S.mode.intValue != 0) S.sendEffect() else S.ble.send(S.colorFrame(), 2)
         flashing = emptyList()
     }
 
@@ -133,21 +118,16 @@ object AlertBridge {
             if (kind == 0) return
             val on = !S.alertPhase.value
             S.alertPhase.value = on
-            if (kind == 3) {
-                val v = if (on) 0xFF0000 else 0x000000
-                // Chỉ khu được chọn (mặc định khu 1) nháy đỏ, khu còn lại giữ màu đang có
-                val uni = S.czone.intValue == 0
-                val b1 = if (uni) S.col[0] else S.col[1]
-                val b2 = if (uni) S.col[0] else S.col[2]
-                val z = S.speedZone.intValue
-                val c1 = if (z == 0 || z == 1) v else b1
-                val c2 = if (z == 0 || z == 2) v else b2
-                S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
-            } else if (flashing.size > 1) {
-                idx = (idx + 1) % flashing.size
-                S.ble.send(Protocol.door(flashing[idx], 0))
-            }
-            h.postDelayed(this, if (kind == 3) 250L else if (flashing.size > 1) 700L else 450L)
+            // Quá tốc độ: khu được chọn nháy đỏ. Xi nhan: cả hai khu nháy vàng (hộp chưa phân biệt trái/phải qua lệnh màu).
+            val v = if (kind == 3) (if (on) 0xFF0000 else 0x000000) else (if (on) 0xFFA000 else 0x000000)
+            val uni = S.czone.intValue == 0
+            val b1 = if (uni) S.col[0] else S.col[1]
+            val b2 = if (uni) S.col[0] else S.col[2]
+            val z = if (kind == 3) S.speedZone.intValue else 0
+            val c1 = if (z == 0 || z == 1) v else b1
+            val c2 = if (z == 0 || z == 2) v else b2
+            S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
+            h.postDelayed(this, if (kind == 3) 250L else 450L)
         }
     }
 

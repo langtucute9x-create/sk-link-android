@@ -193,7 +193,10 @@ class BleLed(private val ctx: Context) {
                 sub == 0x08 && len >= 4 && v.size >= 7 -> S.on08(v[4], v[5], v[6])
                 sub == 0x06 && len >= 7 && v.size >= 10 -> S.onLeds(IntArray(minOf(16, len - 1, v.size - 4)) { v[4 + it] })
                 sub == 0x0D && len >= 3 && v.size >= 6 -> S.onFactory(v[4], v[5])
-                sub == 0x07 && len >= 4 && v.size >= 7 -> S.p07 = intArrayOf(v[4], v[5], v[6])
+                sub == 0x07 && len >= 4 && v.size >= 7 -> { S.p07 = intArrayOf(v[4], v[5], v[6]); X.on07() }
+                sub == 0x03 && len >= 2 && v.size >= 5 -> X.onPair(v[4])
+                sub == 0x09 && len >= 9 && v.size >= 13 -> X.on09(IntArray(8) { v[4 + it] })
+                sub == 0xAC -> X.onDiag(d)
                 sub == 0x02 && len >= 5 && v.size >= 8 -> S.m1 = v[4] and 0x0F
                 sub == 0x00 && len >= 4 && v.size >= 7 -> S.onBright(v[4], v[5], v[6])
             }
