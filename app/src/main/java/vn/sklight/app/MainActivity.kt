@@ -307,7 +307,9 @@ fun LedMain() {
             Row {
                 listOf("Màu tĩnh", "Màu tự động", "Màu nhấp nháy").forEachIndexed { i, t ->
                     val on = S.z2.intValue == i
-                    Row(Modifier.weight(1f).heightIn(min = 40.dp).clickable { S.setZ2(i) }, verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.weight(1f).heightIn(min = 40.dp).clickable {
+                        if (!S.setZ2(i)) { S.refreshBlocks(); Toast.makeText(S.app, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show() }
+                    }, verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
                             if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
                         }
@@ -473,9 +475,9 @@ fun WelcomeTop() {
         SwitchRow("Hiệu ứng chào mừng", "Bật/Tắt", S.blkBit(1, 0x04)) { if (!S.setBlk(1, 0x04, if (it) 0x04 else 0)) { S.refreshBlocks(); needBlock() } }
         Divider()
         // Chỉ bật được khi Hiệu ứng chào mừng đang bật. Tắt = cả 5 hộp chạy cùng lúc, bật = chào lần lượt từng cửa.
-        SwitchRow("Chào xung quanh xe", "Hiệu ứng chào xung quanh xe", S.aroundOn.value, enabled = S.blkBit(1, 0x04)) {
-            S.aroundOn.value = it
-            Toast.makeText(ctx, L.tr("Công tắc này chưa gửi lệnh tới hộp (chưa biết mã lệnh)."), Toast.LENGTH_SHORT).show()
+        // Bit 0x10 của b4 khối 05 = công tắc "liền mạch" trong app gốc của hộp (chưa kiểm chứng trên hộp thật).
+        SwitchRow("Chào xung quanh xe", "Hiệu ứng chào xung quanh xe", S.blkBit(3, 0x10), enabled = S.blkBit(1, 0x04)) {
+            if (!S.setBlk(3, 0x10, if (it) 0x10 else 0)) { S.refreshBlocks(); needBlock() }
         }
     }
     Card {

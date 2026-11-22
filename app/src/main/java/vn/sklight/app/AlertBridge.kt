@@ -94,7 +94,7 @@ object AlertBridge {
         S.alertKind.intValue = k
         if (k == 0) return
         if (k == 3) {
-            if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.z2.intValue, 0, 0, S.speed.intValue), 3)
+            if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         } else {
             flashing = boxesFor(k)
             for (n in flashing) S.ble.send(Protocol.door(n, 0))

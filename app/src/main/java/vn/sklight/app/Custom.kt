@@ -24,7 +24,6 @@ import kotlin.math.cos
  */
 object SeqTest {
     val kind = mutableIntStateOf(0)                 // 0 không chạy, 1 chuyển dần 3 màu, 2 thở một màu, 3 hai khu vực so le, 4 thở riêng khu vực 2, 5 chớp riêng khu vực 2
-    val probe = mutableIntStateOf(-1)               // số chế độ khu vực 2 vừa gửi thử cho hộp (0..15), -1 = chưa gửi
     val rate = mutableIntStateOf(1)                 // vị trí trong RATES
     val sent = mutableIntStateOf(0)
     val left = mutableIntStateOf(0)                 // giây còn lại
@@ -41,7 +40,7 @@ object SeqTest {
         if (!S.connected.value) { Toast.makeText(S.app, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show(); return }
         h.removeCallbacks(tick)
         // kiểu 1..3: đang chạy hiệu ứng thì đưa hộp về Đơn sắc để lệnh màu có tác dụng. Kiểu 4, 5 để nguyên khu vực 1 đang chạy gì thì chạy.
-        if (k <= 3 && S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.z2.intValue, 0, 0, S.speed.intValue), 3)
+        if (k <= 3 && S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         kind.intValue = k
         sent.intValue = 0
         left.intValue = SECS
@@ -93,22 +92,6 @@ object SeqTest {
         h.postDelayed(tick, (1000 / RATES[rate.intValue.coerceIn(0, RATES.size - 1)]).toLong())
     }
 
-    /** Gửi thử số chế độ [v] (0..15) của khu vực 2 cho hộp, giữ nguyên chế độ đang chạy của khu vực 1. */
-    fun probeZone2(v: Int) {
-        if (!S.connected.value) { Toast.makeText(S.app, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show(); return }
-        stop()
-        val e = Effects.byId(S.mode.intValue)
-        val param = if (e != null && e.subs.isNotEmpty()) e.base + S.sub[e.id] else 0
-        S.ble.send(Protocol.effect(S.sens.intValue, v, S.mode.intValue, param, S.speed.intValue), 3, true)
-        probe.intValue = v
-    }
-
-    /** Trả chế độ khu vực 2 về như đang đặt trong trang Đèn. */
-    fun probeRestore() {
-        probe.intValue = -1
-        try { if (S.connected.value) S.sendEffect() } catch (e: Exception) {}
-    }
-
     /** Sóng 0..1..0 với chu kỳ [period] ms. */
     private fun wave(el: Long, period: Int): Float = (0.5 - 0.5 * cos(2 * Math.PI * (el % period) / period)).toFloat()
 
@@ -121,7 +104,7 @@ object SeqTest {
 // ===================== THỬ CHẾ ĐỘ TỰ TẠO (bản thử) =====================
 @Composable
 fun CustomTestPage() {
-    DisposableEffect(Unit) { onDispose { SeqTest.stop(); if (SeqTest.probe.intValue >= 0) SeqTest.probeRestore() } }
+    DisposableEffect(Unit) { onDispose { SeqTest.stop() } }
     BackToSettings()
     Card {
         GroupTitle(Icons.Filled.Science, "Thử chế độ tự tạo", 16)
@@ -157,15 +140,6 @@ fun CustomTestPage() {
     Card {
         GroupTitle(Icons.Filled.Science, "Thử riêng khu vực 2", 16)
         Spacer(Modifier.height(10.dp))
-        T("Chế độ có sẵn trong hộp", 13, FontWeight.Bold, SubTxt)
-        Spacer(Modifier.height(6.dp))
-        T("Hộp có một ô số dành riêng cho chế độ của khu vực 2. App gốc chỉ dùng 0 (tĩnh), 1 (tự động), 2 (nhấp nháy). Bấm từng số và nhìn khu vực 2 xem hộp còn chế độ nào khác không, ví dụ thở.", 12, color = Grey)
-        Spacer(Modifier.height(8.dp))
-        Grid((0..15).toList(), 6) { v, m -> Chip("$v", SeqTest.probe.intValue == v, m, 42.dp, 13) { SeqTest.probeZone2(v) } }
-        Spacer(Modifier.height(8.dp))
-        if (SeqTest.probe.intValue >= 0) { T("Đã gửi số ${SeqTest.probe.intValue} cho khu vực 2", 12, FontWeight.SemiBold, SubTxt); Spacer(Modifier.height(8.dp)) }
-        Chip("Trả về như cũ", false, Modifier.fillMaxWidth(), 44.dp, 13) { SeqTest.probeRestore() }
-        Spacer(Modifier.height(16.dp))
         T("App tự điều khiển", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(6.dp))
         T("App giữ màu khu vực 1, chỉ đổi màu khu vực 2 trong 20 giây. Thử cả lúc khu vực 1 để Đơn sắc và lúc đang chạy một hiệu ứng. Số lệnh mỗi giây lấy theo ô chọn ở thẻ trên.", 12, color = Grey)

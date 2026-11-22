@@ -37,7 +37,7 @@ object Protocol {
         return intArrayOf(r, g, b)
     }
 
-    /** Hiệu ứng: 02 | (độ nhạy << 4) | mode1 | id hiệu ứng | kiểu con | tốc độ. mode1 = chế độ màu vùng 2 (chưa kiểm chứng). */
+    /** Hiệu ứng: 02 | (độ nhạy << 4) | mode1 | id hiệu ứng | kiểu con | tốc độ. mode1: app gốc không bao giờ đổi, gửi lại đúng giá trị đọc từ hộp. */
     fun effect(sens: Int, mode1: Int, id: Int, param: Int, speed: Int) =
         frame(T_WRITE, 0x02, ((sens and 0x0F) shl 4) or (mode1 and 0x0F), id, param, speed)
 
@@ -55,10 +55,16 @@ object Protocol {
     fun door(box: Int, code: Int) = frame(T_WRITE, 0x04, ((box and 0x0F) shl 4) or (code and 0x0F))
     fun doorReset() = frame(T_WRITE, 0x04, 0xFF)
 
+    /**
+     * Khối 0D (cài đặt nhà máy), luôn gửi đủ 2 byte đọc từ hộp, chỉ đổi đúng bit cần đổi.
+     * b1 bit 3-4 = chế độ màu vùng 2 (0 tĩnh, 1 tự động, 2 nhấp nháy); b2 4 bit thấp = số hộp phụ.
+     */
+    fun factory(b1: Int, b2: Int) = frame(T_WRITE, 0x0D, b1, b2)
+
     fun init() = listOf(
         frame(0x81, 0x01),
         query(0x90), query(0x8F), query(0x00), query(0x02), query(0x03),
-        query(0x05), query(0x06), query(0x08), query(0x09), query(0x0A),
+        query(0x05), query(0x06), query(0x08), query(0x09), query(0x0A), query(0x0D),
         frame(T_READ, 0x9C, 0x01)
     )
 }

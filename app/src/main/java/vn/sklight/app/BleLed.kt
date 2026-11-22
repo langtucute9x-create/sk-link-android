@@ -25,6 +25,7 @@ class BleLed(private val ctx: Context) {
     private var pumping = false
     private var wantMac: String? = null
     private var scanning = false
+    private var disc = false                      // đã gọi dò dịch vụ cho kết nối hiện tại chưa
     @Volatile var lastSetMs = 0L
 
     private fun u(s: String) = UUID.fromString("0000$s-0000-1000-8000-00805f9b34fb")
@@ -66,6 +67,7 @@ class BleLed(private val ctx: Context) {
         S.userOff = false
         wantMac = mac
         S.savedMac = mac
+        S.blk = null; S.blkVer.intValue++; S.fac = null; S.m1 = 0          // cài đặt đọc từ hộp trước không dùng cho lần kết nối mới (có thể là hộp khác)
         val dev = try { adapter?.getRemoteDevice(mac) } catch (e: Exception) { null } ?: return
         closeGatt()
         S.conn.value = "Đang kết nối…"
@@ -84,8 +86,13 @@ class BleLed(private val ctx: Context) {
     private val cb = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                main.post { S.conn.value = "Đang dò dịch vụ…" }
-                g.discoverServices()
+                // Xin tăng cỡ gói như app gốc của hộp (mặc định chỉ 20 byte mỗi lần ghi, lệnh số LED dài 21 byte sẽ bị cắt).
+                main.post {
+                    S.conn.value = "Đang dò dịch vụ…"
+                    disc = false
+                    val asked = try { g.requestMtu(247) } catch (_: Exception) { false }
+                    if (asked) main.postDelayed({ discover(g) }, 1500) else discover(g)      // hộp không trả lời thì vẫn đi tiếp
+                }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 main.post {
                     S.connected.value = false
@@ -98,6 +105,8 @@ class BleLed(private val ctx: Context) {
                 }
             }
         }
+
+        override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) { main.post { discover(g) } }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             val svc = g.getService(svcId)
@@ -125,6 +134,12 @@ class BleLed(private val ctx: Context) {
         }
 
         override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) { rx(value) }
+    }
+
+    private fun discover(g: BluetoothGatt) {
+        if (disc || gatt !== g) return
+        disc = true
+        try { g.discoverServices() } catch (_: Exception) {}
     }
 
     private fun ready(g: BluetoothGatt) {
@@ -176,7 +191,9 @@ class BleLed(private val ctx: Context) {
             when {
                 sub == 0x05 && len >= 7 && v.size >= 10 -> { S.blk = IntArray(6) { v[4 + it] }; S.blkVer.intValue++ }
                 sub == 0x08 && len >= 4 && v.size >= 7 -> S.on08(v[4], v[5], v[6])
-                sub == 0x06 && len >= 7 && v.size >= 10 -> S.onLeds(IntArray(minOf(16, len - 1)) { v[4 + it] })
+                sub == 0x06 && len >= 7 && v.size >= 10 -> S.onLeds(IntArray(minOf(16, len - 1, v.size - 4)) { v[4 + it] })
+                sub == 0x0D && len >= 3 && v.size >= 6 -> S.onFactory(v[4], v[5])
+                sub == 0x02 && len >= 5 && v.size >= 8 -> S.m1 = v[4] and 0x0F
                 sub == 0x00 && len >= 4 && v.size >= 7 -> S.onBright(v[4], v[5], v[6])
             }
         }

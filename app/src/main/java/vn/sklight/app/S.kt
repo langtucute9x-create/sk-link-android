@@ -39,7 +39,9 @@ object S {
     val sub = mutableStateListOf<Int>().also { l -> repeat(64) { l.add(0) } }   // kiểu con đang chọn theo id (đếm từ 0)
     val speed = mutableIntStateOf(5)
     val sens = mutableIntStateOf(6)
-    val z2 = mutableIntStateOf(0)                         // chế độ màu vùng 2: 0 tĩnh, 1 tự động, 2 nhấp nháy
+    val z2 = mutableIntStateOf(0)                         // chế độ màu vùng 2: 0 tĩnh, 1 tự động, 2 nhấp nháy (bit 3-4 của khối 0D)
+    var fac: IntArray? = null                             // khối 0D (cài đặt nhà máy) đọc từ hộp: b1, b2; null = chưa đọc được
+    var m1 = 0                                            // ô mode1 của lệnh hiệu ứng: giữ nguyên giá trị hộp trả về
 
     // chào mừng. Thứ tự đoạn trên sơ đồ: 0 bảng đồng hồ trái, 1 bảng đồng hồ phải, 2 trước trái, 3 trước phải, 4 sau trái, 5 sau phải
     var blk: IntArray? = null
@@ -52,7 +54,6 @@ object S {
     private var w08d3 = 0
     val wSpeed = mutableIntStateOf(1)                     // 0..3
     val wStart = mutableIntStateOf(0)                     // mã vị trí bắt đầu 0..5
-    val aroundOn = mutableStateOf(false)
     val boxPos = mutableStateListOf(-1, -1, -1, -1)       // -1 chưa gán, 0 khác, 2..5 = đoạn trên sơ đồ
     val pickBox = mutableIntStateOf(0)                    // hộp phụ đang nháy (1..4), 0 = không
 
@@ -187,6 +188,11 @@ object S {
         w08d3 = data3
     }
 
+    fun onFactory(b1: Int, b2: Int) {
+        fac = intArrayOf(b1, b2)
+        z2.intValue = ((b1 shr 3) and 3).coerceAtMost(2)
+    }
+
     // ---------- đèn ----------
     fun setPower(v: Boolean) {
         on.value = v
@@ -230,7 +236,7 @@ object S {
     fun sendEffect() {
         val e = Effects.byId(mode.intValue)
         val param = if (e != null && e.subs.isNotEmpty()) e.base + sub[e.id] else 0
-        ble.send(Protocol.effect(sens.intValue, z2.intValue, mode.intValue, param, speed.intValue), 3, true)
+        ble.send(Protocol.effect(sens.intValue, m1, mode.intValue, param, speed.intValue), 3, true)
     }
 
     fun pickEffect(e: Effect) { mode.intValue = e.id; on.value = true; sceneSel.intValue = -1; sendEffect() }
@@ -250,7 +256,8 @@ object S {
         if (sc.uni) { col[0] = sc.c1; czone.intValue = 0 } else { col[1] = sc.c1; col[2] = sc.c2; if (czone.intValue == 0) czone.intValue = 1 }
         mode.intValue = sc.mode
         if (sc.mode in sub.indices) sub[sc.mode] = sc.sub
-        speed.intValue = sc.speed; z2.intValue = sc.z2
+        speed.intValue = sc.speed
+        if (sc.z2 != z2.intValue) setZ2(sc.z2)                 // chưa đọc được khối 0D thì bỏ qua, giữ nguyên chế độ vùng 2 của hộp
         val b = if (Night.active) minOf(sc.bri, nightBri.intValue) else sc.bri       // ban đêm không sáng quá mức ban đêm
         for (i in 0..2) bri[i] = b
         sendBright()
@@ -278,7 +285,16 @@ object S {
     }
     fun setSpeed(v: Int) { if (v != speed.intValue) { speed.intValue = v; sendEffect() } }
     fun setSens(v: Int) { if (v != sens.intValue) { sens.intValue = v; sendEffect() } }
-    fun setZ2(v: Int) { z2.intValue = v; sendEffect() }
+
+    /** Chế độ màu vùng 2: đọc-sửa-ghi khối 0D, chỉ đổi bit 3-4 của b1. Trả về false nếu chưa đọc được khối từ hộp (không gửi mò). */
+    fun setZ2(v: Int): Boolean {
+        val f = fac ?: return false
+        val b1 = (f[0] and 0x18.inv()) or ((v and 3) shl 3)
+        fac = intArrayOf(b1, f[1])
+        z2.intValue = v
+        ble.send(Protocol.factory(b1, f[1]), 22, true)
+        return true
+    }
 
     // ---------- chào mừng ----------
     fun blkBit(i: Int, mask: Int): Boolean = (blk?.get(i) ?: 0) and mask != 0
@@ -341,5 +357,5 @@ object S {
         saveSettings()
     }
 
-    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x08)) ble.send(Protocol.query(q)) }
+    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x08, 0x0D)) ble.send(Protocol.query(q)) }
 }

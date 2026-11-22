@@ -160,11 +160,11 @@ Trước phải	Front right	右前	앞 오른쪽	หน้าขวา	មុខ
 Sau trái	Rear left	左後	뒤 왼쪽	หลังซ้าย	ក្រោយឆ្វេង	ຫຼັງຊ້າຍ
 Sau phải	Rear right	右後	뒤 오른쪽	หลังขวา	ក្រោយស្តាំ	ຫຼັງຂວາ
 Chưa đọc được cài đặt chào mừng từ hộp (v#). Kiểm tra kết nối rồi thử lại.	Could not read the welcome settings from the controller (v#). Check the connection and try again.	コントローラーからウェルカム設定を読み込めません（v#）。接続を確認してもう一度お試しください。	컨트롤러에서 웰컴 설정을 읽지 못했습니다 (v#). 연결을 확인하고 다시 시도하세요.	อ่านการตั้งค่าต้อนรับจากกล่องไม่ได้ (v#) ตรวจสอบการเชื่อมต่อแล้วลองใหม่	មិនអាចអានការកំណត់ស្វាគមន៍ពីប្រអប់បានទេ (v#)។ សូមពិនិត្យការភ្ជាប់ រួចសាកម្តងទៀត។	ອ່ານການຕັ້ງຄ່າຕ້ອນຮັບຈາກກ່ອງບໍ່ໄດ້ (v#). ກວດການເຊື່ອມຕໍ່ ແລ້ວລອງໃໝ່.
+Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại.	Could not read the settings from the controller. Check the connection and try again.	コントローラーから設定を読み込めません。接続を確認してもう一度お試しください。	컨트롤러에서 설정을 읽지 못했습니다. 연결을 확인하고 다시 시도하세요.	อ่านการตั้งค่าจากกล่องไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองใหม่	មិនអាចអានការកំណត់ពីប្រអប់បានទេ។ សូមពិនិត្យការភ្ជាប់ រួចសាកម្តងទៀត។	ອ່ານການຕັ້ງຄ່າຈາກກ່ອງບໍ່ໄດ້. ກວດການເຊື່ອມຕໍ່ ແລ້ວລອງໃໝ່.
 Hiệu ứng chào mừng	Welcome effect	ウェルカムエフェクト	웰컴 효과	เอฟเฟกต์ต้อนรับ	បែបផែនស្វាគមន៍	ເອັບເຟັກຕ້ອນຮັບ
 Bật/Tắt	On/Off	オン／オフ	켜기/끄기	เปิด/ปิด	បើក/បិទ	ເປີດ/ປິດ
 Chào xung quanh xe	Welcome around the car	車を一周するウェルカム	차량 주변 웰컴	ต้อนรับรอบรถ	ស្វាគមន៍ជុំវិញរថយន្ត	ຕ້ອນຮັບຮອບລົດ
 Hiệu ứng chào xung quanh xe	Welcome-around-the-car effect	車を一周するウェルカムエフェクト	차량 주변 웰컴 효과	เอฟเฟกต์ต้อนรับรอบรถ	បែបផែនស្វាគមន៍ជុំវិញរថយន្ត	ເອັບເຟັກຕ້ອນຮັບຮອບລົດ
-Công tắc này chưa gửi lệnh tới hộp (chưa biết mã lệnh).	This switch does not send a command yet (command code unknown).	このスイッチはまだコマンドを送信しません（コマンドコード不明）。	이 스위치는 아직 명령을 보내지 않습니다 (명령 코드 미확인).	สวิตช์นี้ยังไม่ส่งคำสั่งไปที่กล่อง (ยังไม่ทราบรหัสคำสั่ง)		
 Tùy chỉnh	Custom	カスタム	사용자 지정	กำหนดเอง	កំណត់ខ្លួនឯង	ກຳນົດເອງ
 Tốc độ chào mừng liền mạch	Seamless welcome speed	シームレスウェルカムの速度	심리스 웰컴 속도	ความเร็วต้อนรับแบบต่อเนื่อง	ល្បឿនស្វាគមន៍បន្តគ្នា	ຄວາມໄວຕ້ອນຮັບແບບຕໍ່ເນື່ອງ
 Tốc độ #	Speed #	速度 #	속도 #	ความเร็ว #	ល្បឿន #	ຄວາມໄວ #
@@ -294,10 +294,6 @@ Chưa chạy.	Not running.
 Dừng	Stop					
 Thử lần lượt 2, 5, 10, 20 lệnh mỗi giây với từng kiểu. Ghi lại mức nào đèn chuyển mượt, mức nào bị giật, đứng hình hoặc sai màu.	Try 2, 5, 10 and 20 commands per second with each pattern. Note which rates look smooth and which stutter, freeze or show wrong colours.					
 Thử riêng khu vực 2	Zone 2 only test					
-Chế độ có sẵn trong hộp	Modes built into the box					
-Hộp có một ô số dành riêng cho chế độ của khu vực 2. App gốc chỉ dùng 0 (tĩnh), 1 (tự động), 2 (nhấp nháy). Bấm từng số và nhìn khu vực 2 xem hộp còn chế độ nào khác không, ví dụ thở.	The box has one number reserved for the mode of zone 2. The original app only uses 0 (static), 1 (auto) and 2 (flashing). Tap each number and watch zone 2 to see whether the box has other modes, for example breathing.					
-Đã gửi số # cho khu vực 2	Sent value # for zone 2					
-Trả về như cũ	Restore					
 App tự điều khiển	Driven by the app					
 App giữ màu khu vực 1, chỉ đổi màu khu vực 2 trong 20 giây. Thử cả lúc khu vực 1 để Đơn sắc và lúc đang chạy một hiệu ứng. Số lệnh mỗi giây lấy theo ô chọn ở thẻ trên.	The app keeps the zone 1 colour and only changes zone 2 for 20 seconds. Try it both with zone 1 in Single colour and while an effect is running. Commands per second follow the choice in the card above.					
 Thở riêng khu vực 2	Breathe zone 2 only					
