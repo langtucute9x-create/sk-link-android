@@ -181,7 +181,25 @@ class BleLed(private val ctx: Context) {
     }
 
     // ---------------- nhận ----------------
-    private fun rx(d: ByteArray) {
+    /** Một lần báo có thể chứa nhiều khung dính nhau (danh sách loại xe, chẩn đoán): tách theo byte độ dài. */
+    private fun rx(all: ByteArray) {
+        var o = 0
+        while (o + 4 <= all.size && (all[o].toInt() and 0xFF) == 0x2E) {
+            val n = (all[o + 2].toInt() and 0xFF) + 4
+            if (o == 0 && n >= all.size) break
+            if (o + n > all.size) { rxOne(all.copyOfRange(o, all.size)); return }
+            rxOne(all.copyOfRange(o, o + n)); o += n
+        }
+        if (o == 0) rxOne(all)
+    }
+
+    private fun rxOne(d: ByteArray) {
+        if (d.size >= 5 && (d[0].toInt() and 0xFF) == 0x2E) {
+            val t = d[1].toInt() and 0xFF
+            if (t == 0x8C) { main.post { X.onCarFrame(d) }; return }
+            if (t == 0xAC) { main.post { X.onDiagFrame(d) }; return }
+            if (t != 0x8D && (d[3].toInt() and 0xFF) == 0x0E && d.size >= 6 && (d[4].toInt() and 0xFF) == 0xF1) { main.post { X.onReset() }; return }
+        }
         if (d.size < 6 || (d[0].toInt() and 0xFF) != 0x2E || (d[1].toInt() and 0xFF) != 0x7C) return
         if (System.currentTimeMillis() - lastSetMs < 500) return
         val len = d[2].toInt() and 0xFF
@@ -196,7 +214,7 @@ class BleLed(private val ctx: Context) {
                 sub == 0x07 && len >= 4 && v.size >= 7 -> { S.p07 = intArrayOf(v[4], v[5], v[6]); X.on07() }
                 sub == 0x03 && len >= 2 && v.size >= 5 -> X.onPair(v[4])
                 sub == 0x09 && len >= 9 && v.size >= 13 -> X.on09(IntArray(8) { v[4 + it] })
-                sub == 0xAC -> X.onDiag(d)
+                sub == 0x0F && len >= 3 && v.size >= 6 -> X.onCarCur(v[4], v[5])
                 sub == 0x02 && len >= 5 && v.size >= 8 -> S.m1 = v[4] and 0x0F
                 sub == 0x00 && len >= 4 && v.size >= 7 -> S.onBright(v[4], v[5], v[6])
             }

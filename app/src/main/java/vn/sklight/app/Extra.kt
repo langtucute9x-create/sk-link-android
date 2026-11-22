@@ -33,14 +33,92 @@ object X {
     var pairing by mutableStateOf(false)
     var pairLeft by mutableIntStateOf(0)
     var p09: IntArray? = null                            // khối 09: số ô trước, RGB, số ô sau, RGB
-    val diag = mutableStateListOf<String>()
+    val diag = mutableStateListOf<String>()               // dòng chữ chẩn đoán đã giải mã
+    val diagRaw = mutableStateListOf<String>()            // khung thô (hex)
+    private val diagParts = java.util.TreeMap<Int, java.util.TreeMap<Int, ByteArray>>()
+
+    // loại xe: danh sách nằm trong hộp, mỗi loại hộp một danh sách riêng. (hãng, dòng, tên); dòng 0 = tên hãng
+    val cars = mutableStateListOf<Triple<Int, Int, String>>()
+    val carRaw = mutableStateListOf<String>()
+    private val carParts = java.util.TreeMap<Int, java.util.TreeMap<Int, ByteArray>>()
+    var carCur by mutableIntStateOf(-1)                  // (hãng << 8) | dòng đang đặt trong hộp, -1 = chưa đọc
+    var carTick by mutableIntStateOf(0)
+    var carLoading by mutableStateOf(false)
+    var resetState by mutableIntStateOf(0)               // 0 chưa làm, 1 đã gửi đang chờ, 2 hộp báo xong
 
     private val dirBit = intArrayOf(5, 4, 0, 1, 2, 3)    // đoạn -> bit, cùng thứ tự khối 08
 
     fun onPair(b: Int) { pairRaw = b; ver.intValue++ }
     fun on09(v: IntArray) { p09 = v; ver.intValue++ }
     fun on07() { ver.intValue++ }
-    fun onDiag(d: ByteArray) { diag.add(d.joinToString(" ") { "%02X".format(it) }); if (diag.size > 40) diag.removeAt(0) }
+
+    private fun hex(d: ByteArray) = d.joinToString(" ") { "%02X".format(it) }
+    /** Chữ từ hộp: cùng bảng mã "Unicode" (UTF-16) như app gốc. */
+    private fun text(parts: java.util.TreeMap<Int, ByteArray>): String {
+        var n = 0; for (b in parts.values) n += b.size
+        val all = ByteArray(n); var o = 0
+        for (b in parts.values) { System.arraycopy(b, 0, all, o, b.size); o += b.size }
+        val cs = try { java.nio.charset.Charset.forName("Unicode") } catch (e: Exception) { Charsets.UTF_16 }
+        return String(all, cs).trim { it <= ' ' || it == '\uFEFF' }
+    }
+    private fun slice(d: ByteArray, from: Int, len: Int): ByteArray {
+        val end = minOf(from + len, d.size - 1)          // byte cuối là ck
+        return if (end > from) d.copyOfRange(from, end) else ByteArray(0)
+    }
+
+    /** Khung chẩn đoán: 2E AC dài | nhóm | (tổng khung << 4 | khung) | dài | chữ. */
+    fun onDiagFrame(d: ByteArray) {
+        if (d.size < 7) return
+        if (diagRaw.size < 80) diagRaw.add(hex(d))
+        val series = d[3].toInt() and 0xFF; val fr = d[4].toInt() and 0x0F; val len = d[5].toInt() and 0xFF
+        diagParts.getOrPut(series) { java.util.TreeMap() }[fr] = slice(d, 6, len)
+        diag.clear()
+        for (p in diagParts.values) { val t = text(p); if (t.isNotEmpty()) diag.add(t) }
+    }
+    fun readDiag() { diag.clear(); diagRaw.clear(); diagParts.clear(); S.ble.send(Protocol.frame(Protocol.T_READ, 0xAC, 0x00)) }
+
+    /** Khung danh sách loại xe: 2E 8C dài | hãng | dòng | (tổng khung << 4 | khung) | dài | tên. */
+    fun onCarFrame(d: ByteArray) {
+        if (d.size < 8) return
+        if (carRaw.size < 400) carRaw.add(hex(d))
+        val series = d[3].toInt() and 0xFF; val model = d[4].toInt() and 0xFF
+        val fr = d[5].toInt() and 0x0F; val len = d[6].toInt() and 0xFF
+        carParts.getOrPut((series shl 8) or model) { java.util.TreeMap() }[fr] = slice(d, 7, len)
+        cars.clear()
+        for ((k, p) in carParts) cars.add(Triple(k shr 8, k and 0xFF, text(p)))
+        carTick++
+    }
+    fun onCarCur(series: Int, model: Int) { carCur = (series shl 8) or model; ver.intValue++ }
+    fun readCars() {
+        cars.clear(); carRaw.clear(); carParts.clear(); carLoading = true; carTick++
+        S.ble.send(Protocol.frame(Protocol.T_READ, 0x8C, 0x00))
+        S.ble.send(Protocol.query(0x0F))
+    }
+    fun carName(key: Int): String {
+        if (key < 0) return "—"
+        val sName = cars.firstOrNull { it.first == key shr 8 && it.second == 0 }?.third ?: ""
+        val mName = if (key and 0xFF == 0) "" else cars.firstOrNull { it.first == key shr 8 && it.second == key and 0xFF }?.third ?: ""
+        val t = listOf(sName, mName).filter { it.isNotEmpty() }.joinToString(" · ")
+        return if (t.isEmpty()) "hãng ${key shr 8}, dòng ${key and 0xFF}" else t
+    }
+    /** Đặt loại xe: 0F | hãng | dòng (mã lấy nguyên từ danh sách hộp gửi về). Sau đó hỏi lại hộp. */
+    fun setCar(series: Int, model: Int) {
+        S.ble.send(Protocol.frame(Protocol.T_WRITE, 0x0F, series, model))
+        carCur = -1; ver.intValue++
+        h.postDelayed({ S.ble.send(Protocol.query(0x0F)) }, 700)
+    }
+
+    private val h = android.os.Handler(android.os.Looper.getMainLooper())
+    /** Khôi phục cài đặt gốc của hộp: 0E F1. Hộp trả lời 0E F1 khi xong. */
+    fun factoryReset() {
+        resetState = 1
+        S.ble.send(Protocol.frame(Protocol.T_WRITE, 0x0E, 0xF1))
+        for (i in 0 until 4) S.boxPos[i] = -1
+        S.pickBox.intValue = 0
+        S.saveSettings()
+        h.postDelayed({ pairRaw = -1; carCur = -1; S.refreshBlocks(); S.ble.send(Protocol.query(0x03)) }, 2000)
+    }
+    fun onReset() { if (resetState == 1) resetState = 2 }
 
     fun paired() = if (pairRaw < 0) -1 else
         (pairRaw and 1) or (((pairRaw shr 1) and 1) shl 1) or (((pairRaw shr 2) and 1) shl 2) or (((pairRaw shr 5) and 1) shl 3)
@@ -116,6 +194,7 @@ fun ExtraPage(sp: Int) {
         7 -> WelcomeColorPage()
         8 -> FactoryPage()
         9 -> CarFuncPage()
+        11 -> CarModelPage()
         else -> DiagPage()
     }
 }
@@ -232,6 +311,7 @@ fun FactoryPage() {
     val ctx = LocalContext.current
     X.ver.intValue; S.blkVer.intValue
     var confirm by remember { mutableStateOf(false) }
+    var reset by remember { mutableIntStateOf(0) }      // 0 không, 1 hỏi lần một, 2 hỏi lần hai
     BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.Build, "Cài đặt nhà máy", 16)
@@ -253,12 +333,31 @@ fun FactoryPage() {
         Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Cảnh báo theo tín hiệu xe: xi nhan, phanh tay, dây an toàn, cửa…") { S.subPage.intValue = 9 }
         Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc dữ liệu chẩn đoán từ hộp") { S.subPage.intValue = 10 }
         Feature(Icons.Filled.Settings, "Cấu hình cửa xe", "Xóa cấu hình gán hộp phụ vào cửa") { confirm = true }
+        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", "Danh sách xe do hộp đang kết nối cung cấp") { S.subPage.intValue = 11 }
+        Feature(Icons.Filled.Refresh, "Khôi phục cài đặt gốc", "Đưa hộp về cài đặt ban đầu của nhà sản xuất") {
+            if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else reset = 1
+        }
+        if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
     }
     Card {
         T("Chưa có trong app này", 14, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
-        T("Nâng cấp phần mềm hộp, Khôi phục cài đặt gốc và Chọn loại xe dễ làm hỏng hộp nên chưa làm. Cần thì dùng app gốc của hãng.", 12, color = SubTxt)
+        T("Nâng cấp phần mềm hộp cần tệp phần mềm của nhà sản xuất và dễ làm hỏng hộp nếu nạp lỗi, nên chưa làm. Cần thì dùng app gốc của hãng.", 12, color = SubTxt)
     }
+    if (reset == 1) AlertDialog(
+        onDismissRequest = { reset = 0 },
+        title = { Text(L.tr("Khôi phục cài đặt gốc?")) },
+        text = { Text(L.tr("Hộp sẽ xóa hết cài đặt: hộp phụ đã ghép, vị trí cửa, số LED, loại xe, chào mừng. Phải cài lại từ đầu.")) },
+        confirmButton = { TextButton({ reset = 2 }) { Text(L.tr("Tiếp tục")) } },
+        dismissButton = { TextButton({ reset = 0 }) { Text(L.tr("Hủy")) } }
+    )
+    if (reset == 2) AlertDialog(
+        onDismissRequest = { reset = 0 },
+        title = { Text(L.tr("Chắc chắn khôi phục?")) },
+        text = { Text(L.tr("Không hoàn tác được. Giữ nguyên nguồn điện của hộp cho tới khi xong.")) },
+        confirmButton = { TextButton({ reset = 0; X.factoryReset() }) { Text(L.tr("Khôi phục")) } },
+        dismissButton = { TextButton({ reset = 0 }) { Text(L.tr("Hủy")) } }
+    )
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },
         title = { Text(L.tr("Xóa cấu hình cửa xe?")) },
@@ -336,17 +435,85 @@ fun DiagPage() {
     Card {
         GroupTitle(Icons.Filled.Info, "Thông tin chẩn đoán", 16)
         Spacer(Modifier.height(6.dp))
-        T("Chỉ đọc. Dữ liệu thô từ hộp, gửi cho kỹ thuật khi cần.", 12, color = SubTxt)
+        T("Chỉ đọc. Thông tin do hộp gửi về, sao chép gửi cho kỹ thuật khi cần.", 12, color = SubTxt)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FillBtn("Đọc dữ liệu", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) { X.diag.clear(); S.ble.send(Protocol.frame(Protocol.T_READ, 0xAC, 0x00)) }
+            FillBtn("Đọc dữ liệu", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) { X.readDiag() }
             FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("diag", X.diag.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("diag", (X.diag + listOf("--- khung thô ---") + X.diagRaw).joinToString("\n")))
                 Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
             }
         }
         Spacer(Modifier.height(10.dp))
-        if (X.diag.isEmpty()) T("Chưa có dữ liệu.", 13, color = SubTxt) else for (l in X.diag) T(l, 11, color = Txt)
+        if (X.diag.isEmpty()) T(if (X.diagRaw.isEmpty()) "Chưa có dữ liệu." else "Đã nhận ${X.diagRaw.size} khung nhưng chưa đọc được chữ. Bấm Sao chép để gửi.", 13, color = SubTxt)
+        else for (l in X.diag) T(l, 12, color = Txt)
     }
+}
+
+// ===================== CHỌN LOẠI XE =====================
+@Composable
+fun CarModelPage() {
+    val ctx = LocalContext.current
+    X.ver.intValue
+    var open by remember { mutableIntStateOf(-1) }       // hãng đang mở
+    var ask by remember { mutableIntStateOf(-1) }        // (hãng << 8) | dòng đang hỏi xác nhận
+    LaunchedEffect(Unit) { if (S.connected.value) X.readCars() }
+    LaunchedEffect(X.carTick) { delay(1500); X.carLoading = false }      // hết 1,5 giây không có khung mới = xong, như app gốc
+    BackRow(8, "Cài đặt nhà máy")
+    Card {
+        GroupTitle(Icons.Filled.DirectionsCar, "Chọn loại xe", 16)
+        Spacer(Modifier.height(6.dp))
+        Kv("Loại xe đang đặt", if (X.carCur < 0) "—" else X.carName(X.carCur))
+        val series = X.cars.count { it.second == 0 }
+        Kv("Danh sách", if (X.carLoading) "Đang đọc từ hộp…" else if (X.cars.isEmpty()) "Hộp chưa gửi danh sách" else "$series hãng, ${X.cars.size - series} dòng xe")
+        Spacer(Modifier.height(4.dp))
+        T("Danh sách này nằm trong hộp đang kết nối: mỗi loại hộp hỗ trợ một nhóm xe riêng.", 12, color = SubTxt)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FillBtn("Đọc lại", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) {
+                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.readCars()
+            }
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
+                val lines = X.cars.map { "${it.first}/${it.second}: ${it.third}" } + listOf("đang đặt: ${X.carCur}", "--- khung thô ---") + X.carRaw
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("cars", lines.joinToString("\n")))
+                Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    val ids = X.cars.map { it.first }.distinct()
+    if (ids.isNotEmpty()) Card {
+        for ((n, sId) in ids.withIndex()) {
+            if (n > 0) Divider()
+            val name = X.cars.firstOrNull { it.first == sId && it.second == 0 }?.third?.ifEmpty { null } ?: "Hãng $sId"
+            val models = X.cars.filter { it.first == sId && it.second != 0 }
+            val cur = X.carCur >= 0 && X.carCur shr 8 == sId
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 50.dp).clickable { if (models.isEmpty()) ask = sId shl 8 else open = if (open == sId) -1 else sId },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                T(name, 15, FontWeight.Bold, if (cur) Pink else Txt, Modifier.weight(1f))
+                if (models.isNotEmpty()) Icon(if (open == sId) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, null, tint = SubTxt, modifier = Modifier.size(22.dp))
+                else if (cur) Icon(Icons.Filled.Check, null, tint = Pink, modifier = Modifier.size(20.dp))
+            }
+            if (open == sId) for (m in models) {
+                val on = X.carCur == (sId shl 8) or m.second
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { ask = (sId shl 8) or m.second }.padding(start = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    T(m.third.ifEmpty { "Dòng ${m.second}" }, 14, if (on) FontWeight.Bold else FontWeight.Normal, if (on) Pink else Txt, Modifier.weight(1f))
+                    if (on) Icon(Icons.Filled.Check, null, tint = Pink, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    }
+    if (ask >= 0) AlertDialog(
+        onDismissRequest = { ask = -1 },
+        title = { Text(L.tr("Đặt loại xe?")) },
+        text = { Text(X.carName(ask)) },
+        confirmButton = { TextButton({ val k = ask; ask = -1; X.setCar(k shr 8, k and 0xFF) }) { Text(L.tr("Đặt")) } },
+        dismissButton = { TextButton({ ask = -1 }) { Text(L.tr("Hủy")) } }
+    )
 }

@@ -904,7 +904,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.17 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.18 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
