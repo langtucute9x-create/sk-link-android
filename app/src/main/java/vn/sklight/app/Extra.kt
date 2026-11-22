@@ -160,7 +160,6 @@ object X {
         val n = f.copyOf(); n[i] = (n[i] and mask.inv()) or (value and mask)
         S.fac = n; ver.intValue++
         if (i == 0) S.z2.intValue = ((n[0] shr 3) and 3).coerceAtMost(2)
-        if (i == 0) S.applyInvert()
         S.ble.send(Protocol.factory(n[0], n[1]), 22, true)
         return true
     }
@@ -194,7 +193,7 @@ object X {
     fun pickWelcome(reverse: Boolean, idx: Int, argb: Int): Boolean {
         val p = (p09 ?: run { S.ble.send(Protocol.query(0x09)); return false }).copyOf()
         val o = if (reverse) 4 else 0
-        // Hộp này hiện màu bù của màu gửi đi (như lệnh màu 01), nên đảo 255-x khi S.invert. 00 00 00 = tắt nên tránh.
+        // Cùng cách gửi màu với lệnh màu 01 (đảo 255-x chỉ khi S.invert). 00 00 00 = tắt nên tránh.
         var r = (argb shr 16) and 0xFF; var g = (argb shr 8) and 0xFF; var b = argb and 0xFF
         if (S.invert.value) { r = 255 - r; g = 255 - g; b = 255 - b }
         if (r == 0 && g == 0 && b == 0) { r = 1; g = 1; b = 1 }
@@ -206,7 +205,7 @@ object X {
 }
 
 // 10 màu chào mừng của app gốc: giá trị gửi cho hộp (đã cân theo LED) và màu hiện trên màn hình
-private val PRE = intArrayOf(0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0x8C01FC, 0xFF0020, 0xFF5000, 0xFFFFFF)
+private val PRE = intArrayOf(0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0x8C01FC, 0xFF0020, 0x501000, 0x808080)
 private val PRE_SHOW = intArrayOf(0xFF0000, 0xFFE600, 0x00D93A, 0x00D5E6, 0x1E4BFF, 0xFF2CD6, 0x8C01FC, 0xFF2E63, 0xFF7A00, 0xFFFFFF)
 
 private fun need(ctx: Context) {
@@ -386,11 +385,11 @@ fun FactoryPage() {
         T("Màu gửi cho hộp", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            for ((label, m) in listOf("Tự động" to 0, "Đảo màu" to 1, "Không đảo" to 2))
-                Chip(label, S.invertMode.intValue == m, Modifier.weight(1f), 44.dp, 13) { S.setInvertMode(m) }
+            Chip("Bình thường", !S.invert.value, Modifier.weight(1f), 44.dp, 13) { S.setInvert(false) }
+            Chip("Đảo màu", S.invert.value, Modifier.weight(1f), 44.dp, 13) { S.setInvert(true) }
         }
         Spacer(Modifier.height(6.dp))
-        T("Đang dùng: ${if (S.invert.value) "đảo màu" else "không đảo"}. Nếu chọn đỏ mà đèn ra xanh băng (màu bị ngược) thì đổi mục này.", 12, color = SubTxt)
+        T("Để Bình thường. Chỉ đổi sang Đảo màu nếu chọn đỏ mà đèn ra xanh băng.", 12, color = SubTxt)
     }
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }

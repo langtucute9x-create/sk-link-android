@@ -23,7 +23,7 @@ object Protocol {
         return frame(T_WRITE, 0x00, flag, b1, b2)
     }
 
-    /** Màu hai khu. Hộp hiện màu bù của màu gửi đi nên đảo 255-x khi [invert]. */
+    /** Màu hai khu, gửi đúng RGB. [invert] = đảo 255-x, chỉ dùng cho loại hộp hiện màu bù (mặc định tắt). */
     fun color(unified: Boolean, c1: Int, c2: Int, invert: Boolean): ByteArray {
         val a = led(c1, invert); val b = led(c2, invert)
         val flag = if (unified) 0x48 else 0x40

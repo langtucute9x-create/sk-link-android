@@ -62,9 +62,8 @@ object S {
     val pickBox = mutableIntStateOf(0)                    // hộp phụ đang nháy (1..4), 0 = không
 
     // cài đặt
-    val invert = mutableStateOf(true)
-    /** Cách đảo màu gửi cho hộp: 0 tự động theo phiên bản hộp (Ảo ảnh = đảo, Toàn màu = không đảo), 1 luôn đảo, 2 không đảo. */
-    val invertMode = mutableIntStateOf(0)
+    /** Đảo màu 255-x trước khi gửi. Mặc định KHÔNG đảo: hộp của chủ dự án hiện đúng màu gửi đi (các bản tới 0.5.27 đảo sẵn nên ra màu bù). */
+    val invert = mutableStateOf(false)
 
     // dẫn đường + cảnh báo (bản thử)
     val warnOn = mutableStateOf(false)                    // nháy đèn khi sắp rẽ
@@ -134,9 +133,7 @@ object S {
         app = c.applicationContext
         Crash.install(app)
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
-        invert.value = sp.getBoolean("invert", true)
-        invertMode.intValue = sp.getInt("invertMode", 0)
-        if (invertMode.intValue != 0) invert.value = invertMode.intValue == 1
+        invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
         speedWarn.value = sp.getBoolean("speedWarn", false)
@@ -171,7 +168,7 @@ object S {
     }
 
     fun saveSettings() {
-        sp.edit().putBoolean("invert", invert.value).putInt("invertMode", invertMode.intValue)
+        sp.edit().putBoolean("invert2", invert.value)
             .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
@@ -218,22 +215,16 @@ object S {
 
     fun onFactory(b1: Int, b2: Int) {
         fac = intArrayOf(b1, b2)
-        applyInvert()
         z2.intValue = ((b1 shr 3) and 3).coerceAtMost(2)
     }
 
-    /**
-     * Hộp bản "Ảo ảnh" (bit 6 của b1 khối 0D) hiện màu bù của màu gửi đi nên phải đảo 255-x; bản "Toàn màu" thì không.
-     * Chưa đọc được khối 0D thì giữ cách đang dùng. Đổi cách đảo thì gửi lại màu đang đặt.
-     */
-    fun applyInvert() {
-        val want = when (invertMode.intValue) { 1 -> true; 2 -> false; else -> fac?.let { it[0] and 0x40 != 0 } ?: invert.value }
-        if (want == invert.value) return
-        invert.value = want
+    /** Đổi cách gửi màu rồi gửi lại màu đang đặt để thấy ngay. */
+    fun setInvert(v: Boolean) {
+        if (v == invert.value) return
+        invert.value = v
         saveSettings()
         try { if (connected.value && mode.intValue == 0 && !Auto.running()) ble.send(colorFrame(), 2) } catch (e: Exception) {}
     }
-    fun setInvertMode(m: Int) { invertMode.intValue = m; saveSettings(); applyInvert() }
 
     // ---------- đèn ----------
     fun setPower(v: Boolean) {
