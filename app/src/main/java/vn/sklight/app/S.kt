@@ -394,5 +394,5 @@ object S {
         return true
     }
 
-    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x07, 0x08, 0x0D)) ble.send(Protocol.query(q)) }
+    fun refreshBlocks() { for (q in intArrayOf(0x00, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0D)) ble.send(Protocol.query(q)) }
 }

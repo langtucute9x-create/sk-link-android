@@ -494,6 +494,7 @@ fun WelcomeTop() {
         val cur = (S.blk?.get(3) ?: 0) and 0x07
         val modes = listOf("Chế độ 1" to 0, "Chế độ 2" to 1, "Chế độ 3" to 2, "Chế độ 4" to 3, "Chế độ 5" to 4, "Chế độ 6" to 5, "Tùy chỉnh" to 7)
         Grid(modes, 4) { (label, v), m -> Chip(label, S.blk != null && cur == v, m, 48.dp, 12) { if (!S.setBlk(3, 0x07, v)) { S.refreshBlocks(); needBlock() } } }
+        if (S.blk != null && cur == 7) WelcomeColors()
     }
     Card {
         GroupTitle(Icons.Filled.Speed, "Tốc độ chào mừng liền mạch", 16)
@@ -894,7 +895,6 @@ fun SettingsFeatures() {
         Spacer(Modifier.height(8.dp))
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối và quản lý thiết bị hộp phụ") { S.subPage.intValue = 5 }
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Cài đặt hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
-        Feature(Icons.Outlined.Palette, "Màu chào mừng tùy chỉnh", "Chọn màu chiều thuận và chiều ngược") { S.subPage.intValue = 7 }
         Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói") { S.subPage.intValue = 4 }
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
@@ -904,7 +904,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.20 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.21 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

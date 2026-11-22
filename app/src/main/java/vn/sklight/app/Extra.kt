@@ -173,16 +173,20 @@ object X {
         val p = p09 ?: return
         S.ble.send(Protocol.frame(Protocol.T_WRITE, 0x09, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]), 24, true)
     }
-    fun pickWelcome(reverse: Boolean, idx: Int, argb: Int) {
-        val p = (p09 ?: IntArray(8)).copyOf()
+    /** Đọc-sửa-ghi: chưa đọc được khối 09 thì không gửi (tránh xóa màu của chiều còn lại). */
+    fun pickWelcome(reverse: Boolean, idx: Int, argb: Int): Boolean {
+        val p = (p09 ?: run { S.ble.send(Protocol.query(0x09)); return false }).copyOf()
         val o = if (reverse) 4 else 0
         p[o] = idx + 1; p[o + 1] = (argb shr 16) and 0xFF; p[o + 2] = (argb shr 8) and 0xFF; p[o + 3] = argb and 0xFF
         p09 = p; ver.intValue++
         send09()
+        return true
     }
 }
 
-private val PRE = intArrayOf(-65536, -256, -16711936, -16711681, -16776961, -65281, -7601668, -65504, -11530240)
+// 10 màu chào mừng của app gốc: giá trị gửi cho hộp (đã cân theo LED) và màu hiện trên màn hình
+private val PRE = intArrayOf(0xFF0000, 0xFFFF00, 0x00FF00, 0x00FFFF, 0x0000FF, 0xFF00FF, 0x8C01FC, 0xFF0020, 0x501000, 0x808080)
+private val PRE_SHOW = intArrayOf(0xFF0000, 0xFFE600, 0x00D93A, 0x00D5E6, 0x1E4BFF, 0xFF2CD6, 0x8C01FC, 0xFF2E63, 0xFF7A00, 0xFFFFFF)
 
 private fun need(ctx: Context) {
     S.refreshBlocks()
@@ -233,8 +237,8 @@ fun PairPage() {
         GroupTitle(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", 16)
         Spacer(Modifier.height(8.dp))
         val n = X.paired()
-        Kv("Số hộp phụ đã ghép", if (n < 0) "—" else "$n")
-        Kv("Số lượng đã cài", if (S.fac == null) "—" else "${S.fac!![1] and 0x0F}")
+        Kv("Số hộp phụ của xe", if (S.fac == null) "—" else "${S.fac!![1] and 0x0F}")
+        if (n > 0) Kv("Hộp vừa ghép được", "$n")
         Kv("Trạng thái", if (X.pairing) "Đang ghép nối… còn ${X.pairLeft} giây" else "Chưa ghép")
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -308,29 +312,33 @@ fun FlowPage() {
 }
 
 // ===================== MÀU CHÀO MỪNG TÙY CHỈNH =====================
+/** Hai hàng màu (chiều thuận, chiều ngược) cho chế độ chào mừng Tùy chỉnh. Đặt trong một Card có sẵn. */
 @Composable
-fun WelcomeColorPage() {
+fun WelcomeColors() {
     val ctx = LocalContext.current
     X.ver.intValue
-    BackRow(0, "Cài đặt")
+    LaunchedEffect(Unit) { if (X.p09 == null && S.connected.value) S.ble.send(Protocol.query(0x09)) }
     for (rev in listOf(false, true)) {
-        Card {
-            GroupTitle(Icons.Filled.Palette, if (rev) "Màu chào mừng — chiều ngược (khóa xe)" else "Màu chào mừng — chiều thuận (mở xe)", 15)
-            Spacer(Modifier.height(10.dp))
-            val num = X.p09?.get(if (rev) 4 else 0) ?: -1
-            Grid(PRE.indices.toList(), 5) { i, m ->
-                val on = num == i + 1
-                Box(
-                    m.height(42.dp).clip(RoundedCornerShape(6.dp)).background(Color(PRE[i]))
-                        .border(if (on) 3.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(6.dp))
-                        .clickable { X.pickWelcome(rev, i, PRE[i]) },
-                    contentAlignment = Alignment.Center
-                ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(20.dp)) }
-            }
+        Spacer(Modifier.height(12.dp))
+        T(if (rev) "Màu chiều ngược" else "Màu chiều thuận", 13, FontWeight.Bold, SubTxt)
+        Spacer(Modifier.height(8.dp))
+        val num = X.p09?.get(if (rev) 4 else 0) ?: -1
+        Grid(PRE.indices.toList(), 5) { i, m ->
+            val on = num == i + 1
+            Box(
+                m.height(40.dp).clip(RoundedCornerShape(6.dp)).background(rgbColor(PRE_SHOW[i]))
+                    .border(if (on) 3.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(6.dp))
+                    .clickable { if (!X.pickWelcome(rev, i, PRE[i])) need(ctx) },
+                contentAlignment = Alignment.Center
+            ) { if (on) Icon(Icons.Filled.Check, null, tint = if (i == 1 || i == 9) Color(0xFF14142B) else Color.White, modifier = Modifier.size(20.dp)) }
         }
     }
-    T("Chiều thuận và chiều ngược có thể chọn hai màu khác nhau. Dùng khi chế độ chào mừng là Tùy chỉnh.", 12, color = SubTxt)
-    if (X.p09 == null) FillBtn("Đọc lại từ hộp", Icons.Filled.Refresh, Pink, Modifier.fillMaxWidth()) { need(ctx) }
+}
+
+@Composable
+fun WelcomeColorPage() {
+    BackRow(0, "Cài đặt")
+    Card { GroupTitle(Icons.Filled.Palette, "Màu chào mừng tùy chỉnh", 16); WelcomeColors() }
 }
 
 // ===================== CÀI ĐẶT NHÀ MÁY =====================
