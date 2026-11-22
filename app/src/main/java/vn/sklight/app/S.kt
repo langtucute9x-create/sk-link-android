@@ -36,7 +36,7 @@ object S {
     val col = mutableStateListOf(0xFFFFFF, 0xFFFFFF, 0xFFFFFF)
     val customs = mutableStateListOf<Int>()
     val mode = mutableIntStateOf(0)                       // id hiệu ứng
-    val sub = mutableStateListOf<Int>().also { l -> repeat(64) { l.add(0) } }   // kiểu con đang chọn theo id (đếm từ 0)
+    val sub = mutableStateListOf<Int>().also { l -> repeat(128) { l.add(0) } }   // kiểu con đang chọn theo id (đếm từ 0)
     val speed = mutableIntStateOf(5)
     val sens = mutableIntStateOf(6)
     val z2 = mutableIntStateOf(0)                         // chế độ màu vùng 2: 0 tĩnh, 1 tự động, 2 nhấp nháy (bit 3-4 của khối 0D)

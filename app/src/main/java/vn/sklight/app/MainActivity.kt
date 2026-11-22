@@ -635,7 +635,7 @@ fun Strip(modifier: Modifier = Modifier) {
         if (AlertBridge.lit(3) || AlertBridge.lit(5)) r = c
     } else if (S.mode.intValue != 0) {
         val e = Effects.byId(S.mode.intValue)
-        val name = (if (e != null) e.subs.getOrNull(S.sub[e.id]) ?: "" else "").lowercase()
+        val name = (if (e != null) e.subs.getOrNull(S.sub.getOrElse(e.id) { 0 }) ?: "" else "").lowercase()
         val hit = NAME_COLOR.firstOrNull { name.endsWith(it.first) }
         l = if (hit != null) SolidColor(rgbColor(hit.second)) else Brush.horizontalGradient(RAINBOW)
         if (S.z2.intValue == 1) r = Brush.horizontalGradient(RAINBOW)
@@ -904,7 +904,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.18 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.19 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable
