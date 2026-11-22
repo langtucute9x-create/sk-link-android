@@ -55,6 +55,38 @@ object Voice {
     val phase = mutableIntStateOf(0)                 // 0 đang mở micro, 1 sẵn sàng nghe, 2 đang nghe thấy tiếng, 3 đang xử lý
     val level = mutableFloatStateOf(0f)              // độ lớn tiếng thu được, 0..1
     var engine = ""                                  // gói của bộ nhận giọng nói đang dùng (để báo khi lỗi)
+    private val mutedStreams = ArrayList<Int>()      // các luồng âm thanh app đang tạm tắt tiếng trong lúc nghe
+
+    /**
+     * Tắt tiếng "tinh tinh" của bộ nhận giọng nói: bộ nhận không có cách tắt riêng, nên app tạm tắt tiếng luồng nhạc
+     * và luồng hệ thống từ lúc bắt đầu nghe tới khi có kết quả. Chỉ đụng tới luồng đang có tiếng, xong thì bật lại đúng các luồng đó.
+     */
+    private fun quiet(on: Boolean) {
+        try {
+            val am = S.app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            if (on) {
+                if (!S.voiceQuiet.value || mutedStreams.isNotEmpty()) return
+                for (st in intArrayOf(AudioManager.STREAM_MUSIC, AudioManager.STREAM_SYSTEM)) {
+                    try { if (!am.isStreamMute(st)) { am.adjustStreamVolume(st, AudioManager.ADJUST_MUTE, 0); mutedStreams.add(st) } } catch (e: Exception) {}
+                }
+            } else {
+                for (st in mutedStreams) try { am.adjustStreamVolume(st, AudioManager.ADJUST_UNMUTE, 0) } catch (e: Exception) {}
+                mutedStreams.clear()
+            }
+        } catch (e: Exception) {}
+    }
+
+    /** Có kết quả: chờ tiếng báo kết thúc của bộ nhận trôi qua rồi mới bật tiếng lại và xử lý (để câu trả lời nghe được). */
+    private fun settle(my: Int, block: () -> Unit) {
+        if (mutedStreams.isEmpty()) { block(); return }
+        h.postDelayed({ quiet(false); if (my == gen) block() }, 350)
+    }
+
+    private fun results(c: Context, list: List<String>) {
+        for (cand in list) { val m = run(cand); if (m != null) { answer(c, cand, m); return } }
+        if (list.isEmpty()) { show(6, msg = "Không nghe thấy câu lệnh."); Speaker.say(c, "Em chưa nghe rõ") }
+        else { show(3, list[0]); Speaker.say(c, "Em chưa có lệnh này") }
+    }
 
     // tên dài đứng trước để "xanh lá" không bị hiểu thành "xanh". Tên màu theo tờ "Hướng dẫn điều khiển giọng nói" của SK:
     // "xanh lam" = xanh dương đậm, "xanh da trời" = xanh nhạt.
@@ -157,6 +189,7 @@ object Voice {
         h.removeCallbacksAndMessages(null)
         try { sr?.cancel(); sr?.destroy() } catch (_: Exception) {}
         sr = null
+        quiet(false)
         S.voiceState.intValue = 0
     }
 
@@ -185,28 +218,29 @@ object Voice {
         val comp = list.getOrNull(attempt)
         engine = comp?.packageName ?: "mặc định của máy"
         phase.intValue = 0; level.floatValue = 0f
+        quiet(true)
         try {
             val r = if (comp != null) SpeechRecognizer.createSpeechRecognizer(c, comp) else SpeechRecognizer.createSpeechRecognizer(c)
             r.setRecognitionListener(object : RecognitionListener {
                 override fun onResults(b: Bundle?) {
                     if (my != gen) return
                     h.removeCallbacksAndMessages(null)
-                    val list2 = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) ?: arrayListOf()
-                    for (cand in list2) { val m = run(cand); if (m != null) { answer(c, cand, m); return } }
-                    if (list2.isEmpty()) { show(6, msg = "Không nghe thấy câu lệnh."); Speaker.say(c, "Em chưa nghe rõ") }
-                    else { show(3, list2[0]); Speaker.say(c, "Em chưa có lệnh này") }
+                    val list2: List<String> = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) ?: emptyList()
+                    settle(my) { results(c, list2) }
                 }
                 override fun onError(code: Int) {
                     if (my != gen) return
                     h.removeCallbacksAndMessages(null)
-                    if (code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) Speaker.say(c, "Em chưa nghe rõ")
-                    show(6, msg = when (code) {
-                        SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Không nghe thấy câu lệnh."
-                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Cần có mạng để nhận giọng nói."
-                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Bộ nhận giọng nói chưa có quyền micro. Vào Cài đặt máy, mục Ứng dụng, chọn Google, bật quyền Micro."
-                        12, 13 -> "Bộ nhận giọng nói của máy chưa có tiếng Việt."
-                        else -> "Bộ nhận giọng nói báo lỗi (mã $code)."
-                    })
+                    settle(my) {
+                        if (code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) Speaker.say(c, "Em chưa nghe rõ")
+                        show(6, msg = when (code) {
+                            SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Không nghe thấy câu lệnh."
+                            SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Cần có mạng để nhận giọng nói."
+                            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Bộ nhận giọng nói chưa có quyền micro. Vào Cài đặt máy, mục Ứng dụng, chọn Google, bật quyền Micro."
+                            12, 13 -> "Bộ nhận giọng nói của máy chưa có tiếng Việt."
+                            else -> "Bộ nhận giọng nói báo lỗi (mã $code)."
+                        })
+                    }
                 }
                 override fun onReadyForSpeech(p: Bundle?) { if (my == gen) phase.intValue = 1 }
                 override fun onBeginningOfSpeech() { if (my == gen) phase.intValue = 2 }
@@ -243,7 +277,7 @@ object Voice {
                 if (heard.isNotBlank()) { val m = run(heard); if (m != null) answer(c, heard, m) else { show(3, heard); Speaker.say(c, "Em chưa có lệnh này") } }
                 else { show(6, msg = "Không nghe thấy câu lệnh."); Speaker.say(c, "Em chưa nghe rõ") }
             }, 16000)
-        } catch (e: Exception) { show(6, msg = "Không mở được bộ nhận giọng nói của máy.") }
+        } catch (e: Exception) { quiet(false); show(6, msg = "Không mở được bộ nhận giọng nói của máy.") }
     }
 }
 
@@ -323,6 +357,7 @@ object Speaker {
 
     /** Đọc [text]; đọc xong (hoặc không đọc được) thì gọi [then]. */
     fun say(ctx: Context, text: String, then: (() -> Unit)? = null) {
+        if (!S.voiceReply.value) { if (then != null) h.postDelayed({ then() }, 1200); return }      // đã tắt trả lời bằng tiếng: chỉ hiện chữ trên thẻ
         use(ctx) { e -> if (e == null) { beep(ctx); then?.invoke() } else speak(e, text, then) }
     }
 
@@ -362,6 +397,33 @@ fun MicBtn() {
 @Composable
 private fun CmdLine(group: String, items: String) {
     Row { T(group, 13, FontWeight.Bold, modifier = Modifier.width(76.dp)); T(items, 13, color = SubTxt) }
+}
+
+/** Bảng câu lệnh (theo tờ "Hướng dẫn điều khiển giọng nói" của SK). */
+@Composable
+fun CmdList() {
+    T("Các câu lệnh", 16, FontWeight.ExtraBold)
+    CmdLine("Bật tắt", "“bật đèn”, “tắt đèn”")
+    CmdLine("Độ sáng", "“sáng hơn”, “tối hơn”, “độ sáng tối đa”, “độ sáng tối thiểu”, “độ sáng 50”")
+    CmdLine("Màu", "“màu đỏ”, vàng, xanh lá, xanh lam, xanh da trời, tím, trắng, cam, hồng")
+    CmdLine("Chế độ", "“chế độ tự động”, “chế độ thở”, “chế độ chớp”, “nhịp điệu sôi động”, “chế độ một” đến “chế độ mười hai”, hoặc gọi theo tên; “đổi hiệu ứng”")
+    CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
+    CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”, “tốc độ 8”")
+    CmdLine("Khác", "“đổi hướng”, “đổi giọng nói”, “xin chào SK Light”, “hẹn gặp lại”")
+}
+
+/** Trang "Giọng nói AI" trong Cài đặt: công tắc trả lời bằng tiếng, tắt tiếng báo khi bấm mic, bảng câu lệnh. */
+@Composable
+fun VoicePage() {
+    BackToSettings()
+    Card {
+        GroupTitle(Icons.Filled.Mic, "Giọng nói AI", 16)
+        Spacer(Modifier.height(6.dp))
+        SwitchRow("Trả lời bằng tiếng nói", "Đọc lại việc vừa làm sau mỗi câu lệnh", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
+        Divider()
+        SwitchRow("Tắt tiếng báo khi bấm mic", "Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.", S.voiceQuiet.value) { S.voiceQuiet.value = it; S.saveSettings() }
+    }
+    Card { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { CmdList() } }
 }
 
 /** Thẻ nhỏ dưới menu: đang nghe, kết quả, hoặc hướng dẫn. Ẩn khi không dùng. */
@@ -412,14 +474,7 @@ fun VoicePanel(modifier: Modifier = Modifier) {
                 }
             }
             4 -> {
-                T("Các câu lệnh", 16, FontWeight.ExtraBold)
-                CmdLine("Bật tắt", "“bật đèn”, “tắt đèn”")
-                CmdLine("Độ sáng", "“sáng hơn”, “tối hơn”, “độ sáng tối đa”, “độ sáng tối thiểu”, “độ sáng 50”")
-                CmdLine("Màu", "“màu đỏ”, vàng, xanh lá, xanh lam, xanh da trời, tím, trắng, cam, hồng")
-                CmdLine("Chế độ", "“chế độ tự động”, “chế độ thở”, “chế độ chớp”, “nhịp điệu sôi động”, “chế độ một” đến “chế độ mười hai”, hoặc gọi theo tên; “đổi hiệu ứng”")
-                CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
-                CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”, “tốc độ 8”")
-                CmdLine("Khác", "“đổi hướng”, “đổi giọng nói”, “xin chào SK Light”, “hẹn gặp lại”")
+                CmdList()
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlineBtn("Nói thử", Modifier.weight(1f), again)
                     OutlineBtn("Đóng", Modifier.weight(1f)) { Voice.close() }

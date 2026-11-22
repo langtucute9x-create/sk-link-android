@@ -151,7 +151,8 @@ fun Root() {
                             val (granted, open) = navAccess()
                             TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                         }
-                        else -> if (S.subPage.intValue == 3) TwoCol(leftW.dp, { CustomTestPage() }, { })
+                        else -> if (S.subPage.intValue == 4) TwoCol(leftW.dp, { VoicePage() }, { })
+                        else if (S.subPage.intValue == 3) TwoCol(leftW.dp, { CustomTestPage() }, { })
                         else if (S.subPage.intValue == 2) TwoCol(leftW.dp, { LanguagePage() }, { })
                         else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
                         else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
@@ -178,7 +179,7 @@ fun Root() {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
-                    else -> if (S.subPage.intValue == 3) CustomTestPage() else if (S.subPage.intValue == 2) LanguagePage() else if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
+                    else -> if (S.subPage.intValue == 4) VoicePage() else if (S.subPage.intValue == 3) CustomTestPage() else if (S.subPage.intValue == 2) LanguagePage() else if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
                 }
                 LogoFooter()
             }
@@ -826,7 +827,7 @@ fun SettingsFeatures() {
         val later = { Toast.makeText(ctx, L.tr("Trang này sẽ làm sau."), Toast.LENGTH_SHORT).show() }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối và quản lý thiết bị hộp phụ", later)
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Cài đặt hướng ánh sáng chạy của từng khu vực", later)
-        Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói", later)
+        Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói") { S.subPage.intValue = 4 }
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
         Feature(Icons.Filled.Science, "Thử chế độ tự tạo", "Xem hộp đèn chuyển màu liên tục có mượt không (bản thử)") { S.subPage.intValue = 3 }

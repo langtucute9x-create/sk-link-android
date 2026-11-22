@@ -298,3 +298,7 @@ App tự điều khiển	Driven by the app
 App giữ màu khu vực 1, chỉ đổi màu khu vực 2 trong 20 giây. Thử cả lúc khu vực 1 để Đơn sắc và lúc đang chạy một hiệu ứng. Số lệnh mỗi giây lấy theo ô chọn ở thẻ trên.	The app keeps the zone 1 colour and only changes zone 2 for 20 seconds. Try it both with zone 1 in Single colour and while an effect is running. Commands per second follow the choice in the card above.					
 Thở riêng khu vực 2	Breathe zone 2 only					
 Chớp riêng khu vực 2	Flash zone 2 only					
+Trả lời bằng tiếng nói	Spoken replies					
+Đọc lại việc vừa làm sau mỗi câu lệnh	Says what was done after each voice command					
+Tắt tiếng báo khi bấm mic	Mute the mic chime					
+Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.	Mutes the speech recogniser chime. Music is also muted while listening.					

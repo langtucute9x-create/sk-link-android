@@ -95,6 +95,8 @@ object S {
     val voiceHeard = mutableStateOf("")
     val voiceMsg = mutableStateOf("")
     val voiceTick = mutableIntStateOf(0)
+    val voiceReply = mutableStateOf(true)                 // trả lời bằng tiếng nói sau mỗi câu lệnh
+    val voiceQuiet = mutableStateOf(true)                 // tắt tiếng báo của bộ nhận giọng nói khi bấm mic
     val speedKmh = mutableFloatStateOf(0f)
     val song = mutableStateOf("")
     val placeVer = mutableIntStateOf(0)
@@ -104,7 +106,7 @@ object S {
     var appVisible = false
     var userOff = false                                   // người dùng vừa bấm Ngắt kết nối: không tự nối lại
     private val main = Handler(Looper.getMainLooper())
-    val subPage = mutableIntStateOf(0)                    // trang con trong Cài đặt: 0 không, 1 Cài đặt giao diện, 2 Cài đặt ngôn ngữ, 3 Thử chế độ tự tạo
+    val subPage = mutableIntStateOf(0)                    // trang con trong Cài đặt: 0 không, 1 Cài đặt giao diện, 2 Cài đặt ngôn ngữ, 3 Thử chế độ tự tạo, 4 Giọng nói AI
     private val nightLoop = object : Runnable {
         override fun run() {
             try { Theme.nightNow.value = Night.isNightNow(); Night.tick() } catch (_: Exception) {}
@@ -133,6 +135,8 @@ object S {
         idleOn.value = sp.getBoolean("idleOn", false)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
+        voiceReply.value = sp.getBoolean("voiceReply", true)
+        voiceQuiet.value = sp.getBoolean("voiceQuiet", true)
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
         Scenes.load(if (sp.contains("scenes2")) sp.getString("scenes2", "") ?: "" else null)
@@ -154,6 +158,7 @@ object S {
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value)
+            .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue)
