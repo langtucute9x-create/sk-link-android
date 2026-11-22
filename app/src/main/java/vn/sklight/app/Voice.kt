@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.media.ToneGenerator
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -120,13 +119,23 @@ object Voice {
     private fun has(t: String, word: String) = Regex("(^|\\s)" + Regex.escape(word) + "(\\s|$)").containsMatchIn(t)
 
     private fun pick(e: Effect): String { S.pickEffect(e); return "Em đã chuyển sang chế độ ${e.name} rồi" }
-    private fun bright(v: Int): String { S.setBright(v); return "Em đã chỉnh độ sáng $v% rồi" }
+    private fun zn(z: Int) = when (z) { 1 -> " khu vực 1"; 2 -> " khu vực 2"; 0 -> " cả xe"; else -> "" }
+    /** Độ sáng hiện tại của khu vực [z] (-1 = khu vực đang chọn trong trang Đèn). */
+    private fun curBri(z: Int) = if (z > 0 && S.zone.intValue == 0) S.bri[0] else S.bri[if (z >= 0) z else S.zone.intValue]
+    private fun bright(v: Int, z: Int): String {
+        if (z >= 0 && z != S.zone.intValue) {
+            if (z != 0 && S.zone.intValue == 0) { S.bri[1] = S.bri[0]; S.bri[2] = S.bri[0] }      // đang đồng nhất: khu vực còn lại giữ mức đang sáng
+            S.zone.intValue = z
+        }
+        S.setBright(v)
+        return "Em đã chỉnh độ sáng${zn(z)} $v% rồi"
+    }
     private fun speed(v: Int): String { S.setSpeed(v); return "Em đã chỉnh tốc độ $v rồi" }
 
     /** Thực hiện câu lệnh. Trả về câu trả lời (hiện trên thẻ và đọc thành tiếng), hoặc null nếu không có lệnh này. So trên chữ CÓ DẤU. */
     fun run(raw: String): String? {
         after = 0
-        val t = raw.lowercase().replace(Regex("[.,!?]"), " ").replace(Regex("\\s+"), " ").trim()
+        var t = raw.lowercase().replace(Regex("[.,!?]"), " ").replace(Regex("\\s+"), " ").trim()
         if (t.isEmpty()) return null
         // các câu không cần hộp đèn
         if (has(t, "hẹn gặp lại") || has(t, "tạm biệt")) { after = 2; return "Hẹn gặp lại ạ" }
@@ -135,15 +144,29 @@ object Voice {
         if (called && t.split(" ").size <= 5) { after = 1; return "Em nghe đây ạ" }
         if (!S.connected.value) return "Em chưa kết nối với hộp đèn"
 
-        val cur = S.bri[S.zone.intValue]
-        Regex("độ sáng (\\d{1,3})").find(t)?.let { return bright(it.groupValues[1].toInt().coerceIn(0, 100)) }
+        // khu vực nêu trong câu: "khu vực 2 màu đỏ", "vùng 1 sáng hơn", "cả xe màu trắng". z: -1 không nêu, 0 cả xe, 1, 2
+        var z = -1
+        Regex("(khu vực|khu|vùng) (số )?(1|2|một|hai)(\\s|$)").find(t)?.let { m ->
+            z = if (m.groupValues[3] == "1" || m.groupValues[3] == "một") 1 else 2
+            t = t.removeRange(m.range).replace(Regex("\\s+"), " ").trim()
+        }
+        if (z < 0 && (has(t, "cả xe") || has(t, "đồng nhất") || has(t, "toàn bộ") || has(t, "tất cả"))) z = 0
+        if (z == 2) {      // chế độ màu của khu vực 2 (tĩnh / tự động / nhấp nháy)
+            val v = if (has(t, "tự động")) 1 else if (has(t, "nhấp nháy") || has(t, "chớp")) 2 else if (has(t, "tĩnh") || has(t, "đứng yên")) 0 else -1
+            if (v >= 0) {
+                if (S.setZ2(v)) return "Em đã chuyển khu vực 2 sang ${listOf("màu tĩnh", "màu tự động", "màu nhấp nháy")[v]} rồi"
+                S.refreshBlocks(); return "Em chưa đọc được cài đặt từ hộp đèn"
+            }
+        }
+        val cur = curBri(z)
+        Regex("độ sáng (\\d{1,3})").find(t)?.let { return bright(it.groupValues[1].toInt().coerceIn(0, 100), z) }
         Regex("tốc độ (\\d{1,2})").find(t)?.let { return speed(it.groupValues[1].toInt().coerceIn(1, 10)) }
         if (has(t, "tắt đèn") || t == "tắt" || has(t, "tắt hết") || has(t, "màu đen")) { S.setPower(false); return "Em đã tắt đèn rồi" }
         if (has(t, "bật đèn") || has(t, "mở đèn") || t == "bật") { S.setPower(true); return "Em đã bật đèn rồi" }
-        if (has(t, "sáng tối đa") || has(t, "sáng nhất")) return bright(100)
-        if (has(t, "sáng tối thiểu") || has(t, "tối nhất")) return bright(5)
-        if (has(t, "sáng hơn") || has(t, "tăng sáng") || has(t, "sáng lên")) return bright((cur + 20).coerceAtMost(100))
-        if (has(t, "tối hơn") || has(t, "giảm sáng") || has(t, "tối lại") || has(t, "dịu")) return bright((cur - 20).coerceAtLeast(5))
+        if (has(t, "sáng tối đa") || has(t, "sáng nhất")) return bright(100, z)
+        if (has(t, "sáng tối thiểu") || has(t, "tối nhất")) return bright(5, z)
+        if (has(t, "sáng hơn") || has(t, "tăng sáng") || has(t, "sáng lên")) return bright((cur + 20).coerceAtMost(100), z)
+        if (has(t, "tối hơn") || has(t, "giảm sáng") || has(t, "tối lại") || has(t, "dịu")) return bright((cur - 20).coerceAtLeast(5), z)
         if (has(t, "tăng tốc") || has(t, "nhanh hơn")) return speed((S.speed.intValue + 2).coerceAtMost(10))
         if (has(t, "chậm lại") || has(t, "chậm hơn") || has(t, "giảm tốc")) return speed((S.speed.intValue - 2).coerceAtLeast(1))
         if (has(t, "đổi hướng") || has(t, "đảo hướng")) {
@@ -167,11 +190,15 @@ object Voice {
         for (g in GUIDE) if (g.third.any { has(t, it) }) Effects.byId(g.second)?.let { return pick(it) }
         if (has(t, "mùa hè")) Effects.byId(16)?.let { return pick(it) }
         if (has(t, "bảy màu") || has(t, "7 màu") || has(t, "đủ màu")) Effects.byId(1)?.let { return pick(it) }
-        // màu: cần chữ "màu", hoặc câu rất ngắn
-        if (t.contains("màu") || t.split(" ").size <= 3) for (c in COLORS) if (c.first.any { has(t, it) }) {
+        // màu: cần chữ "màu", có nêu khu vực, hoặc câu rất ngắn
+        if (z >= 0 || t.contains("màu") || t.split(" ").size <= 3) for (c in COLORS) if (c.first.any { has(t, it) }) {
             if (S.mode.intValue != 0) { S.mode.intValue = 0; S.sendEffect() }      // đang chạy hiệu ứng thì về Đơn sắc để thấy màu
+            if (z >= 0) {
+                if (z != 0 && S.czone.intValue == 0) { S.col[1] = S.col[0]; S.col[2] = S.col[0] }      // đang đồng nhất: khu vực còn lại giữ màu đang có
+                S.czone.intValue = z
+            }
             S.setColor(c.second)
-            return "Em đã đổi sang màu ${c.third} rồi"
+            return "Em đã đổi${zn(z)} sang màu ${c.third} rồi"
         }
         return null
     }
@@ -181,7 +208,7 @@ object Voice {
         val a = after
         show(2, heard, m)
         val done: () -> Unit = { if (a == 1) start(c) else if (a == 2) close() }
-        if (a == 3) Speaker.changeVoice(c, m) else Speaker.say(c, m, done)
+        if (a == 3) Speaker.changeVoice(c, m) else Speaker.say(c, m, then = done)
     }
 
     fun close() {
@@ -282,70 +309,82 @@ object Voice {
 }
 
 /**
- * Trả lời bằng tiếng nói: bộ đọc chữ thành tiếng có sẵn của máy (không dùng mạng riêng, không dùng AI).
- * Máy chưa có giọng tiếng Việt thì kêu một tiếng "bíp" và báo một lần cách cài.
+ * Trả lời bằng tiếng nói: bộ đọc chữ thành tiếng có sẵn của máy (không dùng AI).
+ * Bộ đọc mặc định của máy không có tiếng Việt thì thử bộ đọc của Google. Không có giọng tiếng Việt thì app im lặng
+ * (chỉ hiện chữ trên thẻ) và báo một lần; cách cài nằm ở Cài đặt > Giọng nói AI.
  */
 object Speaker {
+    private const val GOOGLE = "com.google.android.tts"
     private val h = Handler(Looper.getMainLooper())
     private var tts: TextToSpeech? = null
-    private var state = 0                            // 0 chưa mở, 1 đang mở, 2 dùng được, 3 máy không có giọng tiếng Việt
+    val state = mutableIntStateOf(0)                 // 0 chưa mở, 1 đang mở, 2 dùng được, 3 máy không có giọng tiếng Việt
+    var engine = ""                                  // gói của bộ đọc đang dùng
+    private var triedGoogle = false
     private var waiting: ((TextToSpeech?) -> Unit)? = null
     private var onDone: (() -> Unit)? = null
     private var seq = 0
     private var told = false
 
+    private fun open(c: Context, pkg: String?) {
+        try {
+            tts = if (pkg == null) TextToSpeech(c) { st -> h.post { opened(c, st) } } else TextToSpeech(c, { st -> h.post { opened(c, st) } }, pkg)
+        } catch (e: Exception) { fail() }
+    }
+
+    private fun fail() {
+        try { tts?.shutdown() } catch (e: Exception) {}
+        tts = null
+        state.intValue = 3
+        val w = waiting; waiting = null
+        w?.invoke(null)
+    }
+
     private fun use(ctx: Context, block: (TextToSpeech?) -> Unit) {
-        when (state) {
+        when (state.intValue) {
             2 -> block(tts)
             3 -> block(null)
             1 -> waiting = block
-            else -> {
-                state = 1; waiting = block
-                val c = ctx.applicationContext
-                try {
-                    tts = TextToSpeech(c) { st -> h.post { opened(st) } }
-                } catch (e: Exception) { state = 3; waiting = null; block(null) }
-            }
+            else -> { state.intValue = 1; waiting = block; triedGoogle = false; open(ctx.applicationContext, null) }
         }
     }
 
-    private fun opened(st: Int) {
+    private fun opened(c: Context, st: Int) {
         val e = tts
         var ok = false
         if (st == TextToSpeech.SUCCESS && e != null) {
             val r = try { e.setLanguage(Locale("vi", "VN")) } catch (x: Exception) { TextToSpeech.LANG_NOT_SUPPORTED }
             ok = r != TextToSpeech.LANG_MISSING_DATA && r != TextToSpeech.LANG_NOT_SUPPORTED
         }
-        if (ok && e != null) {
-            state = 2
-            try {
-                val want = S.ttsVoice
-                if (want.isNotEmpty()) e.voices?.firstOrNull { it.name == want }?.let { e.voice = it }
-            } catch (x: Exception) {}
-            e.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(id: String?) {}
-                override fun onDone(id: String?) { finished(id) }
-                @Deprecated("") override fun onError(id: String?) { finished(id) }
-            })
-        } else state = 3
+        if (!ok || e == null) {
+            val def = try { e?.defaultEngine } catch (x: Exception) { null }
+            try { e?.shutdown() } catch (x: Exception) {}
+            tts = null
+            if (!triedGoogle && def != GOOGLE) { triedGoogle = true; open(c, GOOGLE) } else fail()
+            return
+        }
+        engine = if (triedGoogle) GOOGLE else (try { e.defaultEngine } catch (x: Exception) { null } ?: "")
+        state.intValue = 2
+        try {
+            val want = S.ttsVoice
+            if (want.isNotEmpty()) e.voices?.firstOrNull { it.name == want }?.let { e.voice = it }
+        } catch (x: Exception) {}
+        e.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(id: String?) {}
+            override fun onDone(id: String?) { finished(id) }
+            @Deprecated("") override fun onError(id: String?) { finished(id) }
+        })
         val w = waiting; waiting = null
-        w?.invoke(if (state == 2) e else null)
+        w?.invoke(e)
     }
 
     private fun finished(id: String?) {
         h.post { if (id == "sk$seq") { val d = onDone; onDone = null; d?.invoke() } }
     }
 
-    private fun beep(ctx: Context) {
-        try {
-            val g = ToneGenerator(AudioManager.STREAM_MUSIC, 80)
-            g.startTone(ToneGenerator.TONE_PROP_ACK, 180)
-            h.postDelayed({ try { g.release() } catch (e: Exception) {} }, 600)
-        } catch (e: Exception) {}
-        if (!told) {
-            told = true
-            Toast.makeText(ctx.applicationContext, L.tr("Máy chưa có giọng đọc tiếng Việt nên app chỉ kêu bíp. Vào Cài đặt máy, tìm \"Chuyển văn bản thành giọng nói\" để cài tiếng Việt."), Toast.LENGTH_LONG).show()
-        }
+    private fun noVoice(ctx: Context) {
+        if (told) return
+        told = true
+        Toast.makeText(ctx.applicationContext, L.tr("Máy chưa có giọng đọc tiếng Việt nên app chưa trả lời bằng tiếng được. Vào Cài đặt, mục Giọng nói AI để cài."), Toast.LENGTH_LONG).show()
     }
 
     private fun speak(e: TextToSpeech, text: String, then: (() -> Unit)?) {
@@ -355,16 +394,20 @@ object Speaker {
         if (r != TextToSpeech.SUCCESS) { onDone = null; then?.invoke() }
     }
 
-    /** Đọc [text]; đọc xong (hoặc không đọc được) thì gọi [then]. */
-    fun say(ctx: Context, text: String, then: (() -> Unit)? = null) {
-        if (!S.voiceReply.value) { if (then != null) h.postDelayed({ then() }, 1200); return }      // đã tắt trả lời bằng tiếng: chỉ hiện chữ trên thẻ
-        use(ctx) { e -> if (e == null) { beep(ctx); then?.invoke() } else speak(e, text, then) }
+    /** Đọc [text]; đọc xong (hoặc không đọc được) thì gọi [then]. [force]: đọc cả khi đã tắt công tắc trả lời (nút Nghe thử). */
+    fun say(ctx: Context, text: String, force: Boolean = false, then: (() -> Unit)? = null) {
+        if (!force && !S.voiceReply.value) { if (then != null) h.postDelayed({ then() }, 1200); return }      // đã tắt trả lời bằng tiếng: chỉ hiện chữ trên thẻ
+        use(ctx) { e ->
+            if (e != null) speak(e, text, then)
+            else { noVoice(ctx); if (then != null) h.postDelayed({ then() }, 1200) }
+            Unit
+        }
     }
 
     /** Chuyển sang giọng tiếng Việt kế tiếp của máy rồi đọc [text] bằng giọng mới. */
     fun changeVoice(ctx: Context, text: String) {
         use(ctx) { e ->
-            if (e == null) { beep(ctx); return@use }
+            if (e == null) { noVoice(ctx); return@use }
             val l = try { e.voices?.filter { it.locale.language == "vi" && !it.features.contains("notInstalled") }?.sortedBy { it.name } } catch (x: Exception) { null } ?: emptyList()
             if (l.size < 2) { speak(e, "Máy này chỉ có một giọng tiếng Việt", null); return@use }
             val cur = try { e.voice?.name } catch (x: Exception) { null }
@@ -372,6 +415,29 @@ object Speaker {
             try { e.voice = v; S.ttsVoice = v.name } catch (x: Exception) {}
             speak(e, text, null)
         }
+    }
+
+    /** Mở bộ đọc để biết máy có giọng tiếng Việt không (cho trang Giọng nói AI). */
+    fun probe(ctx: Context) { if (state.intValue == 0) use(ctx) { } }
+
+    /** Đóng bộ đọc để lần sau dò lại từ đầu (sau khi người dùng cài thêm giọng). */
+    fun reset() {
+        onDone = null; waiting = null; told = false
+        try { tts?.shutdown() } catch (e: Exception) {}
+        tts = null
+        state.intValue = 0
+    }
+
+    /** Mở chỗ cài giọng đọc tiếng Việt: tải dữ liệu giọng của Google, không được thì mở cài đặt đọc chữ của máy, rồi CH Play. */
+    fun install(ctx: Context) {
+        val tries = listOf(
+            Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).setPackage(GOOGLE),
+            Intent("com.android.settings.TTS_SETTINGS"),
+            Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$GOOGLE")),
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$GOOGLE"))
+        )
+        for (i in tries) { try { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); return } catch (e: Exception) {} }
+        Toast.makeText(ctx.applicationContext, L.tr("Máy này không mở được CH Play."), Toast.LENGTH_LONG).show()
     }
 
     fun stop() { onDone = null; try { tts?.stop() } catch (e: Exception) {} }
@@ -406,6 +472,7 @@ fun CmdList() {
     CmdLine("Bật tắt", "“bật đèn”, “tắt đèn”")
     CmdLine("Độ sáng", "“sáng hơn”, “tối hơn”, “độ sáng tối đa”, “độ sáng tối thiểu”, “độ sáng 50”")
     CmdLine("Màu", "“màu đỏ”, vàng, xanh lá, xanh lam, xanh da trời, tím, trắng, cam, hồng")
+    CmdLine("Khu vực", "“khu vực 2 màu đỏ”, “khu vực 1 màu xanh”, “khu vực 2 sáng hơn”, “cả xe màu trắng”")
     CmdLine("Chế độ", "“chế độ tự động”, “chế độ thở”, “chế độ chớp”, “nhịp điệu sôi động”, “chế độ một” đến “chế độ mười hai”, hoặc gọi theo tên; “đổi hiệu ứng”")
     CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
     CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”, “tốc độ 8”")
@@ -420,6 +487,16 @@ fun VoicePage() {
         GroupTitle(Icons.Filled.Mic, "Giọng nói AI", 16)
         Spacer(Modifier.height(6.dp))
         SwitchRow("Trả lời bằng tiếng nói", "Đọc lại việc vừa làm sau mỗi câu lệnh", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
+        val ctx = LocalContext.current
+        val st = Speaker.state.intValue
+        LaunchedEffect(Unit) { Speaker.probe(ctx) }
+        T(when (st) { 2 -> "Máy có giọng đọc tiếng Việt."; 3 -> "Máy chưa có giọng đọc tiếng Việt, nên app chưa trả lời bằng tiếng được."; else -> "Đang kiểm tra giọng đọc của máy…" }, 12, color = if (st == 3) Pink else Grey)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (st == 3) OutlineBtn("Cài giọng đọc tiếng Việt", Modifier.weight(1.6f)) { Speaker.install(ctx) }
+            OutlineBtn(if (st == 3) "Kiểm tra lại" else "Nghe thử", Modifier.weight(1f)) { Speaker.reset(); Speaker.say(ctx, "Xin chào, em là SK Light", force = true) }
+        }
+        Spacer(Modifier.height(6.dp))
         Divider()
         SwitchRow("Tắt tiếng báo khi bấm mic", "Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.", S.voiceQuiet.value) { S.voiceQuiet.value = it; S.saveSettings() }
     }

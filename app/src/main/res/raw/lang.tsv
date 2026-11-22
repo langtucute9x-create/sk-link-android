@@ -302,3 +302,9 @@ Trả lời bằng tiếng nói	Spoken replies
 Đọc lại việc vừa làm sau mỗi câu lệnh	Says what was done after each voice command					
 Tắt tiếng báo khi bấm mic	Mute the mic chime					
 Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.	Mutes the speech recogniser chime. Music is also muted while listening.					
+Máy có giọng đọc tiếng Việt.	This device has a Vietnamese reading voice.					
+Máy chưa có giọng đọc tiếng Việt, nên app chưa trả lời bằng tiếng được.	This device has no Vietnamese reading voice, so spoken replies are not available yet.					
+Đang kiểm tra giọng đọc của máy…	Checking the device reading voice…					
+Cài giọng đọc tiếng Việt	Install Vietnamese voice					
+Kiểm tra lại	Check again					
+Nghe thử	Play sample					
