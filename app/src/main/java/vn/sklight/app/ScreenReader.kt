@@ -122,17 +122,40 @@ class ScreenReader : AccessibilityService() {
                         val d = NavParser.analyseIcon(Bitmap.createScaledBitmap(c, 64, 64, true), NavState())
                         if (d != '?') { dirNow = d; dirRoad = road; pushNav(pkg, dist, road) }
                     }
-                    if (sign != null) crop(bmp, sign)?.let { c ->
-                        val big = if (c.height < 120) Bitmap.createScaledBitmap(c, c.width * 2, c.height * 2, true) else c
-                        recognizer.process(InputImage.fromBitmap(big, 0)).addOnSuccessListener { t ->
-                            val v = Regex("\\d{2,3}").findAll(t.text).mapNotNull { it.value.toIntOrNull() }.firstOrNull { it in 5..130 }
-                            if (v != null) { S.speedLimit.intValue = v; AlertBridge.refresh() }
-                        }
+                    if (sign != null) {
+                        S.ocrNote.value = "vùng biển ${sign.width()}x${sign.height()}, màn hình ${bmp.width}x${bmp.height}"
+                        readSign(bmp, sign)
                     }
                 } catch (t: Throwable) { /* bỏ qua */ }
             }
             override fun onFailure(code: Int) {}
         })
+    }
+
+    /** Đọc số trên biển: thử vùng bên trong vành đỏ trước, không ra thì thử cả biển. */
+    private fun readSign(bmp: Bitmap, sign: Rect) {
+        val inner = Rect(sign.left + sign.width() * 18 / 100, sign.top + sign.height() * 18 / 100,
+            sign.right - sign.width() * 18 / 100, sign.bottom - sign.height() * 18 / 100)
+        val tries = listOf(inner, sign)
+        fun attempt(i: Int) {
+            if (i >= tries.size) { S.ocrNote.value += " · không đọc được số"; return }
+            val c = crop(bmp, tries[i]) ?: return attempt(i + 1)
+            val k = (240f / c.height).coerceIn(1f, 4f)
+            val big = Bitmap.createScaledBitmap(c, (c.width * k).toInt(), (c.height * k).toInt(), true)
+            recognizer.process(InputImage.fromBitmap(big, 0)).addOnSuccessListener { t ->
+                val v = Regex("\\d{2,3}").findAll(t.text).mapNotNull { it.value.toIntOrNull() }.firstOrNull { it in 5..130 }
+                if (v != null) {
+                    S.speedLimit.intValue = v; AlertBridge.refresh()
+                    S.ocrNote.value = "đọc được $v (lần ${i + 1})"
+                } else {
+                    S.ocrNote.value += " · lần ${i + 1} thấy \"${t.text.replace('\n', ' ').take(20)}\""
+                    attempt(i + 1)
+                }
+            }.addOnFailureListener { ex ->
+                S.ocrNote.value = "lỗi đọc chữ: ${ex.javaClass.simpleName} ${ex.message?.take(60) ?: ""}"
+            }
+        }
+        attempt(0)
     }
 
     private fun crop(b: Bitmap, r: Rect): Bitmap? {

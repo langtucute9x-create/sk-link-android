@@ -773,6 +773,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
         Kv("Giới hạn đọc được", if (S.speedLimit.intValue > 0) "${S.speedLimit.intValue} km/h" else "Chưa có")
+        if (S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
         Spacer(Modifier.height(6.dp))
         T("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở phần Đọc chữ trên màn hình bên dưới.", 11, color = Grey)
     }

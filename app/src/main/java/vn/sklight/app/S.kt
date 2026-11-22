@@ -77,6 +77,7 @@ object S {
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
     val appSpeed = mutableIntStateOf(-1)                  // tốc độ xe đọc từ app dẫn đường, -1 = chưa biết
     val screenAuto = mutableStateOf(false)                // tự đọc màn hình app bản đồ
+    val ocrNote = mutableStateOf("")                      // kết quả đọc biển tốc độ gần nhất (để kiểm tra)
     val screenInfo = mutableStateOf("")                   // kết quả đọc gần nhất, để kiểm tra
     val screenOn = mutableStateOf(false)                  // đang đọc chữ trên màn hình (tự tắt sau 5 phút)
     @Volatile var screenUntil = 0L
