@@ -27,7 +27,11 @@ object Effects {
     val groups = listOf(
         EffectGroup("CHẾ ĐỘ CƠ BẢN", Icons.Outlined.LightMode, listOf(
             Effect(0, "Đơn sắc", Icons.Outlined.Lightbulb, cPink), Effect(1, "Tự động", Icons.Filled.Autorenew, cRed),
-            Effect(2, "Thở", Icons.Filled.ShowChart, cCyan, pre("Chuyển màu", c7)), Effect(3, "Chớp", Icons.Filled.Bolt, cYel, pre("Nhấp nháy", c8)))),
+            Effect(2, "Thở", Icons.Filled.ShowChart, cCyan, pre("Chuyển màu", c7)), Effect(3, "Chớp", Icons.Filled.Bolt, cYel, pre("Nhấp nháy", c8)),
+            Effect(100, "Cầu vồng mượt", Icons.Filled.Gradient, cPurple), Effect(101, "Thở theo màu chọn", Icons.Filled.ShowChart, cPink),
+            Effect(102, "Hai khu so le", Icons.Filled.SwapHoriz, cCyan), Effect(103, "Lửa", Icons.Filled.LocalFireDepartment, cOrange),
+            Effect(104, "Cảnh sát", Icons.Filled.FlashOn, cBlue), Effect(105, "Sét", Icons.Filled.Bolt, cYel),
+            Effect(106, "Đại dương", Icons.Filled.Waves, cBlue), Effect(107, "Hoàng hôn", Icons.Filled.WbTwilight, cRed))),
         EffectGroup("CHẾ ĐỘ HIỆU ỨNG", Icons.Filled.AutoAwesome, listOf(
             Effect(7, "Ma thuật", Icons.Filled.AutoAwesome, cRed), Effect(8, "Huyền ảo", Icons.Filled.BlurCircular, cPink),
             Effect(9, "Ma thuật", Icons.Filled.AutoAwesome, cCyan), Effect(11, "Cuộn màn hình", Icons.Outlined.ViewAgenda, cOrange),

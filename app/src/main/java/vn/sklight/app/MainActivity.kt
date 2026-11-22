@@ -307,20 +307,25 @@ fun LedMain() {
                 T("Chọn chế độ màu vùng 2 huyền ảo", 13, FontWeight.Bold)
             }
             Spacer(Modifier.height(4.dp))
-            Row {
-                listOf("Màu tĩnh", "Màu tự động", "Màu nhấp nháy").forEachIndexed { i, t ->
-                    val on = S.z2.intValue == i
-                    Row(Modifier.weight(1f).heightIn(min = 40.dp).clickable {
+            val opts = listOf("Màu tĩnh", "Màu tự động", "Màu nhấp nháy") + Auto.Z2_NAMES
+            Grid(opts.indices.toList(), 3, 0.dp, 0.dp) { i, m ->
+                val hw = i < 3
+                val on = if (hw) (S.z2.intValue == i && Auto.z2.intValue == 0) else Auto.z2.intValue == i - 2
+                Row(m.heightIn(min = 40.dp).clickable {
+                    if (hw) {
+                        if (Auto.z2.intValue != 0) Auto.stop()
                         if (!S.setZ2(i)) { S.refreshBlocks(); Toast.makeText(S.app, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show() }
-                    }, verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
-                            if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
-                        }
-                        Spacer(Modifier.width(6.dp))
-                        T(t, 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Txt else Grey)
+                    } else if (!S.connected.value) Toast.makeText(S.app, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show()
+                    else Auto.startZ2(i - 2)
+                }, verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
+                        if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
                     }
+                    Spacer(Modifier.width(6.dp))
+                    T(opts[i], 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Txt else Grey)
                 }
             }
+            if (Auto.z2.intValue != 0) { Spacer(Modifier.height(4.dp)); T("Kiểu thêm do app điều khiển, chạy khi app còn mở.", 11, color = Grey) }
         }
     }
 }
@@ -899,7 +904,7 @@ fun SettingsFeatures() {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.16 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    T("SK Light 0.5.17 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }
 
 @Composable

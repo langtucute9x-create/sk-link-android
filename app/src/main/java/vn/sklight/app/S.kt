@@ -220,6 +220,7 @@ object S {
     // ---------- đèn ----------
     fun setPower(v: Boolean) {
         on.value = v
+        if (!v) Auto.stop()
         if (v) sendBright() else ble.send(Protocol.bright(false, true, 100, 100), 1, true)
         saveSettings()
     }
@@ -242,6 +243,7 @@ object S {
         else Protocol.color(false, col[1], col[2], invert.value)
 
     fun setColor(rgb: Int) {
+        if (Auto.running()) { Auto.leave(); if (mode.intValue >= 100) mode.intValue = 0 }
         col[czone.intValue] = rgb
         on.value = true; sceneSel.intValue = -1
         ble.send(colorFrame(), 2, true)
@@ -258,6 +260,8 @@ object S {
     fun removeCustom(c: Int) { customs.remove(c); saveSettings() }
 
     fun sendEffect() {
+        if (mode.intValue >= 100) { Auto.startMain(mode.intValue); return }
+        Auto.leave()
         val e = Effects.byId(mode.intValue)
         val param = if (e != null && e.subs.isNotEmpty()) e.base + sub[e.id] else 0
         ble.send(Protocol.effect(sens.intValue, m1, mode.intValue, param, speed.intValue), 3, true)
