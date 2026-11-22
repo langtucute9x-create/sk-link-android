@@ -465,26 +465,43 @@ private fun CmdLine(group: String, items: String) {
     Row { T(group, 13, FontWeight.Bold, modifier = Modifier.width(76.dp)); T(items, 13, color = SubTxt) }
 }
 
-/** Bảng câu lệnh (theo tờ "Hướng dẫn điều khiển giọng nói" của SK). */
+/** Câu lệnh của mô-đun giọng nói trong hộp (theo tờ "Hướng dẫn điều khiển giọng nói" của SK). Nút mic trên app cũng hiểu các câu này. */
 @Composable
 fun CmdList() {
     T("Các câu lệnh", 16, FontWeight.ExtraBold)
+    CmdLine("Gọi", "“Xin chào SK Light” hoặc “Này đèn viền”; xong thì nói “Hẹn gặp lại”")
     CmdLine("Bật tắt", "“bật đèn”, “tắt đèn”")
-    CmdLine("Độ sáng", "“sáng hơn”, “tối hơn”, “độ sáng tối đa”, “độ sáng tối thiểu”, “độ sáng 50”")
-    CmdLine("Màu", "“màu đỏ”, vàng, xanh lá, xanh lam, xanh da trời, tím, trắng, cam, hồng")
-    CmdLine("Khu vực", "“khu vực 2 màu đỏ”, “khu vực 1 màu xanh”, “khu vực 2 sáng hơn”, “cả xe màu trắng”")
-    CmdLine("Chế độ", "“chế độ tự động”, “chế độ thở”, “chế độ chớp”, “nhịp điệu sôi động”, “chế độ một” đến “chế độ mười hai”, hoặc gọi theo tên; “đổi hiệu ứng”")
-    CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
-    CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”, “tốc độ 8”")
-    CmdLine("Khác", "“đổi hướng”, “đổi giọng nói”, “xin chào SK Light”, “hẹn gặp lại”")
+    CmdLine("Độ sáng", "“sáng hơn”, “tối hơn”, “độ sáng tối đa”, “độ sáng tối thiểu”")
+    CmdLine("Màu", "“màu đỏ”, “màu vàng”, “màu xanh lá”, “màu xanh lam”, “màu xanh da trời”, “màu tím”, “màu trắng”")
+    CmdLine("Chế độ", "“chế độ tự động”, “chế độ thở”, “chế độ chớp”, “nhịp điệu sôi động”, “đổi hiệu ứng”")
+    CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”")
+    CmdLine("Khác", "“đổi hướng”, “đổi giọng nói”")
+    T("Chế độ theo số", 13, FontWeight.Bold)
+    T("“chế độ một” Thể thao · “hai” Ma thuật · “ba” Đuôi sao chổi · “bốn” Xuân về hoa nở · “năm” Khúc tình ca mùa đông · “sáu” Nhảy theo nhạc · “bảy” Mây trôi nước chảy · “tám” Xếp chồng · “chín” Nhịp điệu năng động · “mười một” Cuộn đủ màu · “mười hai” Chiếu sáng năng động", 13, color = SubTxt)
 }
 
-/** Trang "Giọng nói AI" trong Cài đặt: công tắc trả lời bằng tiếng, tắt tiếng báo khi bấm mic, bảng câu lệnh. */
+/** Câu lệnh chỉ nút mic trên app mới hiểu (hộp không có). */
+@Composable
+fun CmdListApp() {
+    T("Thêm khi dùng nút mic trên app", 14, FontWeight.Bold)
+    CmdLine("Độ sáng", "“độ sáng 50”")
+    CmdLine("Màu", "“màu cam”, “màu hồng”")
+    CmdLine("Khu vực", "“khu vực 2 màu đỏ”, “khu vực 1 màu xanh”, “khu vực 2 sáng hơn”, “cả xe màu trắng”")
+    CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
+    CmdLine("Tốc độ", "“tốc độ 8”")
+    CmdLine("Chế độ", "gọi theo tên chế độ trên màn hình")
+}
+
+/** Trang "Giọng nói AI": cài đặt mô-đun giọng nói của hộp, câu lệnh, rồi tới phần nút mic của app. */
 @Composable
 fun VoicePage() {
     BackToSettings()
+    BoxVoiceCard()
+    Card { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { CmdList() } }
     Card {
-        GroupTitle(Icons.Filled.Mic, "Giọng nói AI", 16)
+        GroupTitle(Icons.Filled.Mic, "Nút mic trên app", 16)
+        Spacer(Modifier.height(4.dp))
+        T("Ra lệnh qua điện thoại hoặc màn hình xe, dùng khi không nói trực tiếp với hộp.", 12, color = Grey)
         Spacer(Modifier.height(6.dp))
         SwitchRow("Trả lời bằng tiếng nói", "Đọc lại việc vừa làm sau mỗi câu lệnh", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
         val ctx = LocalContext.current
@@ -499,8 +516,9 @@ fun VoicePage() {
         Spacer(Modifier.height(6.dp))
         Divider()
         SwitchRow("Tắt tiếng báo khi bấm mic", "Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.", S.voiceQuiet.value) { S.voiceQuiet.value = it; S.saveSettings() }
+        Divider(6.dp, 10.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { CmdListApp() }
     }
-    Card { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { CmdList() } }
 }
 
 /** Thẻ nhỏ dưới menu: đang nghe, kết quả, hoặc hướng dẫn. Ẩn khi không dùng. */
@@ -552,6 +570,7 @@ fun VoicePanel(modifier: Modifier = Modifier) {
             }
             4 -> {
                 CmdList()
+                CmdListApp()
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlineBtn("Nói thử", Modifier.weight(1f), again)
                     OutlineBtn("Đóng", Modifier.weight(1f)) { Voice.close() }

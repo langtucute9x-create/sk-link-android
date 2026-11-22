@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -48,6 +49,8 @@ object X {
 
     private val dirBit = intArrayOf(5, 4, 0, 1, 2, 3)    // đoạn -> bit, cùng thứ tự khối 08
 
+    /** Kết nối mới (có thể là hộp khác): bỏ những gì đọc từ hộp trước. */
+    fun clear() { pairRaw = -1; p09 = null; sup = null; cars.clear(); carRaw.clear(); carParts.clear(); carCur = -1; diag.clear(); diagRaw.clear(); diagParts.clear(); doorProbe = ""; resetState = 0; ver.intValue++ }
     fun onPair(b: Int) { pairRaw = b; ver.intValue++ }
     fun on09(v: IntArray) { p09 = v; ver.intValue++ }
     fun on07() { ver.intValue++ }
@@ -169,6 +172,15 @@ object X {
         var d = p[0]
         d = if (on) d or (1 shl dirBit[seg]) else d and (1 shl dirBit[seg]).inv()
         val n = intArrayOf(d, p[1], p[2]); S.p07 = n; ver.intValue++
+        S.ble.send(Protocol.block07(n[0], n[1], n[2]), 23, true)
+        return true
+    }
+
+    /** Mô-đun giọng nói của hộp: byte giữa khối 07, bit0 = thông báo chi tiết (0 = im lặng), bit1 = giọng (0 nữ, 1 nam). Đọc-sửa-ghi. */
+    fun voiceBit(mask: Int): Boolean = (S.p07?.get(1) ?: 0) and mask != 0
+    fun setVoiceBit(mask: Int, on: Boolean): Boolean {
+        val p = S.p07 ?: return false
+        val n = intArrayOf(p[0], if (on) p[1] or mask else p[1] and mask.inv(), p[2]); S.p07 = n; ver.intValue++
         S.ble.send(Protocol.block07(n[0], n[1], n[2]), 23, true)
         return true
     }
@@ -356,9 +368,6 @@ fun FactoryPage() {
     Card {
         GroupTitle(Icons.Filled.Build, "Cài đặt nhà máy", 16)
         Spacer(Modifier.height(6.dp))
-        SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
-        Divider()
-        Spacer(Modifier.height(10.dp))
         T("Phiên bản hộp", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -368,12 +377,15 @@ fun FactoryPage() {
         }
         Spacer(Modifier.height(6.dp))
         T("Đổi phiên bản có thể làm hộp hiện màu khác, chỉ đổi khi biết hộp thuộc loại nào.", 12, color = SubTxt)
+        Divider(10.dp, 0.dp)
+        SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
     }
     Card {
-        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Cảnh báo theo tín hiệu xe: xi nhan, phanh tay, dây an toàn, cửa…") { S.subPage.intValue = 9 }
-        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc dữ liệu chẩn đoán từ hộp") { S.subPage.intValue = 10 }
+        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc thông tin chẩn đoán từ hộp") { S.subPage.intValue = 10 }
+    }
+    Card {
+        T("Đặt lại", 15, FontWeight.Bold)
         Feature(Icons.Filled.Settings, "Cấu hình cửa xe", "Xóa cấu hình gán hộp phụ vào cửa") { confirm = true }
-        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", "Danh sách xe do hộp đang kết nối cung cấp") { S.subPage.intValue = 11 }
         Feature(Icons.Filled.Refresh, "Khôi phục cài đặt gốc", "Đưa hộp về cài đặt ban đầu của nhà sản xuất") {
             if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else reset = 1
         }
@@ -412,7 +424,7 @@ fun FactoryPage() {
 fun CarFuncPage() {
     val ctx = LocalContext.current
     S.blkVer.intValue
-    BackRow(8, "Cài đặt nhà máy")
+    BackRow(0, "Cài đặt")
     X.ver.intValue
     LaunchedEffect(Unit) { if (S.connected.value) S.ble.send(Protocol.frame(Protocol.T_READ, 0x9C, 0x01)) }
     val sup = X.sup
@@ -512,7 +524,7 @@ fun CarModelPage() {
     var ask by remember { mutableIntStateOf(-1) }        // (hãng << 8) | dòng đang hỏi xác nhận
     LaunchedEffect(Unit) { if (S.connected.value) X.readCars() }
     LaunchedEffect(X.carTick) { delay(1500); X.carLoading = false }      // hết 1,5 giây không có khung mới = xong, như app gốc
-    BackRow(8, "Cài đặt nhà máy")
+    BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Chọn loại xe", 16)
         Spacer(Modifier.height(6.dp))
@@ -568,4 +580,44 @@ fun CarModelPage() {
         confirmButton = { TextButton({ val k = ask; ask = -1; X.setCar(k shr 8, k and 0xFF) }) { Text(L.tr("Đặt")) } },
         dismissButton = { TextButton({ ask = -1 }) { Text(L.tr("Hủy")) } }
     )
+}
+
+// ===================== GIỌNG NÓI CỦA HỘP =====================
+/** Cài đặt mô-đun giọng nói cắm trong hộp điều khiển: giọng nữ / nam, im lặng / thông báo chi tiết. */
+@Composable
+fun BoxVoiceCard() {
+    val ctx = LocalContext.current
+    X.ver.intValue
+    LaunchedEffect(Unit) { if (S.p07 == null && S.connected.value) S.ble.send(Protocol.query(0x07)) }
+    val known = S.p07 != null
+    Card {
+        GroupTitle(Icons.Filled.RecordVoiceOver, "Bạn đồng hành giọng nói", 16)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            for ((male, face, label) in listOf(Triple(false, "👩", "Giọng nữ tiêu chuẩn"), Triple(true, "👨", "Giọng nam tiêu chuẩn"))) {
+                val on = known && X.voiceBit(0x02) == male
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(if (on) tint(0.1f) else ChipBg)
+                        .border(if (on) 2.dp else 1.dp, if (on) Pink else Bd, RoundedCornerShape(10.dp))
+                        .clickable { if (!X.setVoiceBit(0x02, male)) need(ctx) }.padding(vertical = 10.dp, horizontal = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(face, fontSize = 30.sp)
+                    Spacer(Modifier.height(4.dp))
+                    T(label, 13, if (on) FontWeight.Bold else FontWeight.SemiBold, if (on) Pink else SubTxt, align = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            }
+        }
+        Divider(14.dp, 12.dp)
+        GroupTitle(Icons.Filled.VolumeUp, "Phương thức thông báo", 16)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Chip("Im lặng", known && !X.voiceBit(0x01), Modifier.weight(1f), 44.dp, 13) { if (!X.setVoiceBit(0x01, false)) need(ctx) }
+            Chip("Thông báo chi tiết", known && X.voiceBit(0x01), Modifier.weight(1f), 44.dp, 13) { if (!X.setVoiceBit(0x01, true)) need(ctx) }
+        }
+        Spacer(Modifier.height(8.dp))
+        T(if (!known) "Chưa đọc được cài đặt giọng nói từ hộp."
+          else if (X.voiceBit(0x01)) "Thông báo chi tiết: thiết bị sẽ thông báo phản hồi và gợi ý trạng thái."
+          else "Im lặng: thiết bị làm theo lệnh nhưng không nói lại.", 12, color = SubTxt)
+    }
 }

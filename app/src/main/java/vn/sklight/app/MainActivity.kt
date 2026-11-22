@@ -886,25 +886,39 @@ fun SettingsDevice(onPick: () -> Unit) {
 @Composable
 fun SettingsFeatures() {
     val ctx = LocalContext.current
+    // Việc người dùng hay chỉnh
     Card {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Settings, null, tint = Pink, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(12.dp))
-            T("Tính năng thiết bị", 16, FontWeight.Bold)
-        }
-        Spacer(Modifier.height(8.dp))
-        Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối và quản lý thiết bị hộp phụ") { S.subPage.intValue = 5 }
-        Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Cài đặt hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
-        Feature(Icons.Filled.Mic, "Giọng nói AI", "Điều khiển đèn viền bằng giọng nói") { S.subPage.intValue = 4 }
+        SetTitle(Icons.Filled.Lightbulb, "Hộp đèn")
+        Feature(Icons.Filled.Mic, "Giọng nói AI", "Giọng nói của hộp, cách thông báo và các câu lệnh") { S.subPage.intValue = 4 }
+        Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
+        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ…") { S.subPage.intValue = 9 }
+    }
+    Card {
+        SetTitle(Icons.Filled.PhoneAndroid, "Ứng dụng")
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
-        Feature(Icons.Filled.Science, "Thử chế độ tự tạo", "Xem hộp đèn chuyển màu liên tục có mượt không (bản thử)") { S.subPage.intValue = 3 }
-        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Cài đặt nâng cao như chức năng gốc xe, phiên bản hộp, chẩn đoán") { S.subPage.intValue = 8 }
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
             Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
         }
     }
-    T("SK Light 0.5.23 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    // Việc của thợ lắp, ít khi đụng tới: để cuối
+    Card {
+        SetTitle(Icons.Filled.Build, "Lắp đặt")
+        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
+        Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
+        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
+    }
+    T("SK Light 0.5.24 (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+}
+
+@Composable
+fun SetTitle(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = Pink, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        T(text, 16, FontWeight.Bold)
+    }
+    Spacer(Modifier.height(4.dp))
 }
 
 @Composable

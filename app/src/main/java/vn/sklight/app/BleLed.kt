@@ -67,7 +67,7 @@ class BleLed(private val ctx: Context) {
         S.userOff = false
         wantMac = mac
         S.savedMac = mac
-        S.blk = null; S.blkVer.intValue++; S.fac = null; S.p07 = null; S.m1 = 0          // cài đặt đọc từ hộp trước không dùng cho lần kết nối mới (có thể là hộp khác)
+        S.blk = null; S.blkVer.intValue++; S.fac = null; S.p07 = null; S.m1 = 0; main.post { X.clear() }          // cài đặt đọc từ hộp trước không dùng cho lần kết nối mới (có thể là hộp khác)
         val dev = try { adapter?.getRemoteDevice(mac) } catch (e: Exception) { null } ?: return
         closeGatt()
         S.conn.value = "Đang kết nối…"
