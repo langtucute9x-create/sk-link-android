@@ -32,7 +32,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Chọn màu bằng bánh xe màu hoặc các bóng màu mẫu. Bấm dấu cộng để lưu màu đang chọn thành màu riêng; giữ lâu một màu riêng để xóa.",
         "Chọn chế độ màu vùng 2: Màu tĩnh, Màu tự động, Màu nhấp nháy là của hộp; các kiểu còn lại do app điều khiển.",
         "Chạm một ô chế độ để chạy. Chế độ có nhiều kiểu thì hàng kiểu con hiện ngay bên dưới.",
-        "Thẻ Hiệu ứng chỉnh Tốc độ nháy và chạy, Độ nhạy nhịp điệu (dùng cho các chế độ nhịp nhạc).",
+        "Thẻ Hiệu ứng (dưới cùng trang Đèn; màn ngang thì ở cột trái) chỉnh Tốc độ nháy và chạy, Độ nhạy nhịp điệu (dùng cho các chế độ nhịp nhạc).",
         "Chạm giữ một ô chế độ để ghim lên đầu trang; chạm giữ lần nữa để bỏ ghim. Ghim được tối đa 9 chế độ.",
         "Các chế độ do app tự chạy (từ Cầu vồng mượt đến Thư giãn, Chế độ của tôi và các kiểu thêm của vùng 2) chỉ chạy khi app đang mở và đang kết nối."
     ),

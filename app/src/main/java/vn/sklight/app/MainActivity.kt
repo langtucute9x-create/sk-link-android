@@ -338,15 +338,11 @@ fun LedMain() {
 /** Các nhóm chế độ + thẻ Hiệu ứng. [cols] = số cột của lưới chế độ. */
 @Composable
 fun LedEffects(cols: Int, tune: Boolean = true) {       // tune = false: màn ngang, thẻ Tốc độ / Độ nhạy đã nằm cố định ở cột trái
-    // thẻ Tốc độ / Độ nhạy nằm ngay dưới nhóm chứa chế độ đang chạy, để chọn chế độ xong chỉnh tốc độ luôn, khỏi cuộn xuống cuối trang
-    val mode = S.mode.intValue
-    val at = Effects.groups.indexOfFirst { g -> g.items.any { it.id == mode } }
-    val pinnedNow = S.pins.contains(mode)      // chế độ đang chạy nằm trong mục Đã ghim: thẻ tốc độ đi theo lên đó
+    // Màn dọc: thẻ Tốc độ / Độ nhạy luôn nằm DƯỚI CÙNG trang Đèn như app gốc (chủ dự án yêu cầu 23/11; bỏ kiểu đi theo nhóm chế độ của 0.5.53).
     PinnedCard(cols)
-    if (tune && pinnedNow) EffectTuneCard()
-    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols, i == 0 && S.pins.isEmpty()); if (tune && i == at && !pinnedNow) EffectTuneCard() }
+    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols, i == 0 && S.pins.isEmpty()) }
     MyModesCard(cols)
-    if (tune && at < 0 && !pinnedNow) EffectTuneCard()          // đang chạy "Chế độ của tôi" (hoặc chế độ không thuộc nhóm nào): nằm dưới thẻ đó
+    if (tune) EffectTuneCard()
 }
 
 /** Tốc độ nháy & chạy + độ nhạy nhịp điệu. */
