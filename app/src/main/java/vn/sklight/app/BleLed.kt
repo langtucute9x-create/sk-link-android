@@ -27,6 +27,10 @@ class BleLed(private val ctx: Context) {
     private var scanning = false
     private var disc = false                      // đã gọi dò dịch vụ cho kết nối hiện tại chưa
     @Volatile var lastSetMs = 0L
+    /** Gói quảng bá Bluetooth gần nhất của từng hộp (để tìm số seri). */
+    val adv = HashMap<String, ByteArray>()
+    @Volatile private var paused = false            // đang đọc thông tin hộp: tạm dừng hàng đợi ghi
+    private var readDone: ((ByteArray?) -> Unit)? = null
 
     private fun u(s: String) = UUID.fromString("0000$s-0000-1000-8000-00805f9b34fb")
     private val svcId = u("ae30"); private val wId = u("ae01"); private val nId = u("ae02")
@@ -43,6 +47,7 @@ class BleLed(private val ctx: Context) {
             val ok = name.contains("CTH2") || name.contains("CZH2") || name.contains("Pocket") || name.contains("BT2")
             if (!ok) return
             val mac = r.device.address
+            r.scanRecord?.bytes?.let { b -> adv[mac] = b; try { ctx.getSharedPreferences("advlog", Context.MODE_PRIVATE).edit().putString(mac, b.joinToString("") { "%02X".format(it) }).apply() } catch (_: Exception) {} }
             main.post { S.addDev(Dev(name, mac, r.rssi)) }
         }
     }
@@ -134,6 +139,55 @@ class BleLed(private val ctx: Context) {
         }
 
         override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) { rx(value) }
+
+        @Deprecated("API < 33")
+        override fun onCharacteristicRead(g: BluetoothGatt, c: BluetoothGattCharacteristic, status: Int) {
+            val v = if (status == BluetoothGatt.GATT_SUCCESS) c.value else null
+            main.post { readDone?.invoke(v) }
+        }
+        override fun onCharacteristicRead(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray, status: Int) {
+            main.post { readDone?.invoke(if (status == BluetoothGatt.GATT_SUCCESS) value else null) }
+        }
+    }
+
+    // ---------------- tìm số seri: đọc mọi đặc tính đọc được của hộp ----------------
+    class Probe(val svc: String, val ch: String, val props: String, val value: ByteArray?)
+
+    /** Đọc lần lượt mọi đặc tính có quyền đọc (kể cả dịch vụ Device Information 180A nếu hộp có). Trả về danh sách qua [done]. */
+    fun probe(done: (List<Probe>) -> Unit) {
+        val g = gatt ?: run { done(emptyList()); return }
+        val all = ArrayList<Pair<BluetoothGattService, BluetoothGattCharacteristic>>()
+        for (s in g.services ?: emptyList()) for (c in s.characteristics ?: emptyList()) all.add(s to c)
+        val out = ArrayList<Probe>()
+        fun pr(c: BluetoothGattCharacteristic): String {
+            val p = c.properties; val l = ArrayList<String>()
+            if (p and BluetoothGattCharacteristic.PROPERTY_READ != 0) l.add("đọc")
+            if (p and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) l.add("ghi")
+            if (p and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) l.add("ghi nhanh")
+            if (p and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) l.add("báo")
+            if (p and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) l.add("báo xác nhận")
+            return l.joinToString(", ")
+        }
+        paused = true
+        var i = 0
+        lateinit var next: () -> Unit
+        val timeout = Runnable { readDone?.invoke(null) }
+        next = next@{
+            while (i < all.size && all[i].second.properties and BluetoothGattCharacteristic.PROPERTY_READ == 0) {
+                out.add(Probe(all[i].first.uuid.toString(), all[i].second.uuid.toString(), pr(all[i].second), null)); i++
+            }
+            if (i >= all.size || gatt !== g) { readDone = null; paused = false; done(out); return@next }
+            val (s, c) = all[i]
+            readDone = { v ->
+                main.removeCallbacks(timeout)
+                readDone = null
+                out.add(Probe(s.uuid.toString(), c.uuid.toString(), pr(c), v)); i++
+                main.postDelayed({ next() }, 60)
+            }
+            val ok = try { g.readCharacteristic(c) } catch (_: Exception) { false }
+            if (!ok) readDone?.invoke(null) else main.postDelayed(timeout, 1500)
+        }
+        main.postDelayed({ next() }, 300)          // chờ hàng đợi ghi đang chạy dừng hẳn
     }
 
     private fun discover(g: BluetoothGatt) {
@@ -177,6 +231,7 @@ class BleLed(private val ctx: Context) {
 
     private val pump = object : Runnable {
         override fun run() {
+            if (paused) { main.postDelayed(this, 120); return }
             val it = q.poll(); val g = gatt; val c = wch
             if (it == null || g == null || c == null) { pumping = false; return }
             try {

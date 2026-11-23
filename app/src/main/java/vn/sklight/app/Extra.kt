@@ -291,6 +291,7 @@ fun ExtraPage(sp: Int) {
         11 -> CarModelPage()
         12 -> ManualPage()
         13 -> ActivationPage(false)
+        14 -> SerialPage()
         else -> DiagPage()
     }
 }
@@ -443,6 +444,7 @@ fun FactoryPage() {
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
         Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc thông tin chẩn đoán từ hộp") { S.subPage.intValue = 10 }
+        Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "Đọc mọi thông tin Bluetooth của hộp để tìm mã riêng") { S.subPage.intValue = 14 }
     }
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
