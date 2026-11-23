@@ -114,12 +114,12 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Mục Chức năng gốc xe (đèn báo theo xi nhan, cửa, dây an toàn…) đã có trong Cài đặt nhưng đang được hoàn thiện; hướng dẫn chi tiết sẽ bổ sung sau."
     ),
     "12. Kích hoạt app và bảo hành" to listOf(
-        "App tải về mở bình thường. Khi đã kết nối với hộp đèn mà máy chưa kích hoạt, các trang điều khiển bị khóa và hiện ô nhập mã kích hoạt.",
+        "Kích hoạt gắn với hộp đèn, không gắn với máy. Hộp đã kích hoạt thì mọi điện thoại, màn hình xe nối vào đều tự dùng được, không cần nhập mã.",
+        "Nối một hộp chưa kích hoạt: các trang điều khiển bị khóa và hiện ô nhập mã. Lần đầu nối một hộp trên một máy cần có mạng để kiểm tra.",
         "Mã kích hoạt là mã giới thiệu 4 chữ in trên tem dán ở vỏ hộp sản phẩm (cùng mã dùng trên web sklight.vn). Cần có mạng khi kích hoạt; sau đó dùng không cần mạng.",
         "Lần đầu dùng mã: điền số điện thoại, biển số xe, dòng xe, đời xe và đơn vị lắp đặt để đăng ký bảo hành. Mã đã kích hoạt bảo hành trên web thì không phải điền lại. Bảo hành 24 tháng tính từ ngày kích hoạt đầu tiên.",
-        "Mỗi số điện thoại chỉ đăng ký bảo hành được một lần.",
-        "Máy khác dùng cùng mã chỉ cần nhập mã, không điền lại thông tin.",
-        "Xóa app rồi cài lại trên cùng một máy: mở app khi có mạng, app tự nhận lại, không cần nhập mã.",
+                "Mỗi mã chỉ kích hoạt được một hộp. Thay hộp khi bảo hành: cửa hàng gỡ hộp cũ trên hệ thống rồi khách nhập lại mã trên hộp mới.",
+        "Xóa app rồi cài lại, hoặc đổi máy: chỉ cần nối lại hộp khi có mạng, không cần nhập mã.",
         "Xem bảo hành: Cài đặt, thẻ Bảo hành hiện ngày kích hoạt và số ngày còn bảo hành.",
         "Nếu app báo mã đã hết lượt kích hoạt hoặc mã bị khóa, gọi hotline 0868 055 555."
     )

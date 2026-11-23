@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
@@ -76,7 +77,9 @@ fun WarrantyCard() {
     Card {
         GroupTitle(Icons.Filled.VerifiedUser, "Bảo hành", 16)
         Spacer(Modifier.height(10.dp))
-        if (Act.ok.value) {
+        if (!S.connected.value) {
+            T("Nối hộp đèn để xem bảo hành của hộp.", 13, color = SubTxt)
+        } else if (Act.ok.value) {
             val left = Act.daysLeft()
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (left != null) { DaysRing(left); Spacer(Modifier.width(16.dp)) }
@@ -185,7 +188,29 @@ fun ActivationPage(locked: Boolean) {
     var err by remember { mutableStateOf("") }
     var hot by remember { mutableStateOf(false) }
     if (!locked) BackRow(0, "Cài đặt")
-    if (Act.ok.value) { WarrantyCard(); return }
+    if (S.connected.value && Act.ok.value) { WarrantyCard(); return }
+    // chưa nối hộp, hoặc đang hỏi SK Core, hoặc lần đầu nối hộp này mà không có mạng
+    val ck = Act.checking.intValue
+    if (!S.connected.value || ck == 1 || ck == 2) {
+        Card {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Hero(Icons.Filled.Key)
+                Spacer(Modifier.height(12.dp))
+                T(when { !S.connected.value -> "Nối hộp đèn để kích hoạt"; ck == 1 -> "Đang kiểm tra hộp đèn…"; else -> "Cần có mạng" }, 19, FontWeight.ExtraBold, align = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                T(when {
+                    !S.connected.value -> "Kích hoạt gắn với hộp đèn. Nối hộp đèn trước, app sẽ tự kiểm tra hộp đã kích hoạt chưa."
+                    ck == 1 -> "App đang hỏi máy chủ SK xem hộp này đã kích hoạt chưa."
+                    else -> "Lần đầu nối hộp này trên máy này cần có mạng để kiểm tra kích hoạt. Bật Wi-Fi hoặc dữ liệu di động rồi thử lại."
+                }, 13, color = SubTxt, align = TextAlign.Center)
+                if (S.connected.value && ck == 2) {
+                    Spacer(Modifier.height(14.dp))
+                    FillBtn("Thử lại", Icons.Filled.Refresh, Pink, Modifier.fillMaxWidth()) { Act.recheck() }
+                }
+            }
+        }
+        return
+    }
 
     val go: () -> Unit = go@{
         val raw = code.filter { it.isLetterOrDigit() }
@@ -214,6 +239,7 @@ fun ActivationPage(locked: Boolean) {
                 r == "ok" -> Notice.show(ctx, L.tr("Đã kích hoạt. Bảo hành đến ") + Act.vn(Act.until.value), true)
                 r == "need_customer" -> need = if (short) 2 else 1
                 r == "invalid_code" -> err = L.tr("Mã kích hoạt không đúng. Kiểm tra lại mã trên tem.")
+                r == "code_used" -> { err = L.tr("Mã này đã kích hoạt cho một hộp đèn khác."); hot = true }
                 r == "phone_used" -> { err = L.tr("Số điện thoại này đã kích hoạt bảo hành cho một bộ sản phẩm khác."); hot = true }
                 r == "limit_reached" -> { err = L.tr("Mã đã hết lượt kích hoạt."); hot = true }
                 r == "locked" -> { err = L.tr("Mã này đang bị khóa."); hot = true }
@@ -239,7 +265,7 @@ fun ActivationPage(locked: Boolean) {
             Spacer(Modifier.height(4.dp))
             T(when {
                 need > 0 -> "Mã này kích hoạt lần đầu. Điền thông tin xe để đăng ký bảo hành."
-                locked -> "Đã kết nối với hộp đèn. Nhập mã trên tem để mở khóa điều khiển."
+                locked -> "Hộp đèn này chưa kích hoạt. Nhập mã trên tem một lần; sau đó mọi điện thoại, màn hình xe nối vào hộp đều tự dùng được."
                 else -> "Nhập mã trên tem để dùng app điều khiển đèn trên máy này."
             }, 13, color = SubTxt, align = TextAlign.Center)
             Spacer(Modifier.height(14.dp))

@@ -29,34 +29,38 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
 
-// ===================== KÍCH HOẠT APP + BẢO HÀNH =====================
-// Quy tắc (tài liệu claude/sk-light-kich-hoat-bao-hanh.md): mã chỉ mở khóa app trên MỘT máy, không gắn với hộp đèn.
-// App không biết và không hiện giới hạn số lượt: chỉ hỏi SK Core được hay không. Cổng: POST /api/public/sk-light-activation.
-// Máy chưa kích hoạt: app mở bình thường; nối được hộp đèn thì khóa điều khiển (không gửi lệnh ghi xuống hộp) tới khi nhập mã.
+// ===================== KÍCH HOẠT APP + BẢO HÀNH: THEO HỘP ĐÈN (Lệnh 433 SK Core, chốt 24/11/2026) =====================
+// Mã nhận biết hộp = địa chỉ Bluetooth của hộp tổng (S.savedMac). Hộp đã kích hoạt thì MỌI máy nối vào đều dùng được, không nhập mã.
+// Nối hộp: hỏi SK Core (check_box). Máy này đã từng thấy hộp được kích hoạt (lưu ở prefs "act", khóa "box:<MAC>") thì mở luôn kể cả không có mạng.
+// Chưa từng thấy: BẮT BUỘC có mạng ở lần nối đầu tiên (chủ dự án chọn), chưa hỏi được thì khóa điều khiển và báo cần mạng.
+// App không biết và không hiện giới hạn: chỉ hỏi SK Core. Cổng: POST /api/public/sk-light-activation.
 object Act {
     private const val URL_ACT = "https://core.sklight.vn/api/public/sk-light-activation"
     const val HOTLINE = "0868055555"
     private val main = Handler(Looper.getMainLooper())
 
-    val ok = mutableStateOf(false)            // máy này đã kích hoạt
-    val at = mutableStateOf("")               // ngày kích hoạt đầu tiên của mã, yyyy-MM-dd
+    val ok = mutableStateOf(false)            // hộp đang nối đã kích hoạt (được điều khiển)
+    val at = mutableStateOf("")               // ngày kích hoạt của hộp đang nối, yyyy-MM-dd
     val until = mutableStateOf("")            // ngày hết bảo hành, yyyy-MM-dd
     val busy = mutableStateOf(false)
+    /** 0 chưa hỏi, 1 đang hỏi SK Core, 2 không có mạng (lần đầu nối hộp này), 3 đã có câu trả lời */
+    val checking = mutableIntStateOf(0)
     private var devId = ""
+    private var box = ""
+    private lateinit var app: Context
 
     private fun sp(c: Context) = c.getSharedPreferences("act", Context.MODE_PRIVATE)
 
     fun init(c: Context) {
-        val app = c.applicationContext
+        app = c.applicationContext
         val p = sp(app)
-        ok.value = p.getBoolean("ok", false); at.value = p.getString("at", "") ?: ""; until.value = p.getString("until", "") ?: ""
-        // Mã máy Android: giữ nguyên khi xóa app rồi cài lại (cùng khóa ký), nên SK Core nhận ra máy cũ và không tính thêm lượt.
+        // Mã máy Android: giữ nguyên khi xóa app rồi cài lại (cùng khóa ký). SK Core dùng nó để gắn mã của máy đã kích hoạt theo cách cũ vào hộp.
         val aid = try { Settings.Secure.getString(app.contentResolver, Settings.Secure.ANDROID_ID) ?: "" } catch (_: Exception) { "" }
         devId = if (aid.length >= 8) "a-$aid" else (p.getString("dev", null) ?: ("r-" + UUID.randomUUID().toString()).also { p.edit().putString("dev", it).apply() })
-        if (!ok.value) recheck(app)
     }
 
     private fun devName() = (Build.MANUFACTURER + " " + Build.MODEL).trim().take(100)
+    private fun key(mac: String) = "box:" + mac.uppercase()
 
     private fun post(body: JSONObject): JSONObject {
         val u = URL(URL_ACT).openConnection() as HttpURLConnection
@@ -68,33 +72,56 @@ object Act {
         return try { JSONObject(txt) } catch (_: Exception) { JSONObject().put("status", "server") }
     }
 
-    private fun store(c: Context, a: String, w: String) {
-        ok.value = true; at.value = a; until.value = w
-        sp(c).edit().putBoolean("ok", true).putString("at", a).putString("until", w).apply()
+    private fun store(mac: String, a: String, w: String) {
+        sp(app).edit().putString(key(mac), "$a|$w").apply()
+        if (mac.equals(box, true)) { ok.value = true; at.value = a; until.value = w }
     }
 
-    /** Cài lại app trên máy đã kích hoạt: SK Core nhận ra mã máy và mở khóa luôn, không cần nhập lại mã. Không có mạng thì bỏ qua, lần mở sau hỏi lại. */
-    fun recheck(c: Context) {
-        val app = c.applicationContext
-        if (ok.value || devId.isEmpty()) return
+    private fun forget(mac: String) {
+        sp(app).edit().remove(key(mac)).apply()
+        if (mac.equals(box, true)) { ok.value = false; at.value = ""; until.value = "" }
+    }
+
+    /** Gọi khi vừa nối được hộp [mac]. */
+    fun onConnected(mac: String) {
+        box = mac
+        val saved = sp(app).getString(key(mac), null)
+        if (saved != null) { ok.value = true; at.value = saved.substringBefore('|'); until.value = saved.substringAfter('|', "") }
+        else { ok.value = false; at.value = ""; until.value = "" }
+        recheck()
+    }
+
+    /** Hỏi lại SK Core hộp đang nối đã kích hoạt chưa. Mất mạng thì giữ nguyên trạng thái đã lưu. */
+    fun recheck() {
+        val mac = box
+        if (mac.isEmpty() || devId.isEmpty()) return
+        checking.intValue = 1
         Thread {
+            var st = 2
             try {
-                val r = post(JSONObject().put("action", "check_device").put("device_id", devId).put("device_name", devName()))
-                if (r.optBoolean("activated", false)) main.post { store(app, r.optString("activated_at"), r.optString("warranty_until")) }
+                val r = post(JSONObject().put("action", "check_box").put("device_id", devId).put("device_name", devName()).put("box_id", mac))
+                if (r.has("activated")) {
+                    st = 3
+                    val yes = r.optBoolean("activated", false)
+                    main.post { if (yes) store(mac, r.optString("activated_at"), r.optString("warranty_until")) else forget(mac) }
+                }
             } catch (_: Exception) {}
+            main.post { if (mac == box) checking.intValue = st }
         }.start()
     }
 
-    /** Kết quả trả về qua [done]: ok, need_customer, invalid_code, phone_used, limit_reached, locked, too_many, invalid_input:<trường>, network, server. */
+    /** Kết quả trả về qua [done]: ok, need_customer, invalid_code, code_used, phone_used, limit_reached, locked, too_many, invalid_input:<trường>, network, server. */
     fun activate(c: Context, code: String, cust: JSONObject?, done: (String) -> Unit) {
         if (busy.value) return
-        val app = c.applicationContext
+        val ac = c.applicationContext
+        val mac = box
         busy.value = true
         Thread {
             var res = "network"
             var a = ""; var w = ""
             try {
                 val b = JSONObject().put("action", "activate").put("code", code).put("device_id", devId).put("device_name", devName())
+                if (mac.isNotEmpty()) b.put("box_id", mac)
                 if (cust != null) b.put("customer", cust)
                 val r = post(b)
                 res = r.optString("status", "server")
@@ -103,7 +130,7 @@ object Act {
             } catch (_: Exception) {}
             main.post {
                 busy.value = false
-                if (res == "ok") { store(app, a, w); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(app, "Kích hoạt bảo hành thành công", force = true) }
+                if (res == "ok") { checking.intValue = 3; store(mac, a, w); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
                 done(res)
             }
         }.start()

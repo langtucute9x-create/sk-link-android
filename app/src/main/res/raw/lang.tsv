@@ -712,3 +712,13 @@ Tìm số seri hộp	Find box serial number	ボックスのシリアル番号を
 Bắt đầu tìm	Start	開始	시작	เริ่มค้นหา	ចាប់ផ្តើម	ເລີ່ມຊອກ
 Đang đọc…	Reading…	読み取り中…	읽는 중…	กำลังอ่าน…	កំពុងអាន…	ກຳລັງອ່ານ…
 Kết quả	Result	結果	결과	ผลลัพธ์	លទ្ធផល	ຜົນ
+Nối hộp đèn để kích hoạt	Connect the LED controller to activate	有効化するにはLEDコントローラーに接続	활성화하려면 LED 컨트롤러 연결	เชื่อมต่อกล่องไฟเพื่อเปิดใช้งาน	ភ្ជាប់ប្រអប់ភ្លើងដើម្បីបើកដំណើរការ	ເຊື່ອມຕໍ່ກ່ອງໄຟເພື່ອເປີດໃຊ້ງານ
+Đang kiểm tra hộp đèn…	Checking the LED controller…	LEDコントローラーを確認中…	LED 컨트롤러 확인 중…	กำลังตรวจสอบกล่องไฟ…	កំពុងពិនិត្យប្រអប់ភ្លើង…	ກຳລັງກວດກ່ອງໄຟ…
+Cần có mạng	Internet required	インターネットが必要です	인터넷 필요	ต้องใช้อินเทอร์เน็ต	ត្រូវការអ៊ីនធឺណិត	ຕ້ອງມີອິນເຕີເນັດ
+Thử lại	Try again	再試行	다시 시도	ลองอีกครั้ง	ព្យាយាមម្តងទៀត	ລອງໃໝ່
+Nối hộp đèn để xem bảo hành của hộp.	Connect the LED controller to see its warranty.	保証を見るにはLEDコントローラーに接続してください。	보증을 보려면 LED 컨트롤러를 연결하세요.	เชื่อมต่อกล่องไฟเพื่อดูการรับประกัน	ភ្ជាប់ប្រអប់ភ្លើងដើម្បីមើលការធានា។	ເຊື່ອມຕໍ່ກ່ອງໄຟເພື່ອເບິ່ງການຮັບປະກັນ.
+Mã này đã kích hoạt cho một hộp đèn khác.	This code is already activated for another LED controller.	このコードは別のLEDコントローラーで有効化済みです。	이 코드는 다른 LED 컨트롤러에 이미 활성화되었습니다.	รหัสนี้เปิดใช้งานกับกล่องไฟอื่นแล้ว	កូដនេះបានបើកសម្រាប់ប្រអប់ភ្លើងផ្សេងរួចហើយ។	ລະຫັດນີ້ເປີດໃຊ້ງານກັບກ່ອງໄຟອື່ນແລ້ວ.
+Kích hoạt gắn với hộp đèn. Nối hộp đèn trước, app sẽ tự kiểm tra hộp đã kích hoạt chưa.	Activation is tied to the LED controller. Connect it first; the app checks whether it is activated.					
+App đang hỏi máy chủ SK xem hộp này đã kích hoạt chưa.	The app is asking the SK server whether this controller is activated.					
+Lần đầu nối hộp này trên máy này cần có mạng để kiểm tra kích hoạt. Bật Wi-Fi hoặc dữ liệu di động rồi thử lại.	The first connection to this controller on this device needs internet to check activation. Turn on Wi-Fi or mobile data and try again.					
+Hộp đèn này chưa kích hoạt. Nhập mã trên tem một lần; sau đó mọi điện thoại, màn hình xe nối vào hộp đều tự dùng được.	This controller is not activated. Enter the code on the label once; after that every phone or car screen connected to it works automatically.					
