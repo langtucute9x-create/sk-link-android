@@ -66,7 +66,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Màn hình chờ khi xe chạy: tự mở khi công tắc bật, xe chạy từ 10 km/h và 10 giây không chạm màn hình. Xe đứng yên thì không tự mở.",
         "Mở màn hình chờ bằng tay: bấm nút có hình khung ảnh trên thanh menu ở màn hình ngang. Chạm màn hình chờ để quay lại.",
         "Trên màn hình chờ, bấm nút mũi tên vòng để đổi kiểu. Có 11 kiểu, gồm đồng hồ, tốc độ, dẫn đường, nhạc đang phát và ảnh của bạn.",
-        "Nút nổi trên màn hình: nút SK hiện trên các ứng dụng khác để bật tắt, chỉnh độ sáng, đổi bối cảnh mà không cần mở app. Cần cấp quyền hiển thị trên ứng dụng khác. Kéo nút để dời chỗ."
+        "Nút nổi trên màn hình: nút SK hiện trên các ứng dụng khác để bật tắt, chỉnh độ sáng, đổi bối cảnh mà không cần mở app. Cần cấp quyền hiển thị trên ứng dụng khác. Kéo nút để dời chỗ; kéo xuống ô dấu X ở giữa cạnh dưới màn hình rồi thả để tắt nút nổi."
     ),
     "7. Trợ lý giọng nói" to listOf(
         "Bấm nút micro rồi nói câu lệnh. Trợ lý chỉ dùng được khi app đang để tiếng Việt, máy có mạng và có app Google.",

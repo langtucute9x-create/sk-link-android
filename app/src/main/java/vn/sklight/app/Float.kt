@@ -196,6 +196,25 @@ object FloatButton {
         }
         var downX = 0f; var downY = 0f; var startX = 0; var startY = 0; var moved = false
         val slop = dp(c, 8)
+        // Kéo nút nổi xuống ô dấu X ở giữa cạnh dưới màn hình rồi thả = tắt nút nổi (bật lại ở thẻ Khi lái xe).
+        var bin: TextView? = null
+        var near = false
+        val binSize = dp(c, 64); val binGap = dp(c, 36)
+        fun binBg(hot: Boolean) = oval(if (hot) 0xFFF44336.toInt() else 0xCC15161C.toInt(), Color.WHITE, dp(c, 2))
+        fun showBin() {
+            if (bin != null) return
+            val v = TextView(c).apply { text = "\u2715"; gravity = Gravity.CENTER; textSize = 24f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; background = binBg(false) }
+            val bl = WindowManager.LayoutParams(binSize, binSize, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, PixelFormat.TRANSLUCENT
+            ).apply { gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; y = binGap }
+            try { wm.addView(v, bl); bin = v } catch (_: Exception) {}
+        }
+        fun hideBin() { val v = bin ?: return; bin = null; near = false; try { wm.removeView(v) } catch (_: Exception) {} }
+        fun overBin(e: MotionEvent): Boolean {
+            val dm = c.resources.displayMetrics
+            val cx = dm.widthPixels / 2f; val cy = dm.heightPixels - binGap - binSize / 2f
+            return abs(e.rawX - cx) < dp(c, 76) && abs(e.rawY - cy) < dp(c, 84)
+        }
         b.setOnTouchListener { _, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> { downX = e.rawX; downY = e.rawY; startX = l.x; startY = l.y; moved = false }
@@ -205,9 +224,20 @@ object FloatButton {
                         moved = true
                         l.x = (startX - dx.toInt()).coerceAtLeast(0); l.y = (startY + dy.toInt()).coerceAtLeast(0)
                         try { wm.updateViewLayout(all, l) } catch (_: Exception) {}
+                        showBin()
+                        val n = overBin(e)
+                        if (n != near) { near = n; bin?.background = binBg(n); bin?.scaleX = if (n) 1.2f else 1f; bin?.scaleY = if (n) 1.2f else 1f }
                     }
                 }
-                MotionEvent.ACTION_UP -> if (!moved) toggle()
+                MotionEvent.ACTION_UP -> {
+                    val off = moved && bin != null && overBin(e)
+                    hideBin()
+                    if (off) {
+                        S.floatOn.value = false; S.saveSettings(); hide(c); S.syncService(c)
+                        Notice.show(c, L.tr("Đã tắt nút nổi. Bật lại ở thẻ Khi lái xe."), true)
+                    } else if (!moved) toggle()
+                }
+                MotionEvent.ACTION_CANCEL -> hideBin()
             }
             true
         }
