@@ -148,7 +148,7 @@ fun Root() {
                 VoicePanel()
                 key(tab, S.subPage.intValue) {
                     when (tab) {
-                        0 -> TwoCol(leftW.dp, { SceneRow(); LedMain() }, { LedEffects(cols) })
+                        0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain() }, { LedEffects(cols) })
                         1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                         2 -> {
                             val (granted, open) = navAccess()
@@ -231,7 +231,7 @@ fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composab
 
 // ===================== TRANG ĐÈN =====================
 @Composable
-fun LedPage() { SceneRow(); LedMain(); LedEffects(3) }
+fun LedPage() { PlugCard(); SceneRow(); LedMain(); LedEffects(3) }
 
 /** Khu vực + độ sáng + chọn màu. */
 @Composable
@@ -482,7 +482,7 @@ fun WelcomeDiagram() {
     Card {
         GroupTitle(Icons.Filled.MeetingRoom, "Sơ đồ xe", 16)
         Spacer(Modifier.height(8.dp))
-        T("Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm vào cửa đó trên sơ đồ. Giữ lâu một hộp để bỏ gán.", 12, color = Grey)
+        T("Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm hình xe đang mở cửa đó. Giữ lâu một hộp để bỏ gán.", 12, color = Grey)
         Spacer(Modifier.height(12.dp))
         Grid(listOf(1, 2, 3, 4), 4, 8.dp) { n, m ->
             val on = S.pickBox.intValue == n
@@ -499,7 +499,7 @@ fun WelcomeDiagram() {
         Spacer(Modifier.height(12.dp))
         StepDiagram()
         Spacer(Modifier.height(8.dp))
-        T("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm chấm màu hoặc ‹ › để đổi đoạn.", 11, color = Grey)
+        T("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm hình xe hoặc ‹ › để đổi đoạn.", 11, color = Grey)
         Spacer(Modifier.height(16.dp))
         T("Vị trí bắt đầu chào mừng", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(10.dp))
@@ -569,7 +569,7 @@ fun SegTile(i: Int, modifier: Modifier) {
     }
 }
 
-private val SEG_COLORS = listOf(Color(0xFFD4537E), Color(0xFF378ADD), Color(0xFF1D9E75), Color(0xFFBA7517), Color(0xFF7F77DD), Color(0xFFD85A30))
+val SEG_COLORS = listOf(Color(0xFFD4537E), Color(0xFF378ADD), Color(0xFF1D9E75), Color(0xFFBA7517), Color(0xFF7F77DD), Color(0xFFD85A30))
 
 /** Sơ đồ xe kiểu "Từng bước": mỗi lần chỉnh một đoạn, nút to. */
 @Composable
@@ -581,17 +581,7 @@ fun StepDiagram() {
     val picking = S.pickBox.intValue > 0
     val box = S.boxPos.indexOf(i)
     var edit by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-        for (k in 0..5) {
-            val on = k == i
-            val d = if (on) 32.dp else 22.dp
-            Box(Modifier.height(36.dp).weight(1f).clickable { sel = k }, contentAlignment = Alignment.Center) {
-                Box(Modifier.size(d).clip(CircleShape).background(if (on) SEG_COLORS[k] else Color.Transparent).border(2.dp, SEG_COLORS[k], CircleShape), contentAlignment = Alignment.Center) {
-                    if (on) T("${k + 1}", 13, FontWeight.Bold, Color.White)
-                }
-            }
-        }
-    }
+    CarRow(i) { sel = it }
     Spacer(Modifier.height(10.dp))
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(14))).background(CardBg).border(1.5.dp, col, RoundedCornerShape(Theme.r(14))).padding(12.dp),

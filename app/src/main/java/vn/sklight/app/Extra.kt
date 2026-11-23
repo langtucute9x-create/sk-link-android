@@ -310,9 +310,15 @@ fun PairPage() {
         GroupTitle(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", 16)
         Spacer(Modifier.height(8.dp))
         val n = X.paired()
-        Kv("Số hộp phụ của xe", if (S.fac == null) "—" else "${S.fac!![1] and 0x0F}")
-        if (n > 0) Kv("Hộp vừa ghép được", "$n")
-        Kv("Trạng thái", if (X.pairing) "Đang ghép nối… còn ${X.pairLeft} giây" else "Chưa ghép")
+        val dots = if (n > 0 || X.pairing) n else ((S.fac?.get(1) ?: 0) and 0x0F)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            PairRadar(X.pairing, dots.coerceIn(0, 4), Modifier.size(104.dp))
+            Column(Modifier.weight(1f)) {
+                Kv("Số hộp phụ của xe", if (S.fac == null) "—" else "${S.fac!![1] and 0x0F}")
+                if (n > 0) Kv("Hộp vừa ghép được", "$n")
+                Kv("Trạng thái", if (X.pairing) "Đang quét… còn ${X.pairLeft} giây" else "Chưa ghép")
+            }
+        }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FillBtn(if (X.pairing) "Dừng" else "Bắt đầu ghép nối", Icons.Filled.BluetoothSearching, if (X.pairing) Color(0xFFF44336) else Pink, Modifier.weight(1f)) {
