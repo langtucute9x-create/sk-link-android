@@ -134,8 +134,13 @@ object AlertBridge {
         val d1 = (p[0] and DIR_BITS.inv()) or (if (left) DIR_BITS else 0)
         S.ble.send(Protocol.block07(d1, p[1], p[2]), 23, true)
         val fx = S.turnFx.intValue.coerceIn(0, TURN_FX.size - 1)
-        S.ble.send(Protocol.effect(S.sens.intValue, S.m1, TURN_FX[fx].first, TURN_FX[fx].second, S.turnSpd[fx].coerceIn(1, 10)), 3, true)
+        val fr = Protocol.effect(S.sens.intValue, S.m1, TURN_FX[fx].first, TURN_FX[fx].second, S.turnSpd[fx].coerceIn(1, 10))
+        S.ble.send(fr, 3, true)
         flow = true
+        // Chủ dự án báo (23/11): Kiểu 2 chạy ra Cuộn đủ màu kiểu 1 thay vì kiểu 3. Phỏng đoán: khi vừa đổi sang chế độ khác, hộp bỏ qua
+        // tham số kiểu con ở khung đầu và chỉ nhận ở khung sau (ở trang Đèn người dùng luôn chạm ô chế độ rồi mới chạm kiểu con, tức hai khung).
+        // Vì vậy gửi lại đúng khung đó thêm hai lần.
+        for (d in longArrayOf(300, 900)) h.postDelayed({ if (flow && kind == k) S.ble.send(fr, 3, true) }, d)
         return true
     }
 
