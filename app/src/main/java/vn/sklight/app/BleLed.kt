@@ -203,6 +203,12 @@ class BleLed(private val ctx: Context) {
             if (t == 0xAC) { main.post { X.onDiagFrame(d) }; return }
             if (t == 0x9C && d.size >= 7) { val b1 = d[4].toInt() and 0xFF; val b2 = d[5].toInt() and 0xFF; main.post { X.onSup(b1, b2) }; return }
             if (t == 0x7C && (d[3].toInt() and 0xFF) == 0x04) { main.post { X.onDoorRaw(d) }; return }
+            val sb = d[3].toInt() and 0xFF
+            if (t == 0x7C && (sb == 0x8F || sb == 0x90) && d.size >= 6) {
+                val n = minOf((d[2].toInt() and 0xFF) - 1, d.size - 5)
+                if (n > 0) { val txt = try { String(d, 4, n, Charsets.UTF_8) } catch (e: Exception) { "" }; main.post { X.onModel(sb, txt) } }
+                return
+            }
             if (t != 0x8D && (d[3].toInt() and 0xFF) == 0x0E && d.size >= 6 && (d[4].toInt() and 0xFF) == 0xF1) { main.post { X.onReset() }; return }
         }
         if (d.size < 6 || (d[0].toInt() and 0xFF) != 0x2E || (d[1].toInt() and 0xFF) != 0x7C) return

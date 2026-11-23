@@ -50,8 +50,12 @@ object X {
     private val dirBit = intArrayOf(5, 4, 0, 1, 2, 3)    // đoạn -> bit, cùng thứ tự khối 08
 
     /** Kết nối mới (có thể là hộp khác): bỏ những gì đọc từ hộp trước. */
-    fun clear() { pairRaw = -1; p09 = null; sup = null; cars.clear(); carRaw.clear(); carParts.clear(); carCur = -1; diag.clear(); diagRaw.clear(); diagParts.clear(); doorProbe = ""; resetState = 0; ver.intValue++ }
+    fun clear() { rfModel = ""; canModel = ""; pairRaw = -1; p09 = null; sup = null; cars.clear(); carRaw.clear(); carParts.clear(); carCur = -1; diag.clear(); diagRaw.clear(); diagParts.clear(); doorProbe = ""; resetState = 0; ver.intValue++ }
     fun onPair(b: Int) { pairRaw = b; ver.intValue++ }
+    // mã phiên bản do hộp gửi (app gốc gọi là "RF Model" = 7C 8F và "CAN Model" = 7C 90)
+    var rfModel by mutableStateOf("")
+    var canModel by mutableStateOf("")
+    fun onModel(sub: Int, text: String) { val t = text.trim { it <= ' ' }; if (sub == 0x8F) rfModel = t else canModel = t }
     fun on09(v: IntArray) { p09 = v; ver.intValue++ }
     fun on07() { ver.intValue++ }
 
@@ -359,15 +363,16 @@ fun FactoryPage() {
     Card {
         GroupTitle(Icons.Filled.Build, "Cài đặt nhà máy", 16)
         Spacer(Modifier.height(6.dp))
-        T("Phiên bản hộp", 15, FontWeight.Bold)
+        // Theo app gốc: bit 6 của b1 khối 0D = bản hộp ảo ảnh, 0 "Thể thao" (sport), 1 "Ánh sáng" (light & shadow).
+        T("Phiên bản hộp ảo ảnh", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             val known = S.fac != null
-            Chip("Toàn màu", known && X.facBits(0, 0x40) == 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0)) need(ctx) }
-            Chip("Ảo ảnh", known && X.facBits(0, 0x40) != 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0x40)) need(ctx) }
+            Chip("Thể thao", known && X.facBits(0, 0x40) == 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0)) need(ctx) }
+            Chip("Ánh sáng", known && X.facBits(0, 0x40) != 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0x40)) need(ctx) }
         }
         Spacer(Modifier.height(6.dp))
-        T("Đổi phiên bản có thể làm hộp hiện màu khác, chỉ đổi khi biết hộp thuộc loại nào.", 12, color = SubTxt)
+        T("Chỉ đổi khi biết hộp thuộc bản nào: chọn sai thì một số hiệu ứng chạy không đúng.", 12, color = SubTxt)
         Divider(10.dp, 10.dp)
         T("Màu gửi cho hộp", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))

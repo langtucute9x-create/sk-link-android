@@ -857,6 +857,8 @@ fun SettingsDevice(onPick: () -> Unit) {
         Kv("Trạng thái kết nối", S.conn.value)
         Kv("Tên thiết bị", if (S.devName.value.isEmpty()) "—" else S.devName.value)
         Kv("ID thiết bị", if (S.savedMac.isEmpty()) "—" else S.savedMac)
+        if (X.rfModel.isNotEmpty()) Kv("Phiên bản hộp", X.rfModel)
+        if (X.canModel.isNotEmpty()) Kv("Phiên bản CAN", X.canModel)
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FillBtn("Ngắt kết nối", Icons.Filled.BluetoothDisabled, Color(0xFFF44336), Modifier.weight(1f)) { S.userOff = true; S.ble.disconnect() }
