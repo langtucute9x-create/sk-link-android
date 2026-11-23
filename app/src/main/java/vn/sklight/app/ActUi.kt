@@ -92,6 +92,15 @@ fun WarrantyCard() {
                     T(L.tr("Hết hạn") + ": " + (if (Act.until.value.isEmpty()) "—" else Act.vn(Act.until.value)), 13, color = SubTxt)
                 }
             }
+            if (Act.needCust.value) {
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(Color(0x1AFFA000)).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFFFA000), modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+                    T("Hộp này chưa có thông tin bảo hành của khách. Cần điền để được bảo hành.", 13, FontWeight.SemiBold, Txt, modifier = Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(10.dp))
+                FillBtn("Điền thông tin bảo hành", Icons.Filled.VerifiedUser, Pink, Modifier.fillMaxWidth()) { S.subPage.intValue = 13 }
+            }
         } else {
             T("App chưa kích hoạt trên máy này.", 13, color = SubTxt)
             Spacer(Modifier.height(10.dp))
@@ -170,6 +179,79 @@ private fun Field(value: String, onChange: (String) -> Unit, label: String, icon
     )
 }
 
+/** Khai thông tin khách cho hộp đã gắn mã (Lệnh 434). Bắt buộc để có hồ sơ bảo hành, nhưng không khóa điều khiển: thợ có thể để khách điền sau. */
+@Composable
+private fun CustomerForm() {
+    val ctx = LocalContext.current
+    var phone by remember { mutableStateOf("") }
+    var plate by remember { mutableStateOf("") }
+    var model by remember { mutableStateOf("") }
+    var year by remember { mutableStateOf("") }
+    var inst by remember { mutableStateOf("") }
+    var err by remember { mutableStateOf("") }
+    var hot by remember { mutableStateOf(false) }
+    val save: () -> Unit = save@{
+        if (phone.filter { it.isDigit() }.length < 10) { err = L.tr("Số điện thoại chưa đúng."); return@save }
+        if (plate.filter { it.isLetterOrDigit() }.length < 4) { err = L.tr("Biển số xe chưa đúng."); return@save }
+        if (model.isBlank()) { err = L.tr("Chưa nhập dòng xe."); return@save }
+        if (year.length != 4) { err = L.tr("Đời xe là năm sản xuất, ví dụ 2024."); return@save }
+        if (inst.isBlank()) { err = L.tr("Chưa nhập đơn vị lắp đặt."); return@save }
+        err = ""; hot = false
+        val cust = JSONObject().put("phone", phone).put("plate", plate.trim()).put("model", model.trim()).put("year", year).put("installer", inst.trim())
+        Act.setCustomer(cust) { r ->
+            when {
+                r == "ok" -> Notice.show(ctx, L.tr("Đã lưu thông tin bảo hành."), true)
+                r == "phone_used" -> { err = L.tr("Số điện thoại này đã kích hoạt bảo hành cho một bộ sản phẩm khác."); hot = true }
+                r == "not_activated" -> { err = L.tr("Hộp này chưa gắn mã kích hoạt."); hot = true }
+                r == "invalid_input:phone" -> err = L.tr("Số điện thoại chưa đúng.")
+                r == "invalid_input:plate" -> err = L.tr("Biển số xe chưa đúng.")
+                r == "invalid_input:model" -> err = L.tr("Chưa nhập dòng xe.")
+                r == "invalid_input:year" -> err = L.tr("Đời xe là năm sản xuất, ví dụ 2024.")
+                r == "invalid_input:installer" -> err = L.tr("Chưa nhập đơn vị lắp đặt.")
+                r == "network" -> err = L.tr("Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.")
+                else -> { err = L.tr("Máy chủ đang bận. Hãy thử lại sau ít phút."); hot = true }
+            }
+        }
+    }
+    Card {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Hero(Icons.Filled.VerifiedUser)
+            Spacer(Modifier.height(12.dp))
+            T("Thông tin bảo hành", 20, FontWeight.ExtraBold, align = TextAlign.Center)
+            Spacer(Modifier.height(4.dp))
+            T("Hộp đã gắn mã, bảo hành đã bắt đầu tính. Điền thông tin xe và khách để có hồ sơ bảo hành. Thợ lắp có thể điền hộ, hoặc để khách tự điền sau.", 13, color = SubTxt, align = TextAlign.Center)
+            Spacer(Modifier.height(16.dp))
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Field(phone, { v -> phone = v.filter { it.isDigit() || it == '+' }.take(14); err = "" }, "Số điện thoại khách", Icons.Filled.Phone, kb = KeyboardOptions(keyboardType = KeyboardType.Phone))
+            Field(plate, { v -> plate = v.uppercase().take(20); err = "" }, "Biển số xe", Icons.Filled.Badge, hint = "30A-123.45", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Field(model, { model = it.take(60); err = "" }, "Dòng xe", Icons.Filled.DirectionsCar, Modifier.weight(1.5f), "VinFast VF7", KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+                Field(year, { v -> year = v.filter { it.isDigit() }.take(4); err = "" }, "Đời xe", Icons.Filled.CalendarMonth, Modifier.weight(1f), "2024", KeyboardOptions(keyboardType = KeyboardType.Number))
+            }
+            Field(inst, { inst = it.take(100); err = "" }, "Đơn vị lắp đặt", Icons.Filled.Storefront, hint = "ABC Auto", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+        }
+        AnimatedVisibility(err.isNotEmpty()) {
+            Row(Modifier.padding(top = 12.dp).fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(Color(0x1AF44336)).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.ErrorOutline, null, tint = Color(0xFFF44336), modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+                T(err, 13, FontWeight.SemiBold, Color(0xFFD32F2F), modifier = Modifier.weight(1f))
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        FillBtn(if (Act.busy.value) "Đang lưu…" else "Lưu thông tin bảo hành", Icons.Filled.VerifiedUser, Pink, Modifier.fillMaxWidth().height(50.dp), save)
+        if (hot) {
+            Spacer(Modifier.height(10.dp))
+            FillBtn("Gọi hotline 0868 055 555", Icons.Filled.Call, OkGreen, Modifier.fillMaxWidth()) { Act.call(ctx) }
+        }
+        Spacer(Modifier.height(10.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(Modifier.clip(RoundedCornerShape(Theme.r(8))).clickable { S.subPage.intValue = 0 }.padding(8.dp)) {
+                T("Để khách điền sau", 12, FontWeight.SemiBold, AccentText)
+            }
+        }
+    }
+}
+
 /** Trang nhập mã. [locked] = đang hiện thay cho trang điều khiển vì đã nối hộp đèn mà máy chưa kích hoạt. */
 @Composable
 fun ActivationPage(locked: Boolean) {
@@ -188,7 +270,7 @@ fun ActivationPage(locked: Boolean) {
     var err by remember { mutableStateOf("") }
     var hot by remember { mutableStateOf(false) }
     if (!locked) BackRow(0, "Cài đặt")
-    if (S.connected.value && Act.ok.value) { WarrantyCard(); return }
+    if (S.connected.value && Act.ok.value) { if (Act.needCust.value) CustomerForm() else WarrantyCard(); return }
     // chưa nối hộp, hoặc đang hỏi SK Core, hoặc lần đầu nối hộp này mà không có mạng
     val ck = Act.checking.intValue
     if (!S.connected.value || ck == 1 || ck == 2) {
@@ -234,9 +316,12 @@ fun ActivationPage(locked: Boolean) {
             2 -> JSONObject().put("phone", phone).put("plate", plate.trim()).put("model", model.trim()).put("year", year).put("installer", inst.trim())
             else -> null
         }
-        Act.activate(ctx, raw, cust) { r ->
+        Act.activate(ctx, raw, cust, defer = short) { r ->
             when {
-                r == "ok" -> Notice.show(ctx, L.tr("Đã kích hoạt. Bảo hành đến ") + Act.vn(Act.until.value), true)
+                r == "ok" -> {
+                    Notice.show(ctx, L.tr(if (Act.needCust.value) "Đã gắn mã vào hộp. Bảo hành đến " else "Đã kích hoạt. Bảo hành đến ") + Act.vn(Act.until.value), true)
+                    if (Act.needCust.value) S.subPage.intValue = 13       // sang ngay trang điền thông tin bảo hành
+                }
                 r == "need_customer" -> need = if (short) 2 else 1
                 r == "invalid_code" -> err = L.tr("Mã kích hoạt không đúng. Kiểm tra lại mã trên tem.")
                 r == "code_used" -> { err = L.tr("Mã này đã kích hoạt cho một hộp đèn khác."); hot = true }

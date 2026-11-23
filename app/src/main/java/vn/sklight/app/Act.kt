@@ -33,6 +33,9 @@ import java.util.UUID
 // Mã nhận biết hộp = địa chỉ Bluetooth của hộp tổng (S.savedMac). Hộp đã kích hoạt thì MỌI máy nối vào đều dùng được, không nhập mã.
 // Nối hộp: hỏi SK Core (check_box). Máy này đã từng thấy hộp được kích hoạt (lưu ở prefs "act", khóa "box:<MAC>") thì mở luôn kể cả không có mạng.
 // Chưa từng thấy: BẮT BUỘC có mạng ở lần nối đầu tiên (chủ dự án chọn), chưa hỏi được thì khóa điều khiển và báo cần mạng.
+// Lệnh 434 (chốt 24/11/2026): thợ nhập mã 4 chữ là GẮN MÃ vào hộp ngay (ngày bảo hành tính từ lúc gắn), chưa cần thông tin khách.
+// Thông tin khách (số điện thoại, biển số, dòng xe, đời xe, đơn vị lắp đặt) khai sau bằng set_customer — bắt buộc để có hồ sơ bảo hành,
+// nhưng không khóa điều khiển. Hộp còn thiếu hồ sơ thì thẻ Bảo hành nhắc ở mọi máy nối vào hộp.
 // App không biết và không hiện giới hạn: chỉ hỏi SK Core. Cổng: POST /api/public/sk-light-activation.
 object Act {
     private const val URL_ACT = "https://core.sklight.vn/api/public/sk-light-activation"
@@ -42,6 +45,7 @@ object Act {
     val ok = mutableStateOf(false)            // hộp đang nối đã kích hoạt (được điều khiển)
     val at = mutableStateOf("")               // ngày kích hoạt của hộp đang nối, yyyy-MM-dd
     val until = mutableStateOf("")            // ngày hết bảo hành, yyyy-MM-dd
+    val needCust = mutableStateOf(false)      // hộp đã gắn mã nhưng chưa có thông tin khách (hồ sơ bảo hành)
     val busy = mutableStateOf(false)
     /** 0 chưa hỏi, 1 đang hỏi SK Core, 2 không có mạng (lần đầu nối hộp này), 3 đã có câu trả lời */
     val checking = mutableIntStateOf(0)
@@ -72,22 +76,24 @@ object Act {
         return try { JSONObject(txt) } catch (_: Exception) { JSONObject().put("status", "server") }
     }
 
-    private fun store(mac: String, a: String, w: String) {
-        sp(app).edit().putString(key(mac), "$a|$w").apply()
-        if (mac.equals(box, true)) { ok.value = true; at.value = a; until.value = w }
+    private fun store(mac: String, a: String, w: String, need: Boolean = false) {
+        sp(app).edit().putString(key(mac), "$a|$w|${if (need) 1 else 0}").apply()
+        if (mac.equals(box, true)) { ok.value = true; at.value = a; until.value = w; needCust.value = need }
     }
 
     private fun forget(mac: String) {
         sp(app).edit().remove(key(mac)).apply()
-        if (mac.equals(box, true)) { ok.value = false; at.value = ""; until.value = "" }
+        if (mac.equals(box, true)) { ok.value = false; at.value = ""; until.value = ""; needCust.value = false }
     }
 
     /** Gọi khi vừa nối được hộp [mac]. */
     fun onConnected(mac: String) {
         box = mac
         val saved = sp(app).getString(key(mac), null)
-        if (saved != null) { ok.value = true; at.value = saved.substringBefore('|'); until.value = saved.substringAfter('|', "") }
-        else { ok.value = false; at.value = ""; until.value = "" }
+        if (saved != null) {
+            val p = saved.split('|')
+            ok.value = true; at.value = p.getOrElse(0) { "" }; until.value = p.getOrElse(1) { "" }; needCust.value = p.getOrElse(2) { "0" } == "1"
+        } else { ok.value = false; at.value = ""; until.value = ""; needCust.value = false }
         recheck()
     }
 
@@ -103,7 +109,7 @@ object Act {
                 if (r.has("activated")) {
                     st = 3
                     val yes = r.optBoolean("activated", false)
-                    main.post { if (yes) store(mac, r.optString("activated_at"), r.optString("warranty_until")) else forget(mac) }
+                    main.post { if (yes) store(mac, r.optString("activated_at"), r.optString("warranty_until"), r.optBoolean("need_customer", false)) else forget(mac) }
                 }
             } catch (_: Exception) {}
             main.post { if (mac == box) checking.intValue = st }
@@ -111,26 +117,50 @@ object Act {
     }
 
     /** Kết quả trả về qua [done]: ok, need_customer, invalid_code, code_used, phone_used, limit_reached, locked, too_many, invalid_input:<trường>, network, server. */
-    fun activate(c: Context, code: String, cust: JSONObject?, done: (String) -> Unit) {
+    fun activate(c: Context, code: String, cust: JSONObject?, defer: Boolean = false, done: (String) -> Unit) {
         if (busy.value) return
         val ac = c.applicationContext
         val mac = box
         busy.value = true
         Thread {
             var res = "network"
-            var a = ""; var w = ""
+            var a = ""; var w = ""; var need = false
             try {
                 val b = JSONObject().put("action", "activate").put("code", code).put("device_id", devId).put("device_name", devName())
                 if (mac.isNotEmpty()) b.put("box_id", mac)
                 if (cust != null) b.put("customer", cust)
+                if (defer && cust == null && mac.isNotEmpty()) b.put("defer_customer", true)
                 val r = post(b)
+                res = r.optString("status", "server")
+                if (res == "invalid_input") res = "invalid_input:" + r.optString("field")
+                a = r.optString("activated_at"); w = r.optString("warranty_until"); need = r.optBoolean("need_customer", false)
+            } catch (_: Exception) {}
+            main.post {
+                busy.value = false
+                if (res == "ok") { checking.intValue = 3; store(mac, a, w, need); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
+                done(res)
+            }
+        }.start()
+    }
+
+    /** Khai thông tin khách cho hộp đang nối (Lệnh 434). Kết quả qua [done]: ok, phone_used, not_activated, invalid_input:<trường>, network, server. */
+    fun setCustomer(cust: JSONObject, done: (String) -> Unit) {
+        if (busy.value) return
+        val mac = box
+        if (mac.isEmpty()) { done("not_activated"); return }
+        busy.value = true
+        Thread {
+            var res = "network"
+            var a = ""; var w = ""
+            try {
+                val r = post(JSONObject().put("action", "set_customer").put("device_id", devId).put("device_name", devName()).put("box_id", mac).put("customer", cust))
                 res = r.optString("status", "server")
                 if (res == "invalid_input") res = "invalid_input:" + r.optString("field")
                 a = r.optString("activated_at"); w = r.optString("warranty_until")
             } catch (_: Exception) {}
             main.post {
                 busy.value = false
-                if (res == "ok") { checking.intValue = 3; store(mac, a, w); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
+                if (res == "ok") store(mac, a.ifEmpty { at.value }, w.ifEmpty { until.value }, false)
                 done(res)
             }
         }.start()
