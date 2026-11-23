@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.2.3"
+    const val VER = "1.2.4"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -188,7 +188,7 @@ object S {
         L.init(app); L.set(sp.getInt("lang", 0))
         Theme.mode.intValue = sp.getInt("themeMode", 0).coerceIn(0, 2)
         Theme.accent.intValue = sp.getInt("themeAccent", 0).coerceIn(0, Theme.ACCENTS.size - 1)
-        Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
+        Theme.font.intValue = sp.getInt("themeFont2", 3).coerceIn(0, Theme.FONTS.size - 1)
         Theme.style.intValue = sp.getInt("themeStyle", 0).coerceIn(0, Theme.STYLES.size - 1)
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
         Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.59, bỏ giá trị cũ do app tự đặt cho máy yếu)
@@ -216,7 +216,7 @@ object S {
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
-            .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)
+            .putInt("themeFont2", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)
             .putString("customs", customs.joinToString(",")).putString("pins", pins.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).putString("seqs", Seqs.dump()).apply()
     }

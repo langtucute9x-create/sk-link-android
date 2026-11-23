@@ -46,11 +46,11 @@ import androidx.core.graphics.drawable.toBitmap
 
 // ===================== HỘP CHỌN HỘP ĐÈN + HỘP CHỌN APP CHIA ĐÔI (mẫu A, chủ dự án chọn 24/11) =====================
 
-/** "Pocket Link CTH2-10" → ("Hộp đèn CTH2-10", là hộp hàm gốc?) */
+/** "Pocket Link CTH2-10" → ("Hộp đèn số 10", là hộp hàm gốc?). Chủ dự án yêu cầu không hiện chữ CTH2 / CZH2. */
 private fun friendly(name: String): Pair<String, Boolean> {
-    val code = name.trim().substringAfterLast(' ')
     val czh = name.contains("CZH2", true)
-    return (L.tr(if (czh) "Hộp hàm gốc" else "Hộp đèn") + " " + code) to czh
+    val num = Regex("(?:CTH2|CZH2)[- ]?(\\w+)", RegexOption.IGNORE_CASE).find(name)?.groupValues?.get(1) ?: ""
+    return (L.tr(if (czh) "Hộp hàm gốc" else "Hộp đèn") + if (num.isNotEmpty()) " " + L.tr("số") + " " + num else "") to czh
 }
 
 /** Mức sóng 1..4 và chữ mô tả. */
@@ -100,7 +100,7 @@ fun DevDialog(onClose: () -> Unit) {
             Spacer(Modifier.height(10.dp))
             if (list.isEmpty()) {
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(12))).background(ChipBg).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    T(if (S.scanning.value) "Đang tìm hộp CTH2 / CZH2…" else "Chưa thấy hộp nào", 14, FontWeight.Bold, align = TextAlign.Center)
+                    T(if (S.scanning.value) "Đang tìm hộp đèn…" else "Chưa thấy hộp nào", 14, FontWeight.Bold, align = TextAlign.Center)
                     Spacer(Modifier.height(4.dp))
                     T("Kiểm tra hộp đã có điện, Bluetooth và vị trí của máy đang bật, và không có máy khác đang nối với hộp.", 12, color = Grey, align = TextAlign.Center)
                 }

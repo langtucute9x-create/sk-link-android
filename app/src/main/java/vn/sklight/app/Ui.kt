@@ -59,7 +59,7 @@ object Theme {
     val style = mutableIntStateOf(0)       // phong cách nền
     val accent = mutableIntStateOf(0)
     val corner = mutableIntStateOf(1)      // 0 vuông, 1 vừa (gốc), 2 tròn
-    val font = mutableIntStateOf(0)
+    val font = mutableIntStateOf(3)                      // mặc định Be Vietnam Pro (chủ dự án chọn 24/11)
     val scale = mutableIntStateOf(1)
     val fx = mutableStateOf(true)          // hiệu ứng nổi khối + chuyển động (tắt = "Giảm hiệu ứng")
     val nightNow = mutableStateOf(false)   // đang là ban đêm (cho chế độ tự động)
@@ -81,7 +81,7 @@ object Theme {
     val scaleF: Float get() = SCALES[scale.intValue.coerceIn(0, SCALES.size - 1)].second
     /** Bán kính bo góc theo kiểu đang chọn; [base] là bán kính của giao diện gốc. */
     fun r(base: Int): Dp = when (corner.intValue) { 0 -> minOf(base, 3).dp; 2 -> (base * 1.8f).dp; else -> base.dp }
-    fun reset() { mode.intValue = 0; style.intValue = 0; accent.intValue = 0; corner.intValue = 1; font.intValue = 0; scale.intValue = 1 }
+    fun reset() { mode.intValue = 0; style.intValue = 0; accent.intValue = 0; corner.intValue = 1; font.intValue = 3; scale.intValue = 1 }
 }
 
 /** Màu nhấn (tên biến giữ là Pink vì mặc định là hồng SK). */
