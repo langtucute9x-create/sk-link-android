@@ -683,3 +683,13 @@ Kiểm tra hộp đã có điện, Bluetooth và vị trí của máy đang bậ
 Để chỉ hiện app đang mở, cho SK Light quyền xem mức sử dụng ứng dụng. Bật Hỗ trợ tiếp cận thì máy tự hiện danh sách app đang mở.	To show only open apps, give SK Light usage access. With Accessibility on, the system shows open apps itself.					
 Đang tìm hộp đèn…	Searching for LED controller…	LEDコントローラーを探しています…	LED 컨트롤러 찾는 중…	กำลังค้นหากล่องไฟ…	កំពុងស្វែងរកប្រអប់ភ្លើង…	ກຳລັງຊອກຫາກ່ອງໄຟ…
 số	no.	No.	번	หมายเลข	លេខ	ເລກ
+Biển số xe	License plate	ナンバープレート	번호판	ป้ายทะเบียน	ស្លាកលេខ	ປ້າຍທະບຽນ
+Dòng xe	Car model	車種	차종	รุ่นรถ	ម៉ូដែលរថយន្ត	ລຸ້ນລົດ
+Đời xe	Model year	年式	연식	ปีรถ	ឆ្នាំផលិត	ປີລົດ
+Đơn vị lắp đặt	Installer	取付業者	설치 업체	ผู้ติดตั้ง	អ្នកដំឡើង	ຜູ້ຕິດຕັ້ງ
+Biển số xe chưa đúng.	The license plate is not valid.	ナンバーが正しくありません。	번호판이 올바르지 않습니다.	ป้ายทะเบียนไม่ถูกต้อง	ស្លាកលេខមិនត្រឹមត្រូវ។	ປ້າຍທະບຽນບໍ່ຖືກຕ້ອງ.
+Chưa nhập dòng xe.	Enter the car model.	車種を入力してください。	차종을 입력하세요.	ยังไม่ได้ใส่รุ่นรถ	សូមបញ្ចូលម៉ូដែលរថយន្ត។	ຍັງບໍ່ໄດ້ໃສ່ລຸ້ນລົດ.
+Đời xe là năm sản xuất, ví dụ 2024.	Model year is the production year, e.g. 2024.	年式は製造年です（例: 2024）。	연식은 생산 연도입니다(예: 2024).	ปีรถคือปีที่ผลิต เช่น 2024	ឆ្នាំផលិត ឧទាហរណ៍ 2024។	ປີລົດແມ່ນປີທີ່ຜະລິດ ເຊັ່ນ 2024.
+Chưa nhập đơn vị lắp đặt.	Enter the installer.	取付業者を入力してください。	설치 업체를 입력하세요.	ยังไม่ได้ใส่ผู้ติดตั้ง	សូមបញ្ចូលអ្នកដំឡើង។	ຍັງບໍ່ໄດ້ໃສ່ຜູ້ຕິດຕັ້ງ.
+Mã kích hoạt là 4 chữ cái in trên tem.	The activation code is the 4 letters printed on the label.	有効化コードはラベルに印字された4文字です。	활성화 코드는 라벨에 인쇄된 4글자입니다.	รหัสเปิดใช้งานคือตัวอักษร 4 ตัวบนสติกเกอร์	កូដបើកដំណើរការគឺអក្សរ 4 តួលើស្លាក។	ລະຫັດເປີດໃຊ້ງານແມ່ນຕົວອັກສອນ 4 ຕົວເທິງສະຕິກເກີ.
+Mã kích hoạt là mã giới thiệu 4 chữ in trên tem dán ở vỏ hộp sản phẩm. Cần có mạng khi kích hoạt.	The activation code is the 4-letter referral code on the product box label. Internet is required to activate.	有効化コードは製品箱のラベルにある4文字の紹介コードです。有効化にはインターネットが必要です。	활성화 코드는 제품 상자 라벨의 4글자 추천 코드입니다. 활성화하려면 인터넷이 필요합니다.	รหัสเปิดใช้งานคือรหัสแนะนำ 4 ตัวอักษรบนสติกเกอร์กล่องสินค้า ต้องมีอินเทอร์เน็ตขณะเปิดใช้งาน	កូដបើកដំណើរការគឺកូដណែនាំ 4 អក្សរលើស្លាកប្រអប់ផលិតផល។ ត្រូវការអ៊ីនធឺណិត។	ລະຫັດເປີດໃຊ້ງານແມ່ນລະຫັດແນະນຳ 4 ຕົວອັກສອນເທິງສະຕິກເກີກ່ອງສິນຄ້າ. ຕ້ອງມີອິນເຕີເນັດ.
