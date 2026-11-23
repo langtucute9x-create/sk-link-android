@@ -652,3 +652,17 @@ Không mở được app này.	Cannot open this app.	このアプリを開けま
 Màn hình này không cho chia đôi.	This screen does not support split screen.	この画面は分割表示に対応していません。	이 화면은 분할 화면을 지원하지 않습니다.	หน้าจอนี้ไม่รองรับการแบ่งจอ	អេក្រង់នេះមិនអនុញ្ញាតបំបែកអេក្រង់ទេ។	ໜ້າຈໍນີ້ບໍ່ຮອງຮັບການແບ່ງຈໍ.
 Chưa chia đôi được: bật Hỗ trợ tiếp cận cho SK Light (trang Dẫn đường) để app tự chia màn hình.	Could not split the screen: turn on Accessibility for SK Light (Navigation page) so the app can split it.					
 Chia đôi màn hình: SK Light một nửa, app bản đồ nửa kia. Cần bật Hỗ trợ tiếp cận cho SK Light để app tự chia.	Split screen: SK Light on one half, the map app on the other. Accessibility must be on for SK Light so it can split automatically.					
+Chia đôi màn hình	Split screen	画面分割	화면 분할	แบ่งหน้าจอ	បំបែកអេក្រង់	ແບ່ງໜ້າຈໍ
+Thoát chia đôi	Exit split screen	分割を終了	분할 종료	ออกจากแบ่งจอ	ចេញពីការបំបែក	ອອກຈາກແບ່ງຈໍ
+Chia đôi với app đang mở	Split with an open app	開いているアプリと分割	열린 앱과 분할	แบ่งจอกับแอปที่เปิดอยู่	បំបែកជាមួយកម្មវិធីដែលកំពុងបើក	ແບ່ງຈໍກັບແອັບທີ່ເປີດຢູ່
+Chọn app đang mở	Choose an open app	開いているアプリを選択	열린 앱 선택	เลือกแอปที่เปิดอยู่	ជ្រើសកម្មវិធីដែលកំពុងបើក	ເລືອກແອັບທີ່ເປີດຢູ່
+Chọn app	Choose app	アプリを選択	앱 선택	เลือกแอป	ជ្រើសកម្មវិធី	ເລືອກແອັບ
+Chỉ hiện app đang mở	Show open apps only	開いているアプリのみ	열린 앱만 표시	แสดงเฉพาะแอปที่เปิดอยู่	បង្ហាញតែកម្មវិធីកំពុងបើក	ສະແດງສະເພາະແອັບທີ່ເປີດຢູ່
+Cho phép xem app đang mở	Allow seeing open apps	開いているアプリの表示を許可	열린 앱 보기 허용	อนุญาตให้ดูแอปที่เปิดอยู่	អនុញ្ញាតមើលកម្មវិធីកំពុងបើក	ອະນຸຍາດໃຫ້ເບິ່ງແອັບທີ່ເປີດຢູ່
+Mọi ứng dụng	All apps	すべてのアプリ	모든 앱	ทุกแอป	កម្មវិធីទាំងអស់	ທຸກແອັບ
+Chọn app đang mở ở nửa màn hình còn lại.	Pick an open app on the other half of the screen.	画面のもう半分で開いているアプリを選んでください。	화면 나머지 절반에서 열린 앱을 선택하세요.	เลือกแอปที่เปิดอยู่ในอีกครึ่งจอ	ជ្រើសកម្មវិធីកំពុងបើកនៅពាក់កណ្តាលអេក្រង់ម្ខាងទៀត។	ເລືອກແອັບທີ່ເປີດຢູ່ໃນອີກເຄິ່ງຈໍ.
+Kết nối	Connect	接続	연결	เชื่อมต่อ	ភ្ជាប់	ເຊື່ອມຕໍ່
+Bấm Chọn hộp đèn để tìm hộp.	Tap Choose LED controller to search.	「LEDコントローラーを選択」で検索します。	LED 컨트롤러 선택을 눌러 검색하세요.	แตะเลือกกล่องไฟเพื่อค้นหา	ចុចជ្រើសប្រអប់ភ្លើងដើម្បីស្វែងរក។	ແຕະເລືອກກ່ອງໄຟເພື່ອຄົ້ນຫາ.
+SK Light một nửa, app đang mở (bản đồ, nhạc…) nửa kia. Bấm nút rồi chọn app ở nửa màn hình còn lại. Cần bật Hỗ trợ tiếp cận cho SK Light.	SK Light on one half, an open app (map, music…) on the other. Tap the button, then pick the app on the other half. Accessibility must be on for SK Light.					
+Để hiện các app đang mở, hãy cho SK Light quyền xem mức sử dụng ứng dụng. Hoặc bật Hỗ trợ tiếp cận để máy tự hiện danh sách app đang mở.	To list open apps, give SK Light usage access. Or turn on Accessibility so the system shows open apps itself.					
+Nếu app mở toàn màn hình: bật Hỗ trợ tiếp cận cho SK Light (trang Dẫn đường) để app tự chia màn hình.	If the app opens full screen: turn on Accessibility for SK Light (Navigation page) so it can split the screen.					

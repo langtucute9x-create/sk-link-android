@@ -22,7 +22,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Bật Bluetooth của máy, mở SK Light và đồng ý các quyền app hỏi (Bluetooth, vị trí, thông báo).",
         "Chọn hộp đèn trong danh sách hiện ra. Từ lần sau app tự kết nối với hộp đã chọn.",
         "Ở màn hình dọc, chấm nhỏ ở góc trên bên phải màu xanh là đã kết nối, màu xám là chưa.",
-        "Khi mất kết nối, đầu trang Đèn hiện thẻ có hình phích cắm. Chạm thẻ đó để thử nối lại ngay.",
+        "Khi mất kết nối, đầu trang Đèn hiện thẻ có hình phích cắm với nút Kết nối (nối lại hộp đã chọn) và Chọn hộp đèn (tìm hộp khác). Kết nối được thì app nói \"Đã kết nối với hộp đèn\".",
         "Hộp đèn chỉ nhận một kết nối một lúc. Nếu không nối được, hãy tắt app đèn trên điện thoại hoặc màn hình khác.",
         "Muốn đổi sang hộp khác: Cài đặt, thẻ Thông tin thiết bị, bấm Chọn lại."
     ),
@@ -58,7 +58,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Nếu rẽ trái mà đèn lại chạy sang phải, bật Đảo chiều chạy.",
         "Thử nháy 4 giây: bấm Rẽ trái, Rẽ phải hoặc Quá tốc độ để xem trước trên đèn.",
         "Nháy đỏ khi quá tốc độ: bật công tắc và chọn khu nháy đỏ. Chỉ hoạt động khi app bản đồ hiện biển giới hạn tốc độ.",
-        "Mở bản đồ bên cạnh: bấm nút chia đôi (thẻ Bản đồ bên cạnh ở trang Dẫn đường, hoặc nút trên thanh menu màn ngang), chọn app bản đồ một lần; lần sau bấm là SK Light và bản đồ chia đôi màn hình. Cần bật Hỗ trợ tiếp cận cho SK Light; màn hình xe phải hỗ trợ chia đôi.",
+        "Chia đôi màn hình: bấm nút chia đôi (thẻ Chia đôi màn hình ở trang Dẫn đường, hoặc nút trên thanh menu màn ngang). SK Light sang một nửa, nửa kia hiện các app đang mở để chọn (bản đồ, nhạc…). Bấm lần nữa để thoát. Cần bật Hỗ trợ tiếp cận cho SK Light; màn hình xe phải hỗ trợ chia đôi.",
         "Để báo được khi SK Light không mở trên màn hình, hãy bật Tự kết nối khi khởi động máy ở thẻ Khi lái xe."
     ),
     "6. Khi lái xe" to listOf(

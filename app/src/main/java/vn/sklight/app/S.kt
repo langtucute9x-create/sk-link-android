@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.2.1"
+    const val VER = "1.2.2"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -120,6 +120,7 @@ object S {
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
     val floatStyle = mutableIntStateOf(0)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
+    val pickNow = mutableStateOf(false)                  // yêu cầu mở hộp chọn hộp đèn (từ thẻ mất kết nối)
     val menuTop = mutableStateOf(true)                    // màn ngang: menu nằm trên (true) hay cột bên trái (false)
     var pendingMic = false                                // bấm mic ở màn hình nổi: mở app rồi nghe ngay
     val floatOn = mutableStateOf(false)                   // nút nổi trên ứng dụng khác
@@ -152,7 +153,6 @@ object S {
         app = c.applicationContext
         Crash.install(app)
         Act.init(app)
-        Split.load(app)
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)

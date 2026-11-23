@@ -73,6 +73,9 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
+    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig); Split.inSplit.value = isInMultiWindowMode
+    }
     override fun onWindowFocusChanged(hasFocus: Boolean) { super.onWindowFocusChanged(hasFocus); Notice.winFocus = hasFocus }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,7 +100,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() { super.onStart(); if (crashShown) return; Gps.start(this); S.syncService(this) }
     override fun onStop() { if (!crashShown) Gps.stop(); super.onStop() }
-    override fun onResume() { super.onResume(); if (crashShown) return; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this)
+    override fun onResume() { super.onResume(); if (crashShown) return; Split.inSplit.value = isInMultiWindowMode; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this)
         // vừa bấm mic ở màn hình nổi: nghe ngay khi app mở lên
         if (S.pendingMic) { S.pendingMic = false; if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) Voice.start(this) }
     }
@@ -135,6 +138,7 @@ fun Root() {
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
     val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Theme.pal.bgTop, Theme.pal.bgBot))).systemBarsPadding()
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
+    LaunchedEffect(S.pickNow.value) { if (S.pickNow.value) { S.pickNow.value = false; pick() } }
     // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
     val lock = S.connected.value && !Act.ok.value
     CompositionLocalProvider(LocalCompact provides wide) {

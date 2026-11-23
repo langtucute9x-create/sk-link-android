@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
@@ -220,7 +222,14 @@ fun PlugCard() {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 T(if (con) "Đã kết nối" else if (none) "Chưa chọn hộp đèn" else "Mất kết nối với hộp đèn", 15, FontWeight.Bold)
-                T(if (con) S.devName.value else if (none) "Vào Cài đặt để chọn hộp đèn." else S.conn.value.ifEmpty { "Đang tự thử nối lại…" }, 12, color = Grey)
+                T(if (con) S.devName.value else if (none) "Bấm Chọn hộp đèn để tìm hộp." else S.conn.value.ifEmpty { "Đang tự thử nối lại…" }, 12, color = Grey)
+            }
+        }
+        if (!con) {
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (!none) FillBtn("Kết nối", Icons.Filled.Bluetooth, a, Modifier.weight(1f)) { S.userOff = false; S.autoConnect() }
+                OutlineBtn("Chọn hộp đèn", Modifier.weight(1f)) { S.pickNow.value = true }
             }
         }
     }

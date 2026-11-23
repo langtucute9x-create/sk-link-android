@@ -103,7 +103,7 @@ object Act {
             } catch (_: Exception) {}
             main.post {
                 busy.value = false
-                if (res == "ok") { store(app, a, w); S.sendBright(); S.sendEffect() }
+                if (res == "ok") { store(app, a, w); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(app, "Kích hoạt bảo hành thành công", force = true) }
                 done(res)
             }
         }.start()
