@@ -536,17 +536,9 @@ fun WelcomeDiagram() {
             }
         }
         Spacer(Modifier.height(12.dp))
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(64.dp, 64.dp, 24.dp, 24.dp)).background(ChipBg)
-                .border(2.dp, Bd, RoundedCornerShape(64.dp, 64.dp, 24.dp, 24.dp)).padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
-        ) {
-            T("ĐẦU XE", 11, FontWeight.Bold, Grey, Modifier.fillMaxWidth(), TextAlign.Center)
-            Grid(listOf(0, 1, 2, 3, 4, 5), 2) { i, m -> SegTile(i, m) }
-            T("ĐUÔI XE", 11, FontWeight.Bold, Grey, Modifier.fillMaxWidth(), TextAlign.Center)
-        }
+        StepDiagram()
         Spacer(Modifier.height(8.dp))
-        T("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng.", 11, color = Grey)
+        T("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm chấm màu hoặc ‹ › để đổi đoạn.", 11, color = Grey)
         Spacer(Modifier.height(16.dp))
         T("Vị trí bắt đầu chào mừng", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(10.dp))
@@ -602,6 +594,75 @@ fun SegTile(i: Int, modifier: Modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             DirBtn(Icons.Filled.ArrowBack, "${SEG_NAMES[i]}: hướng trái", !S.wDir[i], Modifier.weight(1f)) { S.setWDir(i, false) }
             DirBtn(Icons.Filled.ArrowForward, "${SEG_NAMES[i]}: hướng phải", S.wDir[i], Modifier.weight(1f)) { S.setWDir(i, true) }
+        }
+    }
+    if (edit) {
+        var txt by remember { mutableStateOf(S.leds[i].toString()) }
+        AlertDialog(
+            onDismissRequest = { edit = false },
+            confirmButton = { TextButton(onClick = { txt.toIntOrNull()?.let { S.setLed(i, it) }; edit = false }) { T("Xong", 14, FontWeight.Bold, Pink) } },
+            dismissButton = { TextButton(onClick = { edit = false }) { T("Hủy", 14, FontWeight.Bold) } },
+            title = { T("Số lượng LED: ${SEG_NAMES[i]}", 16, FontWeight.Bold) },
+            text = { OutlinedTextField(txt, { v -> txt = v.filter { it.isDigit() }.take(3) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)) }
+        )
+    }
+}
+
+private val SEG_COLORS = listOf(Color(0xFFD4537E), Color(0xFF378ADD), Color(0xFF1D9E75), Color(0xFFBA7517), Color(0xFF7F77DD), Color(0xFFD85A30))
+
+/** Sơ đồ xe kiểu "Từng bước": mỗi lần chỉnh một đoạn, nút to. */
+@Composable
+fun StepDiagram() {
+    var sel by remember { mutableIntStateOf(0) }
+    val i = sel
+    val col = SEG_COLORS[i]
+    val door = i >= 2
+    val picking = S.pickBox.intValue > 0
+    val box = S.boxPos.indexOf(i)
+    var edit by remember { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+        for (k in 0..5) {
+            val on = k == i
+            val d = if (on) 32.dp else 22.dp
+            Box(Modifier.height(36.dp).weight(1f).clickable { sel = k }, contentAlignment = Alignment.Center) {
+                Box(Modifier.size(d).clip(CircleShape).background(if (on) SEG_COLORS[k] else Color.Transparent).border(2.dp, SEG_COLORS[k], CircleShape), contentAlignment = Alignment.Center) {
+                    if (on) T("${k + 1}", 13, FontWeight.Bold, Color.White)
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(10.dp))
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(14))).background(CardBg).border(1.5.dp, col, RoundedCornerShape(Theme.r(14))).padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(Theme.r(10))).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).clickable { sel = (i + 5) % 6 }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.ArrowBack, "Đoạn trước", tint = Txt, modifier = Modifier.size(20.dp))
+            }
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                T(SEG_NAMES[i], 16, FontWeight.Bold, align = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                if (!door) T("Hộp chính", 11, color = Grey)
+                else if (picking) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Pink).clickable { S.assignBox(i) }.padding(horizontal = 12.dp, vertical = 5.dp)) { T("Gán hộp này vào cửa", 12, FontWeight.Bold, Color.White) }
+                else if (box >= 0) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(col).padding(horizontal = 10.dp, vertical = 3.dp)) { T("Hộp ${box + 1}", 11, FontWeight.Bold, Color.White) }
+                else T("Theo hộp", 11, color = Grey)
+            }
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(Theme.r(10))).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).clickable { sel = (i + 1) % 6 }, contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.ArrowForward, "Đoạn sau", tint = Txt, modifier = Modifier.size(20.dp))
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            RepeatBtn(Icons.Filled.Remove, "Giảm số LED ${SEG_NAMES[i]}", Modifier.size(52.dp, 50.dp)) { S.setLed(i, S.leds[i] - 1) }
+            Column(Modifier.widthIn(min = 80.dp).clickable { edit = true }, horizontalAlignment = Alignment.CenterHorizontally) {
+                T("${S.leds[i]}", 24, FontWeight.ExtraBold, col)
+                T("LED", 11, color = Grey)
+            }
+            RepeatBtn(Icons.Filled.Add, "Tăng số LED ${SEG_NAMES[i]}", Modifier.size(52.dp, 50.dp)) { S.setLed(i, S.leds[i] + 1) }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DirBtn(Icons.Filled.ArrowBack, "${SEG_NAMES[i]}: hướng trái", !S.wDir[i], Modifier.width(56.dp).height(50.dp)) { S.setWDir(i, false) }
+            DirBtn(Icons.Filled.ArrowForward, "${SEG_NAMES[i]}: hướng phải", S.wDir[i], Modifier.width(56.dp).height(50.dp)) { S.setWDir(i, true) }
         }
     }
     if (edit) {
