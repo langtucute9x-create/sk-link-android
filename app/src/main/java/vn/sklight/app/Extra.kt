@@ -434,14 +434,6 @@ fun FactoryPage() {
         if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
     }
     Card {
-        T("Chức năng dự phòng (thử nghiệm)", 15, FontWeight.Bold)
-        Spacer(Modifier.height(4.dp))
-        T("Hai công tắc \"Reserve Function\" có trong cài đặt nhà máy của app gốc nhưng không ghi công dụng. Bật từng cái để xem hộp đổi gì, không thấy gì thì tắt lại như cũ.", 12, color = SubTxt)
-        SwitchRow("Chức năng dự phòng 1", "Bit 7 của cài đặt nhà máy", X.facBits(1, 0x80) != 0) { if (!X.setFac(1, 0x80, if (it) 0x80 else 0)) need(ctx) }
-        Divider()
-        SwitchRow("Chức năng dự phòng 2", "Bit 6 của cài đặt nhà máy", X.facBits(1, 0x40) != 0) { if (!X.setFac(1, 0x40, if (it) 0x40 else 0)) need(ctx) }
-    }
-    Card {
         T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
         T("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp lần 1, đổi đúng MỘT thứ (bằng nút cơ hoặc app gốc), kết nối lại rồi chụp lần 2. App chỉ đọc, không ghi gì vào hộp. Lần 1 được nhớ kể cả khi thoát app.", 12, color = SubTxt)
