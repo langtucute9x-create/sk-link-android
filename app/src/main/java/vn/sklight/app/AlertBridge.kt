@@ -7,7 +7,7 @@ import java.util.regex.Pattern
 
 /**
  * Cảnh báo bằng đèn, chỉ dùng lệnh màu (01).
- * Sắp rẽ trái / phải: cả xe nháy vàng, hoặc (S.turnStyle = 1) hiệu ứng vàng của hộp chạy theo hướng rẽ. Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
+ * Sắp rẽ trái / phải: hiệu ứng vàng của hộp (Trôi đa sắc kiểu 3) chạy theo hướng rẽ. Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
  * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ.
  */
 object AlertBridge {
@@ -89,8 +89,13 @@ object AlertBridge {
         S.alertKind.intValue = k
         if (k == 0) return
         // Không dùng lệnh cấu hình cửa (04) để nháy: nó làm lệch đồng bộ hộp với xe.
-        if ((k == 1 || k == 2) && S.turnStyle.intValue == 1 && startFlow(k)) { S.alertPhase.value = true; return }
-        // Nháy bằng lệnh màu: đưa hộp về Đơn sắc trước
+        if (k == 1 || k == 2) {
+            // Sắp rẽ: chỉ dùng kiểu đèn chạy theo hướng rẽ (đã bỏ kiểu nháy vàng cả xe). Chưa đọc được hướng chạy từ hộp thì hỏi lại rồi thử tiếp.
+            S.alertPhase.value = true
+            tryFlow(k, 4)
+            return
+        }
+        // Quá tốc độ: nháy đỏ bằng lệnh màu, đưa hộp về Đơn sắc trước
         if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         S.alertPhase.value = false
         h.post(tick)
@@ -101,7 +106,13 @@ object AlertBridge {
     private var hold: IntArray? = null             // khối 07 của người dùng, giữ lại để trả về sau cảnh báo
     private const val DIR_BITS = 0x3F              // 6 đoạn: cửa trước trái, trước phải, sau trái, sau phải, táp lô giữa, đồng hồ
 
-    /** Trả về false nếu chưa đọc được hướng chạy từ hộp (khi đó dùng kiểu nháy vàng). */
+    private fun tryFlow(k: Int, left: Int) {
+        if (kind != k || flow) return
+        if (startFlow(k) || left <= 0) return
+        h.postDelayed({ tryFlow(k, left - 1) }, 700)
+    }
+
+    /** Trả về false nếu chưa đọc được hướng chạy từ hộp (đã gửi lệnh hỏi lại). */
     private fun startFlow(k: Int): Boolean {
         val p = hold ?: S.p07 ?: run { S.ble.send(Protocol.query(0x07)); return false }
         if (hold == null) { hold = p.copyOf(); S.holdP07(p) }
@@ -136,11 +147,11 @@ object AlertBridge {
 
     private val tick = object : Runnable {
         override fun run() {
-            if (kind == 0) return
+            if (kind != 3) return                      // chỉ quá tốc độ mới nháy bằng lệnh màu
             val on = !S.alertPhase.value
             S.alertPhase.value = on
-            // Quá tốc độ: khu được chọn nháy đỏ. Xi nhan: cả hai khu nháy vàng (hộp chưa phân biệt trái/phải qua lệnh màu).
-            val v = if (kind == 3) (if (on) 0xFF0000 else 0x000000) else (if (on) 0xFFA000 else 0x000000)
+            // Quá tốc độ: khu được chọn nháy đỏ
+            val v = if (on) 0xFF0000 else 0x000000
             val uni = S.czone.intValue == 0
             val b1 = if (uni) S.col[0] else S.col[1]
             val b2 = if (uni) S.col[0] else S.col[2]

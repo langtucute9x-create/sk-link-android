@@ -714,7 +714,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         if (k != 0) {
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(Theme.r(8))).padding(horizontal = 12.dp, vertical = 9.dp)) {
-                T(when (k) { 1 -> if (S.turnStyle.intValue == 1) "Sắp rẽ trái: đèn vàng đang chạy theo hướng rẽ" else "Sắp rẽ trái: đèn đang nháy vàng"; 2 -> if (S.turnStyle.intValue == 1) "Sắp rẽ phải: đèn vàng đang chạy theo hướng rẽ" else "Sắp rẽ phải: đèn đang nháy vàng"; else -> "Quá tốc độ: đang nháy đỏ" }, 13, FontWeight.Bold, AccentText)
+                T(when (k) { 1 -> "Sắp rẽ trái: đèn vàng đang chạy theo hướng rẽ"; 2 -> "Sắp rẽ phải: đèn vàng đang chạy theo hướng rẽ"; else -> "Quá tốc độ: đang nháy đỏ" }, 13, FontWeight.Bold, AccentText)
             }
         }
     }
@@ -723,18 +723,9 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     Card {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo rẽ", 16)
         Spacer(Modifier.height(8.dp))
-        SwitchRow("Báo đèn khi sắp rẽ", "Đèn báo vàng khi sắp tới chỗ rẽ trái hoặc rẽ phải", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
-        Spacer(Modifier.height(6.dp))
-        T("Kiểu cảnh báo rẽ", 13, FontWeight.Bold, SubTxt)
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Chip("Nháy vàng cả xe", S.turnStyle.intValue == 0, Modifier.weight(1f), 46.dp, 12) { S.turnStyle.intValue = 0; S.saveSettings() }
-            Chip("Đèn chạy theo hướng rẽ", S.turnStyle.intValue == 1, Modifier.weight(1f), 46.dp, 12) { S.turnStyle.intValue = 1; S.saveSettings(); if (S.p07 == null && S.connected.value) S.ble.send(Protocol.query(0x07)) }
-        }
-        if (S.turnStyle.intValue == 1) {
-            SwitchRow("Đảo chiều chạy", "Bật nếu khi rẽ trái mà đèn lại chạy sang phải", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
-            T("Dùng hiệu ứng Trôi đa sắc kiểu 3 (vàng) của hộp ở tốc độ nhanh nhất. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11, color = Grey)
-        }
+        SwitchRow("Báo đèn khi sắp rẽ", "Đèn vàng chạy theo hướng rẽ khi sắp tới chỗ rẽ", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Đảo chiều chạy", "Bật nếu khi rẽ trái mà đèn lại chạy sang phải", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
+        T("Khi sắp rẽ, đèn vàng chạy theo hướng rẽ (hiệu ứng Trôi đa sắc kiểu 3 của hộp, tốc độ nhanh nhất). Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11, color = Grey)
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
             T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
@@ -759,7 +750,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
         Spacer(Modifier.height(8.dp))
-        T("Rẽ trái, rẽ phải: báo vàng theo kiểu chọn ở thẻ Cảnh báo rẽ. Quá tốc độ: nháy đỏ theo khu chọn bên dưới. Hết 4 giây đèn trở về như cũ.", 11, color = Grey)
+        T("Rẽ trái, rẽ phải: đèn vàng chạy theo hướng rẽ. Quá tốc độ: nháy đỏ theo khu chọn bên dưới. Hết 4 giây đèn trở về như cũ.", 11, color = Grey)
     }
 
     // ---- cảnh báo quá tốc độ ----
