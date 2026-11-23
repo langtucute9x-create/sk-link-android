@@ -891,24 +891,36 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
         Kv("Giới hạn đọc được", if (S.speedLimit.intValue > 0) "${S.speedLimit.intValue} km/h" else "Chưa có")
-        if (S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
-        S.signThumb.value?.let { bmp ->
+        if (S.dev.value && S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
+        if (S.dev.value) S.signThumb.value?.let { bmp ->
             Spacer(Modifier.height(6.dp))
             T("Ảnh biển app đang đọc:", 11, color = Grey)
             androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
         }
         Spacer(Modifier.height(6.dp))
-        Hint("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở thẻ Đọc app dẫn đường bên dưới.", 11)
+        Hint("Giới hạn tốc độ có khi app dẫn đường hiện biển báo tốc độ trên màn hình (ví dụ Gofa).", 11)
     }
 
-    // ---- quyền đọc app dẫn đường + phần kiểm tra (đóng sẵn) ----
-    Card {
+    // ---- quyền còn thiếu: chỉ hiện khi chưa cấp đủ; cấp xong thì thẻ tự ẩn ----
+    var accOn by remember { mutableStateOf(true) }
+    val openAcc = { try { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {} }
+    LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
+    if (!granted || !accOn) Card {
+        GroupTitle(Icons.Filled.Navigation, "Cần cấp quyền", 16)
+        Spacer(Modifier.height(6.dp))
+        T("Quyền đọc thông báo dùng cho Google Maps, Vietmap. Quyền Hỗ trợ tiếp cận dùng cho app không có thông báo như Gofa.", 12, color = Grey)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (!granted) OutlineBtn("Cấp quyền thông báo", Modifier.weight(1f), openAccess)
+            if (!accOn) OutlineBtn("Bật Hỗ trợ tiếp cận", Modifier.weight(1f)) { openAcc() }
+        }
+    }
+
+    // ---- phần kiểm tra cho kỹ thuật: chỉ có ở chế độ kỹ thuật (chạm 7 lần vào dòng phiên bản ở trang Cài đặt) ----
+    if (S.dev.value) Card {
         GroupTitle(Icons.Filled.Navigation, "Đọc app dẫn đường", 16)
         Spacer(Modifier.height(8.dp))
-        var accOn by remember { mutableStateOf(false) }
         var open by remember { mutableStateOf(false) }
-        val openAcc = { try { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {} }
-        LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
         Kv("Quyền đọc thông báo", if (granted) "Đã cấp" else "Chưa cấp")
         Kv("Quyền Hỗ trợ tiếp cận", if (accOn) "Đã bật" else "Chưa bật")
         if (!granted || !accOn) {
@@ -999,22 +1011,28 @@ fun SettingsFeatures() {
         SetTitle(Icons.Filled.PhoneAndroid, "Ứng dụng")
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
-        Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
-            Notice.show(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."))
-        }
+        Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") { S.subPage.intValue = 12 }
     }
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
-        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
+        // Chức năng gốc xe chưa kiểm chứng xong trên xe thật: tạm chỉ hiện ở chế độ kỹ thuật
+        if (S.dev.value) Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
         Feature(Icons.Filled.Mic, "Trợ lý SK Light (AI)", "Giọng nói của hộp, cách thông báo và các câu lệnh") { S.subPage.intValue = 4 }
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
-        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
+        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
     }
     Card {
         Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
     }
-    T("SK Light ${S.VER} (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+    // chạm 7 lần liên tiếp vào dòng phiên bản để bật / tắt chế độ kỹ thuật (hiện các mục đang thử và công cụ kiểm tra)
+    var taps by remember { mutableIntStateOf(0) }
+    T(if (S.dev.value) "SK Light ${S.VER} · chế độ kỹ thuật" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
+        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
+    ) {
+        taps++
+        if (taps >= 7) { taps = 0; S.dev.value = !S.dev.value; S.saveSettings(); Notice.show(ctx, L.tr(if (S.dev.value) "Đã bật chế độ kỹ thuật." else "Đã tắt chế độ kỹ thuật.")) }
+    }.padding(vertical = 8.dp))
 }
 
 @Composable
