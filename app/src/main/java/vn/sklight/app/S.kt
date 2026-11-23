@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.54"
+    const val VER = "0.5.55"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -139,13 +139,6 @@ object S {
         }
     }
 
-    private fun lowEnd(c: Context): Boolean = try {
-        val am = c.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-        val mi = android.app.ActivityManager.MemoryInfo()
-        am.getMemoryInfo(mi)
-        am.isLowRamDevice || mi.totalMem < 1_600_000_000L || Runtime.getRuntime().availableProcessors() < 4
-    } catch (e: Exception) { false }
-
     fun init(c: Context) {
         if (inited) return
         inited = true
@@ -184,7 +177,7 @@ object S {
         Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
         Theme.style.intValue = sp.getInt("themeStyle", 0).coerceIn(0, Theme.STYLES.size - 1)
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
-        Theme.fx.value = sp.getBoolean("themeFx", !lowEnd(app))     // máy yếu (ít RAM / ít nhân) thì mặc định bật "Giảm hiệu ứng"
+        Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.55, bỏ giá trị cũ do app tự đặt cho máy yếu)
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("pins", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.distinct().take(MAX_PINS).forEach { pins.add(it) }
@@ -209,7 +202,7 @@ object S {
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
-            .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx", Theme.fx.value)
+            .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)
             .putString("customs", customs.joinToString(",")).putString("pins", pins.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).putString("seqs", Seqs.dump()).apply()
     }
