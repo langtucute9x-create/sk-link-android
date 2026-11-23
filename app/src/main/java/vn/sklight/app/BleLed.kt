@@ -154,7 +154,7 @@ class BleLed(private val ctx: Context) {
                 val init = Protocol.init()
                 send(init[0])
                 if (S.on.value) S.sendBright()          // kết nối lại không bao giờ tự tắt đèn của hộp
-                main.postDelayed({ S.syncUntil = System.currentTimeMillis() + 4000; send(Protocol.query(0x01)); for (f in init.drop(1)) send(f) }, 700)
+                main.postDelayed({ S.restoreP07(); S.syncUntil = System.currentTimeMillis() + 4000; send(Protocol.query(0x01)); for (f in init.drop(1)) send(f) }, 700)
             }, 800)
         }
     }
@@ -197,6 +197,7 @@ class BleLed(private val ctx: Context) {
     }
 
     private fun rxOne(d: ByteArray) {
+        if (X.snapOn) { val c = d.copyOf(); main.post { X.onSnapFrame(c) } }
         if (d.size >= 5 && (d[0].toInt() and 0xFF) == 0x2E) {
             val t = d[1].toInt() and 0xFF
             if (t == 0x8C) { main.post { X.onCarFrame(d) }; return }

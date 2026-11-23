@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.34"
+    const val VER = "0.5.35"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -88,6 +88,8 @@ object S {
     val screenPkg = mutableStateOf("")                    // app đang hiện trên màn hình lần đọc gần nhất
     val screenLines = mutableStateListOf<String>()        // chữ đọc được, để kiểm tra
     val signSeen = mutableStateOf("")                     // con số km/h thấy trong thông báo (nếu có)
+    val turnStyle = mutableIntStateOf(0)                  // cảnh báo rẽ: 0 nháy vàng cả xe, 1 đèn chạy theo hướng rẽ
+    val turnFlip = mutableStateOf(false)                  // đảo chiều chạy của kiểu 1
     val alertKind = mutableIntStateOf(0)                  // xem AlertBridge
     val alertPhase = mutableStateOf(false)                // pha sáng / tối của nhịp nháy
 
@@ -136,6 +138,8 @@ object S {
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)
+        turnStyle.intValue = sp.getInt("turnStyle", 0).coerceIn(0, 1)
+        turnFlip.value = sp.getBoolean("turnFlip", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
         speedWarn.value = sp.getBoolean("speedWarn", false)
         speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
@@ -170,6 +174,7 @@ object S {
         czone.intValue = sp.getInt("czone", 0).coerceIn(0, 2)
         Auto.z2.intValue = sp.getInt("autoZ2", 0).coerceIn(0, Auto.Z2_NAMES.size)
         Seqs.load(sp.getString("seqs", "") ?: "")
+        X.loadSnap(1, sp.getString("snap1", "") ?: ""); X.loadSnap(2, sp.getString("snap2", "") ?: "")
         ble = BleLed(app)
         main.post(nightLoop)
         Auto.resume()
@@ -177,7 +182,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("alertDist", alertDist.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("alertDist", alertDist.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
@@ -439,6 +444,20 @@ object S {
         pickBox.intValue = 0
         ble.send(Protocol.doorReset())
         saveSettings()
+    }
+
+    /**
+     * Cảnh báo rẽ kiểu "đèn chạy" tạm đổi hướng chạy (khối 07) của hộp. Ghi lại giá trị gốc vào máy để nếu app bị tắt giữa chừng,
+     * lần kết nối sau vẫn trả lại được. [p] = null: đã trả xong.
+     */
+    fun saveSnap(n: Int, text: String) { try { sp.edit().putString("snap$n", text).apply() } catch (e: Exception) {} }
+    fun holdP07(p: IntArray?) { try { sp.edit().putString("p07Hold", p?.joinToString(",") ?: "").apply() } catch (e: Exception) {} }
+    /** Gọi sau khi kết nối: còn giá trị gốc chưa trả thì trả lại cho hộp. */
+    fun restoreP07() {
+        val v = (sp.getString("p07Hold", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }
+        if (v.size != 3) return
+        ble.send(Protocol.block07(v[0], v[1], v[2]), 23)
+        holdP07(null)
     }
 
     /** Lệnh giọng nói "đổi hướng": đảo hướng ánh sáng chạy của mọi đoạn (khối 07, đọc-sửa-ghi; byte giữa giữ nguyên). */

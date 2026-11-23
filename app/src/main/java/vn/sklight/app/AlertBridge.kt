@@ -7,7 +7,7 @@ import java.util.regex.Pattern
 
 /**
  * Cảnh báo bằng đèn, chỉ dùng lệnh màu (01).
- * Sắp rẽ trái / phải: cả xe nháy vàng (hộp không có lệnh màu riêng từng cửa). Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
+ * Sắp rẽ trái / phải: cả xe nháy vàng, hoặc (S.turnStyle = 1) hiệu ứng vàng của hộp chạy theo hướng rẽ. Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
  * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ.
  */
 object AlertBridge {
@@ -88,16 +88,49 @@ object AlertBridge {
         kind = k
         S.alertKind.intValue = k
         if (k == 0) return
-        // Không dùng lệnh cấu hình cửa (04) để nháy: nó làm lệch đồng bộ hộp với xe. Chỉ dùng lệnh màu như quá tốc độ.
+        // Không dùng lệnh cấu hình cửa (04) để nháy: nó làm lệch đồng bộ hộp với xe.
+        if ((k == 1 || k == 2) && S.turnStyle.intValue == 1 && startFlow(k)) { S.alertPhase.value = true; return }
+        // Nháy bằng lệnh màu: đưa hộp về Đơn sắc trước
         if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         S.alertPhase.value = false
         h.post(tick)
+    }
+
+    // ---- kiểu "đèn chạy theo hướng rẽ": hiệu ứng Trôi đa sắc kiểu 3 (vàng) của hộp, tốc độ tối đa, đổi hướng chạy theo bên rẽ ----
+    private var flow = false                       // cảnh báo đang chạy bằng hiệu ứng của hộp
+    private var hold: IntArray? = null             // khối 07 của người dùng, giữ lại để trả về sau cảnh báo
+    private const val DIR_BITS = 0x3F              // 6 đoạn: cửa trước trái, trước phải, sau trái, sau phải, táp lô giữa, đồng hồ
+
+    /** Trả về false nếu chưa đọc được hướng chạy từ hộp (khi đó dùng kiểu nháy vàng). */
+    private fun startFlow(k: Int): Boolean {
+        val p = hold ?: S.p07 ?: run { S.ble.send(Protocol.query(0x07)); return false }
+        if (hold == null) { hold = p.copyOf(); S.holdP07(p) }
+        // rẽ trái và rẽ phải dùng hai hướng ngược nhau; bên nào ứng với bit nào thì thử trên xe rồi chỉnh bằng công tắc Đảo chiều
+        val left = (k == 1) != S.turnFlip.value
+        val d1 = (p[0] and DIR_BITS.inv()) or (if (left) DIR_BITS else 0)
+        S.ble.send(Protocol.block07(d1, p[1], p[2]), 23, true)
+        S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 10, 3, 10), 3, true)
+        flow = true
+        return true
+    }
+
+    private fun stopFlow() {
+        flow = false
+        val p = hold
+        if (p != null) { S.ble.send(Protocol.block07(p[0], p[1], p[2]), 23, true); S.p07 = p.copyOf() }
+        hold = null
+        S.holdP07(null)
+        // trả hộp về chế độ đang đặt (Đơn sắc cũng phải gửi lại vì hộp đang ở Trôi đa sắc)
+        if (S.mode.intValue != 0) S.sendEffect()
+        else { S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3, true); S.ble.send(S.colorFrame(), 2) }
     }
 
     /** Kết thúc cảnh báo đang chạy: trả đèn về như cũ. */
     private fun stop() {
         h.removeCallbacks(tick)
         S.alertPhase.value = false
+        if (flow) { stopFlow(); return }
+        if (kind == 0) return
         if (S.mode.intValue != 0) S.sendEffect() else S.ble.send(S.colorFrame(), 2)
     }
 
