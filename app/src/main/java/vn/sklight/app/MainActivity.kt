@@ -747,17 +747,27 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, tint(0.2f), Pink,
             Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp)
         Spacer(Modifier.height(10.dp))
-        T("Thời gian đèn chạy", 14, FontWeight.SemiBold)
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf(0 to "Tới khi rẽ xong", 5 to "5 giây", 10 to "10 giây", 20 to "20 giây", 30 to "30 giây").forEach { (sec, label) ->
-                val on = S.alertMaxSec.intValue == sec
-                Box(
-                    Modifier.weight(if (sec == 0) 1.6f else 1f).height(34.dp).clip(RoundedCornerShape(Theme.r(8)))
-                        .background(if (on) Pink else tint(0.12f)).border(1.dp, if (on) Pink else tint(0.4f), RoundedCornerShape(Theme.r(8)))
-                        .clickable { S.alertMaxSec.intValue = sec; S.saveSettings() },
-                    contentAlignment = Alignment.Center
-                ) { T(label, 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Color.White else Txt) }
+        var open by remember { mutableStateOf(false) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            T("Thời gian đèn chạy", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Box {
+                Row(
+                    Modifier.height(34.dp).clip(RoundedCornerShape(Theme.r(8))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(8)))
+                        .clickable { open = true }.padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    T(if (S.alertMaxSec.intValue == 0) "Tới khi rẽ xong" else "${S.alertMaxSec.intValue} giây", 14, FontWeight.ExtraBold, Pink)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.Filled.ArrowDropDown, null, tint = Pink, modifier = Modifier.size(20.dp))
+                }
+                androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                    (listOf(0) + (1..20)).forEach { sec ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { T(if (sec == 0) "Tới khi rẽ xong" else "$sec giây", 14, if (S.alertMaxSec.intValue == sec) FontWeight.ExtraBold else FontWeight.Medium, if (S.alertMaxSec.intValue == sec) Pink else Txt) },
+                            onClick = { S.alertMaxSec.intValue = sec; S.saveSettings(); open = false }
+                        )
+                    }
+                }
             }
         }
         T("Hết thời gian thì đèn trở về như cũ dù chưa qua chỗ rẽ; tới chỗ rẽ kế tiếp sẽ báo lại.", 11, color = Grey, modifier = Modifier.padding(top = 6.dp))
