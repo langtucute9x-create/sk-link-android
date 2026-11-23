@@ -9,7 +9,7 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,7 +40,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -65,13 +67,23 @@ fun dim(c: Color, k: Float) = lerp(c, Color.Black, k)
 private val Shine = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0f)))
 
 /** Nền một ô bấm: màu nhấn khi [on], màu ô khi không. Bật hiệu ứng thì có chuyển sắc, viền sáng phía trên và quầng màu khi đang chọn. */
-fun Modifier.block(on: Boolean, shape: Shape, idle: Color = ChipBg): Modifier {
-    val a = Pink
+fun Modifier.block(on: Boolean, shape: Shape, idle: Color = ChipBg, accent: Color = Pink): Modifier {
+    val a = accent
     if (!Fx) return clip(shape).background(if (on) a else idle).border(1.dp, if (on) a else Bd, shape)
     val base = if (on) shadow(5.dp, shape, clip = false, ambientColor = a, spotColor = a) else this
     val fill = if (on) Brush.verticalGradient(listOf(lite(a, 0.30f), a, dim(a, 0.22f)))
     else Brush.verticalGradient(listOf(lite(idle, if (Theme.dark) 0.07f else 0.6f), dim(idle, if (Theme.dark) 0.12f else 0.03f)))
     return base.clip(shape).background(fill).border(1.dp, if (on) Shine else SolidColor(Bd), shape)
+}
+
+/** Quầng màu [c] quanh ô đang chọn (chỉ khi bật hiệu ứng). Đặt trước clip / background. */
+fun Modifier.glow(on: Boolean, c: Color, shape: Shape): Modifier = if (on && Fx) shadow(5.dp, shape, clip = false, ambientColor = c, spotColor = c) else this
+
+/** Rung rất nhẹ khi bấm các nút chính (máy không có bộ rung thì không có gì xảy ra; tắt cùng "Giảm hiệu ứng"). */
+@Composable
+fun rememberTick(): () -> Unit {
+    val h = LocalHapticFeedback.current
+    return { if (Fx) try { h.performHapticFeedback(HapticFeedbackType.TextHandleMove) } catch (e: Exception) {} }
 }
 
 /** Nền nút tròn (nguồn, micro): quả cầu màu nhấn khi [on]. */
@@ -126,8 +138,9 @@ fun Chip(text: String, sel: Boolean, modifier: Modifier = Modifier, h: Dp = 41.d
 fun PowerBtn(size: Int = 46) {
     val on = S.on.value
     val src = remember { MutableInteractionSource() }
+    val tick = rememberTick()
     Box(
-        Modifier.size(size.dp).then(pressScale(src)).orb(on).clickable(src, LocalIndication.current) { S.setPower(!on) },
+        Modifier.size(size.dp).then(pressScale(src)).orb(on).clickable(src, LocalIndication.current) { tick(); S.setPower(!on) },
         contentAlignment = Alignment.Center
     ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size((size / 2).dp)) }
 }
@@ -158,6 +171,7 @@ fun TabsV(sel: Int, onPick: (Int) -> Unit) {
     val pos = tabPos(sel)
     val sh = RoundedCornerShape(Theme.r(10))
     val rad = Theme.r(8)
+    val tick = rememberTick()
     Column(
         Modifier.clip(sh).background(trough()).border(1.dp, Bd, sh).padding(4.dp).drawBehind {
             val h = 46.dp.toPx()
@@ -166,7 +180,7 @@ fun TabsV(sel: Int, onPick: (Int) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         TAB_ITEMS.forEachIndexed { i, (label, icon) ->
-            Box(Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(rad)).clickable { onPick(i) }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(rad)).clickable { if (sel != i) tick(); onPick(i) }, contentAlignment = Alignment.Center) {
                 Icon(icon, label, tint = if (sel == i) Color.White else SubTxt, modifier = Modifier.size(22.dp))
             }
         }
@@ -181,6 +195,7 @@ fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, onPick: (Int
     val sh = RoundedCornerShape(Theme.r(10))
     val rad = Theme.r(8)
     val n = TAB_ITEMS.size
+    val tick = rememberTick()
     Row(
         modifier.clip(sh).background(trough()).border(1.dp, Bd, sh).padding(if (height < 36) 3.dp else 4.dp).drawBehind {
             val gap = 4.dp.toPx()
@@ -191,7 +206,7 @@ fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, onPick: (Int
     ) {
         TAB_ITEMS.forEachIndexed { i, (label, icon) ->
             Row(
-                Modifier.weight(1f).height(height.dp).clip(RoundedCornerShape(rad)).clickable { onPick(i) },
+                Modifier.weight(1f).height(height.dp).clip(RoundedCornerShape(rad)).clickable { if (sel != i) tick(); onPick(i) },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
             ) { Icon(icon, label, tint = if (sel == i) Color.White else SubTxt, modifier = Modifier.size(if (height < 36) 20.dp else 22.dp)) }
         }
@@ -222,8 +237,9 @@ fun SkSlider(
         modifier.height(30.dp)
             .pointerInput(Unit) { detectTapGestures { o -> val r = thumbD.toPx() / 2f; cb(((o.x - r) / (size.width - 2f * r)).coerceIn(0f, 1f)) } }
             .pointerInput(Unit) {
-                detectDragGestures(onDragStart = { drag = true }, onDragEnd = { drag = false; lean = 0f }, onDragCancel = { drag = false; lean = 0f }) { ch, d ->
-                    lean = (-d.x * 1.5f).coerceIn(-16f, 16f)
+                // chỉ bắt thao tác kéo NGANG: vuốt dọc ngang qua thanh trượt thì trang vẫn cuộn, không đổi nhầm giá trị
+                detectHorizontalDragGestures(onDragStart = { drag = true }, onDragEnd = { drag = false; lean = 0f }, onDragCancel = { drag = false; lean = 0f }) { ch, dx ->
+                    lean = (-dx * 1.5f).coerceIn(-16f, 16f)
                     val r = thumbD.toPx() / 2f
                     cb(((ch.position.x - r) / (size.width - 2f * r)).coerceIn(0f, 1f))
                 }
@@ -308,7 +324,8 @@ fun SkSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
     val stretch by animateFloatAsState(if (pressed) 1f else 0f, label = "swp")
     val a = Pink
     val off = SoftTrack
-    Box(Modifier.size(52.dp, 32.dp).clip(RoundedCornerShape(16.dp)).clickable(src, null) { onChange(!on) }.drawBehind {
+    val tick = rememberTick()
+    Box(Modifier.size(52.dp, 32.dp).clip(RoundedCornerShape(16.dp)).clickable(src, null) { tick(); onChange(!on) }.drawBehind {
         val h = size.height
         val base = lerp(off, a, t.coerceIn(0f, 1f))
         drawRoundRect(Brush.verticalGradient(listOf(dim(base, 0.30f), base)), cornerRadius = CornerRadius(h / 2f, h / 2f))
@@ -347,4 +364,35 @@ fun ColorOrb(col: Color, on: Boolean, gestures: Modifier, content: @Composable B
             .then(gestures),
         contentAlignment = Alignment.Center, content = content
     )
+}
+
+// ----- các nút chữ dùng chung -----
+@Composable
+fun OutlineBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val src = remember { MutableInteractionSource() }
+    Box(
+        modifier.height(44.dp).then(pressScale(src, 0.96f)).block(false, RoundedCornerShape(Theme.r(8)), CardBg).clickable(src, LocalIndication.current, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) { T(text, 12, FontWeight.SemiBold) }
+}
+
+@Composable
+fun FillBtn(text: String, icon: ImageVector, bg: Color, modifier: Modifier, onClick: () -> Unit) {
+    val src = remember { MutableInteractionSource() }
+    Row(
+        modifier.height(43.dp).then(pressScale(src, 0.96f)).block(true, RoundedCornerShape(Theme.r(6)), accent = bg).clickable(src, LocalIndication.current, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        T(text, 13, FontWeight.Bold, Color.White)
+    }
+}
+
+/** Nút mũi tên chọn hướng ánh sáng chạy. */
+@Composable
+fun DirBtn(icon: ImageVector, desc: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val sh = RoundedCornerShape(Theme.r(10))
+    val m = if (on) modifier.height(44.dp).block(true, sh) else modifier.height(44.dp).clip(sh).background(tint(0.12f)).border(1.dp, tint(0.5f), sh)
+    Box(m.clickable(onClick = onClick), contentAlignment = Alignment.Center) { Icon(icon, desc, tint = if (on) Color.White else Pink, modifier = Modifier.size(20.dp)) }
 }

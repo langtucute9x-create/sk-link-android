@@ -219,15 +219,16 @@ val TAB_ITEMS: List<Pair<String, ImageVector>> =
 /** Trang cài đặt con ở màn ngang: dùng hết chiều ngang, các thẻ tự xếp thành hai cột. */
 @Composable
 fun ColumnScope.WideSub(content: @Composable () -> Unit) {
-    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) { Masonry(12.dp, content) }
+    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp)) { Masonry(12.dp, content) }
 }
 
 /** Hai cột cuộn riêng cho màn ngang. */
 @Composable
 fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composable () -> Unit) {
-    Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.width(leftW).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
-        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
+    // lề 4dp quanh mỗi cột để bóng đổ của thẻ không bị cắt ở mép vùng cuộn; khoảng cách giữa hai cột vẫn là 12dp
+    Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.width(leftW + 8.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
+        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
     }
 }
 
@@ -350,7 +351,7 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
         Grid(g.items, cols, 9.dp, 11.dp) { e, m ->
             val on = S.mode.intValue == e.id
             Row(
-                m.height(56.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(e.color, 0.5f) else ChipBg)
+                m.height(56.dp).glow(on, e.color, RoundedCornerShape(Theme.r(8))).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(e.color, 0.5f) else ChipBg)
                     .border(if (on) 2.dp else 1.dp, if (on) e.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickEffect(e) }
                     .padding(start = 10.dp, end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -367,7 +368,7 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
             Grid(cur.subs.indices.toList(), cols) { i, m ->
                 val on = S.sub[cur.id] == i
                 Box(
-                    m.height(51.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(cur.color, 0.2f) else ChipBg)
+                    m.height(51.dp).glow(on, cur.color, RoundedCornerShape(Theme.r(8))).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(cur.color, 0.2f) else ChipBg)
                         .border(if (on) 2.dp else 1.dp, if (on) cur.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickSub(cur, i) }.padding(horizontal = 6.dp),
                     contentAlignment = Alignment.Center
                 ) { T(cur.subs[i], 11, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, align = TextAlign.Center) }
@@ -521,12 +522,6 @@ fun WelcomeDiagram() {
     }
 }
 
-@Composable
-fun OutlineBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(modifier.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
-        T(text, 12, FontWeight.SemiBold)
-    }
-}
 
 @Composable
 fun SegTile(i: Int, modifier: Modifier) {
@@ -590,7 +585,7 @@ fun StepDiagram() {
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(44.dp).clip(RoundedCornerShape(Theme.r(10))).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).clickable { sel = (i + 5) % 6 }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).block(false, RoundedCornerShape(Theme.r(10))).clickable { sel = (i + 5) % 6 }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.ArrowBack, "Đoạn trước", tint = Txt, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -601,7 +596,7 @@ fun StepDiagram() {
                 else if (box >= 0) Box(Modifier.clip(RoundedCornerShape(10.dp)).background(col).padding(horizontal = 10.dp, vertical = 3.dp)) { T("Hộp ${box + 1}", 11, FontWeight.Bold, Color.White) }
                 else T("Theo hộp", 11, color = Grey)
             }
-            Box(Modifier.size(44.dp).clip(RoundedCornerShape(Theme.r(10))).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).clickable { sel = (i + 1) % 6 }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(44.dp).block(false, RoundedCornerShape(Theme.r(10))).clickable { sel = (i + 1) % 6 }, contentAlignment = Alignment.Center) {
                 Icon(Icons.Filled.ArrowForward, "Đoạn sau", tint = Txt, modifier = Modifier.size(20.dp))
             }
         }
@@ -630,14 +625,6 @@ fun StepDiagram() {
     }
 }
 
-@Composable
-fun DirBtn(icon: ImageVector, desc: String, on: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Box(
-        modifier.height(44.dp).clip(RoundedCornerShape(Theme.r(10))).background(if (on) Pink else tint(0.12f))
-            .border(1.dp, if (on) Pink else tint(0.5f), RoundedCornerShape(Theme.r(10))).clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) { Icon(icon, desc, tint = if (on) Color.White else Pink, modifier = Modifier.size(20.dp)) }
-}
 
 // ===================== DẢI MÀU XEM TRƯỚC =====================
 private val RAINBOW = listOf(Color(0xFFFE2B48), Color(0xFFFED119), Color(0xFF40E01E), Color(0xFF1AF4EA), Color(0xFF4E78FF), Color(0xFF8A01FF))
@@ -963,14 +950,6 @@ fun Kv(k: String, v: String) {
     }
 }
 
-@Composable
-fun FillBtn(text: String, icon: ImageVector, bg: Color, modifier: Modifier, onClick: () -> Unit) {
-    Row(modifier.height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(bg).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-        Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        T(text, 13, FontWeight.Bold, Color.White)
-    }
-}
 
 @Composable
 fun Feature(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) {

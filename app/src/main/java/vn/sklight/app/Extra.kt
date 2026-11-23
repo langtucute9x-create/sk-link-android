@@ -269,7 +269,7 @@ private fun need(ctx: Context) {
 @Composable
 fun BackRow(to: Int, label: String) {
     Row(
-        Modifier.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable { S.subPage.intValue = to }.padding(start = 10.dp, end = 14.dp),
+        Modifier.height(44.dp).block(false, RoundedCornerShape(Theme.r(8)), CardBg).clickable { S.subPage.intValue = to }.padding(start = 10.dp, end = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Filled.ArrowBack, null, tint = Txt, modifier = Modifier.size(18.dp))
