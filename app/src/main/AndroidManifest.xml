@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Để hỏi được máy có bộ nhận giọng nói hay không (Android 11 trở lên) -->
     <queries>
@@ -52,6 +54,12 @@
             </intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/screen_reader" />
         </service>
+
+        <!-- Chia sẻ file APK bản mới cho trình cài đặt của máy -->
+        <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.update"
+            android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_paths" />
+        </provider>
 
         <!-- Giữ kết nối với hộp đèn khi app không mở, và giữ nút nổi -->
         <service android:name=".KeepService" android:exported="false" android:foregroundServiceType="connectedDevice" />

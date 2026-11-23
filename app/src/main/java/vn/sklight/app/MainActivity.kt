@@ -110,6 +110,7 @@ fun Root() {
         Gps.start(ctx0); S.syncService(ctx0)
     }
     LaunchedEffect(Unit) { launcher.launch(perms) }
+    LaunchedEffect(Unit) { delay(4000); Updater.auto(ctx0) }
     // nút Quay lại của máy: thoát màn hình chờ, hoặc ra khỏi trang con
     BackHandler(enabled = S.idleShow.value || S.subPage.intValue != 0) { if (S.idleShow.value) S.idleShow.value = false else S.subPage.intValue = 0 }
     // xe đang chạy và 10 giây không chạm: tự chuyển sang màn hình chờ
@@ -142,6 +143,7 @@ fun Root() {
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(48.dp), contentScale = ContentScale.Fit)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                UpdateBanner()
                 Strip()
                 VoicePanel()
                 key(tab, S.subPage.intValue) {
@@ -175,6 +177,7 @@ fun Root() {
             // chấm nhỏ ở góc trên phải: xanh = đã kết nối Bluetooth với hộp đèn, xám = chưa
             Box(Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 4.dp).size(8.dp).clip(CircleShape).background(if (S.connected.value) OkGreen else Color(0xFFB8BCC6)))
             }
+            UpdateBanner(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 4.dp))
             Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             Column(
@@ -193,6 +196,7 @@ fun Root() {
     }
     }
     if (pickDev) DevDialog { pickDev = false }
+    UpdateDialog()
 }
 
 @Composable
@@ -985,6 +989,9 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
+    }
+    Card {
+        Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
     }
     T("SK Light ${S.VER} (bản thử)", 12, color = Grey, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
 }

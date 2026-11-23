@@ -24,8 +24,18 @@ jobs:
       - run: cp app/build/outputs/apk/release/app-release.apk sk-light.apk
       - uses: actions/upload-artifact@v4
         with: { name: sk-light-apk, path: sk-light.apk }
+      - name: Tao version.json cho tinh nang bao cap nhat
+        run: |
+          CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          export CODE NAME
+          export SHA=$(sha256sum sk-light.apk | cut -d' ' -f1)
+          export SIZE=$(stat -c%s sk-light.apk)
+          export NOTES=$(git log -1 --pretty=%s | sed -E 's/^[0-9]+\.[0-9]+\.[0-9]+: *//')
+          python3 -c "import json,os; json.dump({'versionCode':int(os.environ['CODE']),'versionName':os.environ['NAME'],'notes':os.environ['NOTES'],'sha256':os.environ['SHA'],'size':int(os.environ['SIZE']),'url':'https://github.com/${{ github.repository }}/releases/download/sk-light-latest/sk-light.apk'}, open('version.json','w'), ensure_ascii=False)"
+          cat version.json
       - name: Phat hanh ban latest
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           gh release delete sk-light-latest --yes --cleanup-tag || true
-          gh release create sk-light-latest sk-light.apk --target "$GITHUB_SHA" --prerelease --title "SK Light (ban moi nhat)" --notes "Build tu commit ${GITHUB_SHA::7}"
+          gh release create sk-light-latest sk-light.apk version.json --target "$GITHUB_SHA" --prerelease --title "SK Light (ban moi nhat)" --notes "Build tu commit ${GITHUB_SHA::7}"
