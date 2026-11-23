@@ -50,7 +50,7 @@ fun TurnIcon(dir: String, d: Dp, accent: Color = Pink) {
         val st = Stroke(w * 0.105f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         fun p(x: Float, y: Float) = Offset(x * w, y * w)
         fun head(tip: Offset, a: Offset, b: Offset) = Path().apply { moveTo(a.x, a.y); lineTo(tip.x, tip.y); lineTo(b.x, b.y) }
-        fun line(vararg pts: Offset) = Path().apply { moveTo(pts[0].x, pts[0].y); for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y) }
+        fun line(a: Offset, b: Offset) = Path().apply { moveTo(a.x, a.y); lineTo(b.x, b.y) }
         when (dir) {
             "L", "R" -> scale(if (dir == "R") -1f else 1f, 1f, Offset(w / 2f, w / 2f)) {
                 // thân đi lên rồi uốn sang trái
