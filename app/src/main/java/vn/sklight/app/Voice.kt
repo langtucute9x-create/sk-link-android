@@ -227,6 +227,8 @@ object Voice {
         if (has(t, "nhịp điệu năng động")) Effects.byId(50)?.let { return pick(it) }
         // chế độ gọi kèm "chế độ", "hiệu ứng", "mùa": nhận cả tên một chữ (thở, chớp, xuân…)
         for (e in Effects.all) { val n = e.name.lowercase(); if (has(t, "chế độ $n") || has(t, "hiệu ứng $n") || has(t, "mùa $n")) return pick(e) }
+        // chế độ tự đặt: gọi theo tên
+        Seqs.list.forEachIndexed { i, q -> if (q.name.isNotBlank() && has(t, q.name.lowercase())) { S.pickAuto(Auto.SEQ_BASE + i); return "Em đã chuyển sang chế độ ${q.name} rồi" } }
         // bối cảnh gọi theo tên
         Scenes.all().forEachIndexed { i, sc -> if (has(t, sc.name.lowercase())) { Scenes.apply(i); return "Em đã chuyển sang bối cảnh ${sc.name} rồi" } }
         // chế độ tên từ hai chữ trở lên: gọi thẳng tên

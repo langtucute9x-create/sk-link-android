@@ -333,7 +333,7 @@ fun LedMain() {
 /** Các nhóm chế độ + thẻ Hiệu ứng. [cols] = số cột của lưới chế độ. */
 @Composable
 fun LedEffects(cols: Int) {
-    for (g in Effects.groups) EffectGroupCard(g, cols)
+    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols); if (i == 0) MyModesCard(cols) }
     Card {
         GroupTitle(Icons.Filled.Tune, "Hiệu ứng", 19)
         Spacer(Modifier.height(14.dp))

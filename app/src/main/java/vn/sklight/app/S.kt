@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.32"
+    const val VER = "0.5.33"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -169,6 +169,7 @@ object S {
         (sp.getString("col", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) col[i] = v and 0xFFFFFF }
         czone.intValue = sp.getInt("czone", 0).coerceIn(0, 2)
         Auto.z2.intValue = sp.getInt("autoZ2", 0).coerceIn(0, Auto.Z2_NAMES.size)
+        Seqs.load(sp.getString("seqs", "") ?: "")
         ble = BleLed(app)
         main.post(nightLoop)
         Auto.resume()
@@ -186,7 +187,7 @@ object S {
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue)
             .putString("customs", customs.joinToString(","))
-            .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).apply()
+            .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).putString("seqs", Seqs.dump()).apply()
     }
 
     fun addDev(d: Dev) {
@@ -318,6 +319,8 @@ object S {
         ble.send(Protocol.effect(sens.intValue, m1, mode.intValue, param, speed.intValue), 3, true)
     }
 
+    /** Chạy một chế độ do app tự điều khiển theo id (dùng cho chuỗi màu tự đặt). */
+    fun pickAuto(id: Int) { mode.intValue = id; on.value = true; sceneSel.intValue = -1; sendEffect() }
     fun pickEffect(e: Effect) { mode.intValue = e.id; on.value = true; sceneSel.intValue = -1; sendEffect() }
     fun pickSub(e: Effect, i: Int) { sub[e.id] = i; sceneSel.intValue = -1; sendEffect() }
 
