@@ -591,3 +591,14 @@ Cuộn đủ màu 3	Full-color scroll 3	フルカラースクロール 3	풀컬�
 Trôi đa sắc 3	Multicolor drift 3	マルチカラードリフト 3	멀티컬러 드리프트 3	ไหลหลากสี 3	រសាត់ចម្រុះពណ៌ 3	ໄຫຼຫຼາກສີ 3
 Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.	Before a turn, the lights run toward the turn using the effect chosen below. During the alert the app temporarily changes the box's flow direction, then restores it.
 Tốc độ đang đọc được: # km/h. Màn hình chờ chỉ tự mở khi xe chạy từ # km/h; xe đứng yên thì không mở.	Speed read: # km/h. The standby screen opens by itself only when the car moves at # km/h or more; it stays closed while parked.
+Nút nổi và màn hình nổi	Floating button and panel	フローティングボタンとパネル	플로팅 버튼과 패널	ปุ่มลอยและแผงลอย	ប៊ូតុង និងផ្ទាំងអណ្តែត	ປຸ່ມລອຍ ແລະ ແຜງລອຍ
+Kiểu gốc	Classic	クラシック	기본형	แบบดั้งเดิม	បែបដើម	ແບບເດີມ
+Kính mờ	Frosted glass	すりガラス	반투명 유리	กระจกฝ้า	កញ្ចក់ស្រអាប់	ແກ້ວຝ້າ
+Thanh viên thuốc	Pill bar	ピルバー	알약형 바	แถบแคปซูล	របារគ្រាប់ថ្នាំ	ແຖບແຄບຊູນ
+Quạt tròn	Radial fan	ラジアル	원형 부채	พัดวงกลม	កង្ហាររង្វង់	ພັດວົງມົນ
+Khối nổi 3D	3D raised	3D立体	3D 입체	นูน 3D	លេចឡើង 3D	ນູນ 3D
+Cột neon	Neon column	ネオンカラム	네온 기둥	แท่งนีออน	សសរណេអុង	ເສົານີອອນ
+Vị trí menu khi màn hình ngang	Menu position in landscape	横画面でのメニュー位置	가로 화면 메뉴 위치	ตำแหน่งเมนูเมื่อจอแนวนอน	ទីតាំងម៉ឺនុយពេលអេក្រង់ផ្តេក	ຕຳແໜ່ງເມນູເມື່ອຈໍແນວນອນ
+Menu ở trên	Menu on top	メニューを上に	메뉴 위쪽	เมนูด้านบน	ម៉ឺនុយខាងលើ	ເມນູດ້ານເທິງ
+Menu bên trái	Menu on the left	メニューを左に	메뉴 왼쪽	เมนูด้านซ้าย	ម៉ឺនុយខាងឆ្វេង	ເມນູດ້ານຊ້າຍ
+Nút nổi hiện trên các ứng dụng khác (ví dụ app bản đồ). Bật nó ở thẻ Khi lái xe trong trang Cài đặt, rồi về màn hình chính của máy để xem kiểu vừa chọn.	The floating button appears over other apps (such as the map app). Turn it on in the While driving card on the Settings page, then go to the device home screen to see the chosen style.

@@ -327,7 +327,7 @@ fun PairPage() {
             FillBtn("Xóa hộp phụ", Icons.Filled.Delete, Color(0xFFF44336), Modifier.weight(1f)) { confirm = true }
         }
         Spacer(Modifier.height(8.dp))
-        T("Bật nguồn hộp phụ cần ghép, bấm Bắt đầu rồi đợi tối đa 60 giây.", 12, color = SubTxt)
+        Hint("Bật nguồn hộp phụ cần ghép, bấm Bắt đầu rồi đợi tối đa 60 giây.", 12)
     }
     Card {
         GroupTitle(Icons.Filled.Tune, "Số lượng hộp phụ", 16)
@@ -343,7 +343,7 @@ fun PairPage() {
             Kv("Hộp phụ ${i + 1}", when { p == 0 -> "Khác"; p in 2..5 -> listOf("Trước trái", "Trước phải", "Sau trái", "Sau phải")[p - 2]; else -> "Theo hộp" })
         }
         Spacer(Modifier.height(6.dp))
-        T("Vị trí cửa đã học được lưu trong hộp điều khiển. Cài lại app hoặc đổi điện thoại thì hộp vẫn chạy đúng như đã học, app chỉ hiện \"Theo hộp\" vì không đọc lại được. Chỉ gán lại (tab Chào mừng, chạm hộp phụ trên sơ đồ xe) khi muốn đổi.", 12, color = SubTxt)
+        Hint("Vị trí cửa đã học được lưu trong hộp điều khiển. Cài lại app hoặc đổi điện thoại thì hộp vẫn chạy đúng như đã học, app chỉ hiện \"Theo hộp\" vì không đọc lại được. Chỉ gán lại (tab Chào mừng, chạm hộp phụ trên sơ đồ xe) khi muốn đổi.", 12)
     }
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },
@@ -363,7 +363,7 @@ fun FlowPage() {
     Card {
         GroupTitle(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", 16)
         Spacer(Modifier.height(4.dp))
-        T("Chọn Thuận hoặc Ngược cho từng khu vực.", 12, color = SubTxt)
+        Hint("Chọn Thuận hoặc Ngược cho từng khu vực.", 12)
         val names = listOf("Bảng đồng hồ trái", "Bảng đồng hồ phải", "Cửa trước trái", "Cửa trước phải", "Cửa sau trái", "Cửa sau phải")
         for (s in 0 until 6) {
             Spacer(Modifier.height(10.dp))
@@ -427,7 +427,7 @@ fun FactoryPage() {
             Chip("Ánh sáng", known && X.facBits(0, 0x40) != 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0x40)) need(ctx) }
         }
         Spacer(Modifier.height(6.dp))
-        T("Chỉ đổi khi biết hộp thuộc bản nào: chọn sai thì một số hiệu ứng chạy không đúng.", 12, color = SubTxt)
+        Hint("Chỉ đổi khi biết hộp thuộc bản nào: chọn sai thì một số hiệu ứng chạy không đúng.", 12)
         Divider(10.dp, 10.dp)
         T("Màu gửi cho hộp", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
@@ -436,7 +436,7 @@ fun FactoryPage() {
             Chip("Đảo màu", S.invert.value, Modifier.weight(1f), 44.dp, 13) { S.setInvert(true) }
         }
         Spacer(Modifier.height(6.dp))
-        T("Để Bình thường. Chỉ đổi sang Đảo màu nếu chọn đỏ mà đèn ra xanh băng.", 12, color = SubTxt)
+        Hint("Để Bình thường. Chỉ đổi sang Đảo màu nếu chọn đỏ mà đèn ra xanh băng.", 12)
     }
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
@@ -452,7 +452,7 @@ fun FactoryPage() {
     Card {
         T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
-        T("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp một lần, đổi đúng MỘT thứ (bằng app gốc hoặc nút cơ), kết nối lại rồi chụp tiếp. Làm lần lượt cho từng thứ cần tìm, cuối cùng bấm Sao chép để gửi một lần. App chỉ đọc, không ghi gì vào hộp. Các lần chụp được nhớ kể cả khi thoát app.", 12, color = SubTxt)
+        Hint("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp một lần, đổi đúng MỘT thứ (bằng app gốc hoặc nút cơ), kết nối lại rồi chụp tiếp. Làm lần lượt cho từng thứ cần tìm, cuối cùng bấm Sao chép để gửi một lần. App chỉ đọc, không ghi gì vào hộp. Các lần chụp được nhớ kể cả khi thoát app.", 12)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             FillBtn(if (X.snapBusy) "Đang chụp…" else "Chụp lần ${X.snaps.size + 1}", Icons.Filled.Refresh, Pink, Modifier.weight(1.4f)) {
@@ -477,7 +477,7 @@ fun FactoryPage() {
     Card {
         T("Chưa có trong app này", 14, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
-        T("Nâng cấp phần mềm hộp cần tệp phần mềm của nhà sản xuất và dễ làm hỏng hộp nếu nạp lỗi, nên chưa làm. Cần thì dùng app gốc của hãng.", 12, color = SubTxt)
+        Hint("Nâng cấp phần mềm hộp cần tệp phần mềm của nhà sản xuất và dễ làm hỏng hộp nếu nạp lỗi, nên chưa làm. Cần thì dùng app gốc của hãng.", 12)
     }
     if (reset == 1) AlertDialog(
         onDismissRequest = { reset = 0 },
@@ -578,7 +578,7 @@ fun DiagPage() {
     Card {
         GroupTitle(Icons.Filled.Info, "Thông tin chẩn đoán", 16)
         Spacer(Modifier.height(6.dp))
-        T("Chỉ đọc. Thông tin do hộp gửi về, sao chép gửi cho kỹ thuật khi cần.", 12, color = SubTxt)
+        Hint("Chỉ đọc. Thông tin do hộp gửi về, sao chép gửi cho kỹ thuật khi cần.", 12)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FillBtn("Đọc dữ liệu", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) { X.readDiag() }
@@ -611,7 +611,7 @@ fun CarModelPage() {
         val series = X.cars.count { it.second == 0 }
         Kv("Danh sách", if (X.carLoading) "Đang đọc từ hộp…" else if (X.cars.isEmpty()) "Hộp chưa gửi danh sách" else "$series hãng, ${X.cars.size - series} dòng xe")
         Spacer(Modifier.height(4.dp))
-        T("Danh sách này nằm trong hộp đang kết nối: mỗi loại hộp hỗ trợ một nhóm xe riêng. Hộp gửi tên tiếng Trung, app đổi sang tên quốc tế; tên nào còn chữ Trung thì bấm Sao chép gửi SK để bổ sung.", 12, color = SubTxt)
+        Hint("Danh sách này nằm trong hộp đang kết nối: mỗi loại hộp hỗ trợ một nhóm xe riêng. Hộp gửi tên tiếng Trung, app đổi sang tên quốc tế; tên nào còn chữ Trung thì bấm Sao chép gửi SK để bổ sung.", 12)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FillBtn("Đọc lại", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) {

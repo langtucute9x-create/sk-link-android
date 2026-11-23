@@ -130,7 +130,7 @@ fun SceneRow() {
                         }
                     }
                     OutlineBtn("Khôi phục 4 bối cảnh có sẵn", Modifier.fillMaxWidth()) { Scenes.restore() }
-                    T("Giữ lâu một bối cảnh ở hàng ngoài để đổi tên hoặc cập nhật.", 11, color = Grey)
+                    Hint("Giữ lâu một bối cảnh ở hàng ngoài để đổi tên hoặc cập nhật.", 11)
                 }
             }
         )

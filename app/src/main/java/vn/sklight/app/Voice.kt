@@ -586,7 +586,7 @@ fun CmdList() {
     CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”")
     CmdLine("Khác", "“đổi hướng”, “đổi giọng nói”")
     T("Chế độ theo số", 13, FontWeight.Bold)
-    T("Mọi chế độ đều có số in ở góc ô (xem trang Đèn). Nói “chế độ 15” hoặc “chế độ mười lăm” khi dùng nút mic trên app; mô-đun giọng nói trong hộp chỉ hiểu số 1 đến 12 như dưới đây.", 12, color = Grey)
+    Hint("Mọi chế độ đều có số in ở góc ô (xem trang Đèn). Nói “chế độ 15” hoặc “chế độ mười lăm” khi dùng nút mic trên app; mô-đun giọng nói trong hộp chỉ hiểu số 1 đến 12 như dưới đây.", 12)
     T("“chế độ một” Thể thao · “hai” Ma thuật · “ba” Đuôi sao chổi · “bốn” Xuân về hoa nở · “năm” Khúc tình ca mùa đông · “sáu” Nhảy theo nhạc · “bảy” Mây trôi nước chảy · “tám” Xếp chồng · “chín” Nhịp điệu năng động · “mười một” Cuộn đủ màu · “mười hai” Chiếu sáng năng động", 13, color = SubTxt)
 }
 
@@ -611,7 +611,7 @@ fun VoicePage() {
     Card {
         GroupTitle(Icons.Filled.Mic, "Nút mic trên app", 16)
         Spacer(Modifier.height(4.dp))
-        T("Ra lệnh qua điện thoại hoặc màn hình xe, dùng khi không nói trực tiếp với hộp.", 12, color = Grey)
+        Hint("Ra lệnh qua điện thoại hoặc màn hình xe, dùng khi không nói trực tiếp với hộp.", 12)
         Spacer(Modifier.height(6.dp))
         SwitchRow("Trả lời bằng tiếng nói", "Đọc lại việc vừa làm sau mỗi câu lệnh", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
         val ctx = LocalContext.current
@@ -655,7 +655,7 @@ fun VoicePanel(modifier: Modifier = Modifier) {
                     Column(Modifier.weight(1f)) {
                         T(when (ph) { 0 -> "Đang mở micro…"; 2 -> "Đang nghe thấy tiếng…"; 3 -> "Đang xử lý…"; else -> "Mời nói" }, 16, FontWeight.ExtraBold)
                         if (heard.isNotBlank()) T("Nghe được: “$heard”", 12, color = SubTxt)
-                        else T("Nói: “màu đỏ”, “sáng hơn”, “chế độ thở”", 12, color = SubTxt)
+                        else Hint("Nói: “màu đỏ”, “sáng hơn”, “chế độ thở”", 12)
                     }
                     OutlineBtn("Hủy", Modifier.width(64.dp)) { Voice.close() }
                 }

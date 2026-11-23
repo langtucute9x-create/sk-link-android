@@ -110,7 +110,7 @@ fun LanguagePage() {
     Card {
         GroupTitle(Icons.Filled.Language, "Ngôn ngữ", 16)
         Spacer(Modifier.height(6.dp))
-        T("Chọn ngôn ngữ hiển thị của app.", 12, color = Grey)
+        Hint("Chọn ngôn ngữ hiển thị của app.", 12)
         Spacer(Modifier.height(6.dp))
         L.NAMES.forEachIndexed { i, name ->
             val on = L.cur.intValue == i
@@ -124,7 +124,7 @@ fun LanguagePage() {
         }
         if (L.cur.intValue != 0) {
             Spacer(Modifier.height(6.dp))
-            T("Ra lệnh bằng giọng nói hiện chỉ có khi dùng tiếng Việt.", 11, color = Grey)
+            Hint("Ra lệnh bằng giọng nói hiện chỉ có khi dùng tiếng Việt.", 11)
         }
     }
 }

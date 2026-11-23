@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.57"
+    const val VER = "0.5.58"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -117,6 +117,9 @@ object S {
     val idleStyle = mutableIntStateOf(0)                  // 0 đồng hồ + tốc độ, 1 chỉ đồng hồ, 2 tốc độ lớn, 3 ảnh của tôi
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
+    val floatStyle = mutableIntStateOf(0)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
+    val menuTop = mutableStateOf(true)                    // màn ngang: menu nằm trên (true) hay cột bên trái (false)
+    var pendingMic = false                                // bấm mic ở màn hình nổi: mở app rồi nghe ngay
     val floatOn = mutableStateOf(false)                   // nút nổi trên ứng dụng khác
     val voiceState = mutableIntStateOf(0)                 // xem Voice.kt
     val voiceHeard = mutableStateOf("")
@@ -170,6 +173,8 @@ object S {
         idleOn.value = sp.getBoolean("idleOn", false)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
+        floatStyle.intValue = sp.getInt("floatStyle", 0).coerceIn(0, 5)
+        menuTop.value = sp.getBoolean("menuTop", true)
         voiceReply.value = sp.getBoolean("voiceReply", true)
         voiceQuiet.value = sp.getBoolean("voiceQuiet", true)
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
@@ -181,7 +186,7 @@ object S {
         Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
         Theme.style.intValue = sp.getInt("themeStyle", 0).coerceIn(0, Theme.STYLES.size - 1)
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
-        Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.57, bỏ giá trị cũ do app tự đặt cho máy yếu)
+        Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.58, bỏ giá trị cũ do app tự đặt cho máy yếu)
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("pins", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.distinct().take(MAX_PINS).forEach { pins.add(it) }
@@ -202,7 +207,7 @@ object S {
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
-            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value)
+            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle", floatStyle.intValue).putBoolean("menuTop", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)

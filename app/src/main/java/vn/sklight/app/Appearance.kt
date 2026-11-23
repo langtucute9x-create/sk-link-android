@@ -148,7 +148,19 @@ fun AppearanceIdle() {
             OutlineBtn("Chọn ảnh của tôi", Modifier.fillMaxWidth()) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
         }
         Spacer(Modifier.height(8.dp))
-        T("Bật hoặc tắt việc tự mở màn hình chờ khi xe chạy ở thẻ Khi lái xe.", 11, color = Grey)
+        Hint("Bật hoặc tắt việc tự mở màn hình chờ khi xe chạy ở thẻ Khi lái xe.", 11)
+    }
+    Card {
+        GroupTitle(Icons.Filled.Wallpaper, "Nút nổi và màn hình nổi", 16)
+        Spacer(Modifier.height(12.dp))
+        Grid(FloatButton.STYLES.indices.toList(), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
+        Spacer(Modifier.height(8.dp))
+        Hint("Nút nổi hiện trên các ứng dụng khác (ví dụ app bản đồ). Bật nó ở thẻ Khi lái xe trong trang Cài đặt, rồi về màn hình chính của máy để xem kiểu vừa chọn.", 11)
+    }
+    Card {
+        GroupTitle(Icons.Filled.Style, "Vị trí menu khi màn hình ngang", 16)
+        Spacer(Modifier.height(12.dp))
+        Grid(listOf(true, false), 2) { top, m -> Chip(if (top) "Menu ở trên" else "Menu bên trái", S.menuTop.value == top, m, 44.dp, 12) { S.menuTop.value = top; S.saveSettings() } }
     }
     OutlineBtn("Về giao diện mặc định", Modifier.fillMaxWidth()) { Theme.reset(); S.saveSettings() }
 }

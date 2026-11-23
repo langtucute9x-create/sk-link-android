@@ -109,7 +109,7 @@ fun CustomTestPage() {
     Card {
         GroupTitle(Icons.Filled.Science, "Thử chế độ tự tạo", 16)
         Spacer(Modifier.height(6.dp))
-        T("App tự gửi lệnh đổi màu liên tục trong 20 giây để xem hộp đèn chuyển màu có mượt không. Hết giờ hoặc bấm Dừng thì đèn trở về như cũ.", 12, color = Grey)
+        Hint("App tự gửi lệnh đổi màu liên tục trong 20 giây để xem hộp đèn chuyển màu có mượt không. Hết giờ hoặc bấm Dừng thì đèn trở về như cũ.", 12)
         Spacer(Modifier.height(14.dp))
         T("Số lệnh mỗi giây", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(8.dp))
@@ -120,7 +120,7 @@ fun CustomTestPage() {
         Grid(listOf(1, 2, 3), 3) { k, m -> Chip(SeqTest.NAMES[k - 1], SeqTest.kind.intValue == k, m, 52.dp, 12) { SeqTest.start(k) } }
         Spacer(Modifier.height(14.dp))
         val run = SeqTest.kind.intValue != 0
-        T("Màu app đang gửi (trái: khu vực 1, phải: khu vực 2)", 11, color = Grey)
+        Hint("Màu app đang gửi (trái: khu vực 1, phải: khu vực 2)", 11)
         Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth().height(26.dp).clip(RoundedCornerShape(Theme.r(8))).border(1.dp, Bd, RoundedCornerShape(Theme.r(8)))) {
             Box(Modifier.weight(1f).fillMaxHeight().background(if (run) rgbColor(SeqTest.c1.intValue) else ChipBg))
@@ -135,14 +135,14 @@ fun CustomTestPage() {
         Spacer(Modifier.height(10.dp))
         Chip("Dừng", false, Modifier.fillMaxWidth(), 44.dp, 13) { SeqTest.stop() }
         Spacer(Modifier.height(10.dp))
-        T("Thử lần lượt 2, 5, 10, 20 lệnh mỗi giây với từng kiểu. Ghi lại mức nào đèn chuyển mượt, mức nào bị giật, đứng hình hoặc sai màu.", 11, color = Grey)
+        Hint("Thử lần lượt 2, 5, 10, 20 lệnh mỗi giây với từng kiểu. Ghi lại mức nào đèn chuyển mượt, mức nào bị giật, đứng hình hoặc sai màu.", 11)
     }
     Card {
         GroupTitle(Icons.Filled.Science, "Thử riêng khu vực 2", 16)
         Spacer(Modifier.height(10.dp))
         T("App tự điều khiển", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(6.dp))
-        T("App giữ màu khu vực 1, chỉ đổi màu khu vực 2 trong 20 giây. Thử cả lúc khu vực 1 để Đơn sắc và lúc đang chạy một hiệu ứng. Số lệnh mỗi giây lấy theo ô chọn ở thẻ trên.", 12, color = Grey)
+        Hint("App giữ màu khu vực 1, chỉ đổi màu khu vực 2 trong 20 giây. Thử cả lúc khu vực 1 để Đơn sắc và lúc đang chạy một hiệu ứng. Số lệnh mỗi giây lấy theo ô chọn ở thẻ trên.", 12)
         Spacer(Modifier.height(8.dp))
         Grid(listOf(4, 5), 2) { k, m -> Chip(SeqTest.NAMES[k - 1], SeqTest.kind.intValue == k, m, 52.dp, 12) { SeqTest.start(k) } }
         Spacer(Modifier.height(8.dp))

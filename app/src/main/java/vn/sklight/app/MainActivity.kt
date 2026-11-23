@@ -97,7 +97,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() { super.onStart(); if (crashShown) return; Gps.start(this); S.syncService(this) }
     override fun onStop() { if (!crashShown) Gps.stop(); super.onStop() }
-    override fun onResume() { super.onResume(); if (crashShown) return; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this) }
+    override fun onResume() { super.onResume(); if (crashShown) return; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this)
+        // vừa bấm mic ở màn hình nổi: nghe ngay khi app mở lên
+        if (S.pendingMic) { S.pendingMic = false; if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) Voice.start(this) }
+    }
     override fun onPause() { if (!crashShown) { S.appVisible = false; Voice.close(); FloatButton.sync(this) }; super.onPause() }
 }
 
@@ -132,50 +135,62 @@ fun Root() {
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
     val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Theme.pal.bgTop, Theme.pal.bgBot))).systemBarsPadding()
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
+    CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
     }) {
     if (S.idleShow.value) IdleScreen(wide) else
     if (wide) {
-        // màn ngang (màn hình ô tô): menu dọc bên trái, nội dung chia hai cột cuộn riêng
-        // Menu trái theo chiều cao màn hình: cao (màn hình xe lớn) = nút to, có tên trang; vừa = cỡ gọn nhưng mic vẫn to; thấp (điện thoại xoay ngang) = như cũ
+        // màn ngang (màn hình ô tô): nội dung chia hai cột cuộn riêng; menu nằm trên (mặc định) hoặc thành cột bên trái (chọn ở Cài đặt giao diện)
+        val topMenu = S.menuTop.value && cfg.screenHeightDp >= 400
         val roomy = cfg.screenHeightDp >= 520
         val mid = !roomy && cfg.screenHeightDp >= 430
-        val sideW = if (roomy) 70 else if (mid) 64 else 54
-        val avail = cfg.screenWidthDp - 24 - sideW - 12
+        val sideW = if (topMenu) 0 else if (roomy) 70 else if (mid) 64 else 54
+        val avail = cfg.screenWidthDp - 24 - (if (topMenu) 0 else sideW + 12)
         val leftW = (avail * 0.43f).coerceIn(346f, 392f)
         val cols = if (avail - leftW - 12f >= 470f) 4 else 3
-        Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Menu trái: nguồn ở trên cùng, bốn trang, nút mở màn hình chờ; nút mic to ở góc dưới (dễ bấm khi đang lái), logo nhỏ dưới cùng
+        val body: @Composable ColumnScope.() -> Unit = {
+            UpdateBanner()
+            Strip()
+            VoicePanel()
+            key(tab, S.subPage.intValue) {
+                when (tab) {
+                    0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
+                    1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
+                    2 -> {
+                        val (granted, open) = navAccess()
+                        TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
+                    }
+                    else -> if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
+                    else if (S.subPage.intValue == 4) WideSub { VoicePage() }
+                    else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
+                    else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
+                    else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
+                }
+            }
+        }
+        if (topMenu) Column(frame.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Menu trên: logo, nguồn, bốn trang (có tên), nút mở màn hình chờ, nút mic to ở góc phải
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(42.dp), contentScale = ContentScale.Fit)
+                PowerBtn(52)
+                Tabs(tab, Modifier.weight(1f), 46, true) { tab = it; S.subPage.intValue = 0 }
+                IdleBtn(52)
+                if (L.cur.intValue == 0) MicBtn(60)
+            }
+            body()
+        } else Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Menu trái: nguồn ở trên cùng, bốn trang, nút mở màn hình chờ; nút mic to ở góc dưới, logo nhỏ dưới cùng
             Column(Modifier.width(sideW.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn(if (roomy) 56 else 46)
                 TabsV(tab, roomy) { tab = it; S.subPage.intValue = 0 }
-                if (roomy || mid) IdleBtn(if (roomy) 56 else 46)          // mở màn hình chờ bằng tay (không cần chờ xe chạy)
+                if (roomy || mid) IdleBtn(if (roomy) 56 else 46)
                 Spacer(Modifier.weight(1f))
                 if (L.cur.intValue == 0) MicBtn(if (roomy) 66 else if (mid) 60 else 46)
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (roomy || mid) 40.dp else 48.dp), contentScale = ContentScale.Fit)
             }
-            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                UpdateBanner()
-                Strip()
-                VoicePanel()
-                key(tab, S.subPage.intValue) {
-                    when (tab) {
-                        0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
-                        1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
-                        2 -> {
-                            val (granted, open) = navAccess()
-                            TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
-                        }
-                        else -> if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
-                        else if (S.subPage.intValue == 4) WideSub { VoicePage() }
-                        else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
-                        else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
-                        else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                        else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
-                    }
-                }
-            }
+            Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) { body() }
         }
     } else {
         Column(frame) {
@@ -208,6 +223,7 @@ fun Root() {
         }
     }
     NoticeHost(Modifier.align(Alignment.BottomCenter))
+    }
     }
     if (pickDev) DevDialog { pickDev = false }
     UpdateDialog()
@@ -309,7 +325,7 @@ fun LedMain() {
                     T(opts[i], 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Txt else Grey)
                 }
             }
-            if (Auto.z2.intValue != 0) { Spacer(Modifier.height(4.dp)); T("Kiểu thêm do app điều khiển: được nhớ khi đổi chế độ, đổi màu; chạy khi app còn mở và đang kết nối.", 11, color = Grey) }
+            if (Auto.z2.intValue != 0) { Spacer(Modifier.height(4.dp)); Hint("Kiểu thêm do app điều khiển: được nhớ khi đổi chế độ, đổi màu; chạy khi app còn mở và đang kết nối.", 11) }
         }
     }
 }
@@ -417,7 +433,7 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
         GroupTitle(g.icon, g.name)
         Spacer(Modifier.height(14.dp))
         Grid(g.items, cols, 9.dp, 11.dp) { e, m -> EffectTile(e, m) }
-        if (hint) { Spacer(Modifier.height(8.dp)); T("Mẹo: chạm giữ một chế độ để ghim lên đầu trang.", 11, color = Grey) }
+        if (hint) { Spacer(Modifier.height(8.dp)); Hint("Mẹo: chạm giữ một chế độ để ghim lên đầu trang.", 11) }
         val cur = g.items.firstOrNull { it.id == S.mode.intValue && it.subs.isNotEmpty() }
         if (cur != null) {
             Spacer(Modifier.height(13.dp))
@@ -541,7 +557,7 @@ fun WelcomeDiagram() {
     Card {
         GroupTitle(Icons.Filled.MeetingRoom, "Sơ đồ xe", 16)
         Spacer(Modifier.height(8.dp))
-        T("Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm hình xe đang mở cửa đó. Giữ lâu một hộp để bỏ gán.", 12, color = Grey)
+        Hint("Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm hình xe đang mở cửa đó. Giữ lâu một hộp để bỏ gán.", 12)
         Spacer(Modifier.height(12.dp))
         Grid(listOf(1, 2, 3, 4), 4, 8.dp) { n, m ->
             val on = S.pickBox.intValue == n
@@ -558,7 +574,7 @@ fun WelcomeDiagram() {
         Spacer(Modifier.height(12.dp))
         StepDiagram()
         Spacer(Modifier.height(8.dp))
-        T("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm hình xe hoặc ‹ › để đổi đoạn.", 11, color = Grey)
+        Hint("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm hình xe hoặc ‹ › để đổi đoạn.", 11)
         Spacer(Modifier.height(16.dp))
         T("Vị trí bắt đầu chào mừng", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(10.dp))
@@ -754,7 +770,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         if (!granted) {
             T("Chưa cấp quyền đọc thông báo", 15, FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            T("App cần quyền này để đọc hướng rẽ và khoảng cách từ thông báo của Google Maps, Vietmap.", 12, color = Grey)
+            Hint("App cần quyền này để đọc hướng rẽ và khoảng cách từ thông báo của Google Maps, Vietmap.", 12)
             Spacer(Modifier.height(12.dp))
             Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(Pink).clickable(onClick = openAccess), contentAlignment = Alignment.Center) {
                 T("Cấp quyền đọc thông báo", 13, FontWeight.Bold, Color.White)
@@ -762,7 +778,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         } else if (!S.navOn.value) {
             T("Chưa có chỉ đường", 15, FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            T("Mở Google Maps hoặc Vietmap, bắt đầu dẫn đường rồi quay lại đây.", 12, color = Grey)
+            Hint("Mở Google Maps hoặc Vietmap, bắt đầu dẫn đường rồi quay lại đây.", 12)
         } else {
             val dir = S.navDir.value
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -794,7 +810,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         SwitchRow("Báo đèn khi sắp rẽ", "Đèn vàng chạy theo hướng rẽ khi sắp tới chỗ rẽ", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
         SwitchRow("Đảo chiều chạy", "Bật nếu khi rẽ trái mà đèn lại chạy sang phải", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
-        T("Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11, color = Grey)
+        Hint("Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11)
         Spacer(Modifier.height(10.dp))
         T("Hiệu ứng khi báo rẽ", 14, FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
@@ -857,7 +873,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
         Spacer(Modifier.height(8.dp))
-        T("Rẽ trái, rẽ phải: đèn vàng chạy theo hướng rẽ. Quá tốc độ: nháy đỏ theo khu chọn bên dưới. Hết 4 giây đèn trở về như cũ.", 11, color = Grey)
+        Hint("Rẽ trái, rẽ phải: đèn vàng chạy theo hướng rẽ. Quá tốc độ: nháy đỏ theo khu chọn bên dưới. Hết 4 giây đèn trở về như cũ.", 11)
     }
 
     // ---- cảnh báo quá tốc độ ----
@@ -866,7 +882,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         SwitchRow("Nháy đỏ khi quá tốc độ", "Nháy đỏ liên tục khi chạy quá giới hạn trên biển báo", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
         Spacer(Modifier.height(6.dp))
-        T("Khu nháy đỏ khi quá tốc độ (các khu còn lại giữ nguyên màu):", 12, color = Grey)
+        Hint("Khu nháy đỏ khi quá tốc độ (các khu còn lại giữ nguyên màu):", 12)
         Spacer(Modifier.height(4.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
@@ -882,7 +898,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
         }
         Spacer(Modifier.height(6.dp))
-        T("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở thẻ Đọc app dẫn đường bên dưới.", 11, color = Grey)
+        Hint("Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật \"Tự đọc\" ở thẻ Đọc app dẫn đường bên dưới.", 11)
     }
 
     // ---- quyền đọc app dẫn đường + phần kiểm tra (đóng sẵn) ----
@@ -926,7 +942,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             // đọc chữ trên màn hình
             T("Đọc chữ trên màn hình", 13, FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            T("Bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. Chữ chỉ đọc trên máy, không gửi đi đâu, tự tắt sau 5 phút.", 12, color = Grey)
+            Hint("Bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. Chữ chỉ đọc trên máy, không gửi đi đâu, tự tắt sau 5 phút.", 12)
             Kv("Đang đọc thử", if (S.screenOn.value) "Có" else "Không")
             Kv("Đọc được", if (S.screenInfo.value.isEmpty()) "Chưa có" else S.screenInfo.value)
             Kv("App đọc gần nhất", if (S.screenPkg.value.isEmpty()) "Chưa có" else S.screenPkg.value)

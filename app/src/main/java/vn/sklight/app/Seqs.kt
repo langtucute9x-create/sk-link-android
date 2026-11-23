@@ -84,7 +84,7 @@ fun MyModesCard(cols: Int) {
     Card {
         GroupTitle(Icons.Filled.ColorLens, "CHẾ ĐỘ CỦA TÔI")
         Spacer(Modifier.height(6.dp))
-        T("Tự ghép 2 đến 5 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12, color = Grey)
+        Hint("Tự ghép 2 đến 5 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12)
         Spacer(Modifier.height(12.dp))
         if (Seqs.list.isEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
@@ -92,7 +92,7 @@ fun MyModesCard(cols: Int) {
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     T("Chưa có chế độ riêng nào", 14, FontWeight.Bold)
-                    T("Bấm ô có dấu cộng, chọn vài màu ưa thích là có ngay một hiệu ứng mang tên riêng.", 12, color = Grey)
+                    Hint("Bấm ô có dấu cộng, chọn vài màu ưa thích là có ngay một hiệu ứng mang tên riêng.", 12)
                 }
             }
         }
@@ -172,7 +172,7 @@ fun MyModesCard(cols: Int) {
                 Chip("So le", split, Modifier.weight(1f), 44.dp, 13) { split = true }
             }
             Spacer(Modifier.height(6.dp))
-            T("Nhanh hay chậm chỉnh bằng thanh Tốc độ nháy & chạy ở thẻ Hiệu ứng.", 11, color = Grey)
+            Hint("Nhanh hay chậm chỉnh bằng thanh Tốc độ nháy & chạy ở thẻ Hiệu ứng.", 11)
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 FillBtn("Lưu và chạy", Icons.Filled.Check, Pink, Modifier.weight(1.4f)) {

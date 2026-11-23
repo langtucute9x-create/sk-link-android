@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -115,6 +116,23 @@ fun pressScale(src: InteractionSource, to: Float = 0.92f): Modifier {
     return Modifier.graphicsLayer { scaleX = s; scaleY = s }
 }
 
+/** Màn ngang (màn hình xe): các dòng giải thích được ẩn cho đỡ rối, chạm nút "i" ở góc thẻ để hiện. */
+val LocalCompact = compositionLocalOf { false }
+class HintBox { var count by mutableIntStateOf(0); var show by mutableStateOf(false) }
+val LocalHintBox = compositionLocalOf<HintBox?> { null }
+
+/** true khi các dòng giải thích của thẻ đang chứa nó bị ẩn. */
+@Composable
+fun hintsHidden(): Boolean { val b = LocalHintBox.current; return LocalCompact.current && b != null && !b.show }
+
+/** Một dòng giải thích (chữ xám). Ở màn ngang chỉ hiện sau khi chạm nút "i" của thẻ. */
+@Composable
+fun Hint(text: String, size: Int = 11, modifier: Modifier = Modifier) {
+    val b = LocalHintBox.current
+    if (b != null) DisposableEffect(b) { b.count++; onDispose { b.count-- } }
+    if (!(LocalCompact.current && b != null && !b.show)) T(text, size, color = Grey, modifier = modifier)
+}
+
 @Composable
 fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val sh = RoundedCornerShape(Theme.r(10))
@@ -125,7 +143,15 @@ fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
             .background(Brush.verticalGradient(listOf(lite(c, if (dark) 0.05f else 0f), dim(c, if (dark) 0.10f else 0.015f))))
             .border(1.dp, Brush.verticalGradient(listOf(if (dark) lite(Bd, 0.18f) else Bd, Bd)), sh)
     } else modifier.fillMaxWidth().clip(sh).background(c).border(1.dp, Bd, sh)
-    Column(m.padding(15.dp), content = content)
+    val box = remember { HintBox() }
+    val compact = LocalCompact.current
+    Box(m) {
+        CompositionLocalProvider(LocalHintBox provides box) { Column(Modifier.fillMaxWidth().padding(15.dp), content = content) }
+        if (compact && box.count > 0) Box(
+            Modifier.align(Alignment.TopEnd).padding(1.dp).size(24.dp).clip(CircleShape).clickable { box.show = !box.show },
+            contentAlignment = Alignment.Center
+        ) { Icon(Icons.Outlined.Info, "Xem giải thích", tint = if (box.show) Pink else Grey, modifier = Modifier.size(16.dp)) }
+    }
 }
 
 @Composable
@@ -233,7 +259,7 @@ fun TabsV(sel: Int, big: Boolean = false, onPick: (Int) -> Unit) {
 }
 
 @Composable
-fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, onPick: (Int) -> Unit) {
+fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, labels: Boolean = false, onPick: (Int) -> Unit) {
     val fx = Fx
     val a = Pink
     val pos = tabPos(sel)
@@ -253,7 +279,13 @@ fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, onPick: (Int
             Row(
                 Modifier.weight(1f).height(height.dp).clip(RoundedCornerShape(rad)).clickable { if (sel != i) tick(); onPick(i) },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
-            ) { Icon(icon, label, tint = if (sel == i) Color.White else SubTxt, modifier = Modifier.size(if (height < 36) 20.dp else 22.dp)) }
+            ) {
+                Icon(icon, label, tint = if (sel == i) Color.White else SubTxt, modifier = Modifier.size(if (height < 36) 20.dp else 22.dp))
+                if (labels) {
+                    Spacer(Modifier.width(7.dp))
+                    FitT(label, 13, if (sel == i) FontWeight.Bold else FontWeight.SemiBold, if (sel == i) Color.White else SubTxt, lines = 1)
+                }
+            }
         }
     }
 }
