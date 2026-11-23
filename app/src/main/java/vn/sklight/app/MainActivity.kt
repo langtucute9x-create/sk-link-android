@@ -921,7 +921,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!granted) OutlineBtn("Cấp quyền thông báo", Modifier.weight(1f), openAccess)
-            if (!accOn) OutlineBtn("Bật Hỗ trợ tiếp cận", Modifier.weight(1f)) { openAcc() }
+            if (!accOn) OutlineBtn("Bật Hỗ trợ tiếp cận", Modifier.weight(1f)) { Setup.show.value = true }
         }
     }
 
@@ -936,7 +936,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!granted) OutlineBtn("Cấp quyền thông báo", Modifier.weight(1f), openAccess)
-                if (!accOn) OutlineBtn("Bật Hỗ trợ tiếp cận", Modifier.weight(1f)) { openAcc() }
+                if (!accOn) OutlineBtn("Bật Hỗ trợ tiếp cận", Modifier.weight(1f)) { Setup.show.value = true }
             }
         }
         SwitchRow("Tự đọc khi dùng Gofa và app bản đồ", "Cho app dẫn đường không có thông báo. Chỉ đọc màn hình của app bản đồ, cần quyền Hỗ trợ tiếp cận.", S.screenAuto.value) { S.screenAuto.value = it; S.saveSettings() }

@@ -722,3 +722,15 @@ Kích hoạt gắn với hộp đèn. Nối hộp đèn trước, app sẽ tự 
 App đang hỏi máy chủ SK xem hộp này đã kích hoạt chưa.	The app is asking the SK server whether this controller is activated.					
 Lần đầu nối hộp này trên máy này cần có mạng để kiểm tra kích hoạt. Bật Wi-Fi hoặc dữ liệu di động rồi thử lại.	The first connection to this controller on this device needs internet to check activation. Turn on Wi-Fi or mobile data and try again.					
 Hộp đèn này chưa kích hoạt. Nhập mã trên tem một lần; sau đó mọi điện thoại, màn hình xe nối vào hộp đều tự dùng được.	This controller is not activated. Enter the code on the label once; after that every phone or car screen connected to it works automatically.					
+Cho phép báo đèn khi dẫn đường	Allow light alerts while navigating	ナビ中のライト通知を許可	내비게이션 중 조명 알림 허용	อนุญาตไฟแจ้งเตือนขณะนำทาง	អនុញ្ញាតភ្លើងជូនដំណឹងពេលនាំផ្លូវ	ອະນຸຍາດໄຟແຈ້ງເຕືອນຂະນະນຳທາງ
+Đọc thông báo	Read notifications	通知の読み取り	알림 읽기	อ่านการแจ้งเตือน	អានការជូនដំណឹង	ອ່ານການແຈ້ງເຕືອນ
+Hỗ trợ tiếp cận	Accessibility	ユーザー補助	접근성	การช่วยเหลือพิเศษ	ភាពងាយស្រួល	ການຊ່ວຍເຂົ້າເຖິງ
+Mở trang Truy cập thông báo	Open Notification access	通知へのアクセスを開く	알림 접근 열기	เปิดการเข้าถึงการแจ้งเตือน	បើកការចូលប្រើការជូនដំណឹង	ເປີດການເຂົ້າເຖິງການແຈ້ງເຕືອນ
+Mở trang Hỗ trợ tiếp cận	Open Accessibility	ユーザー補助を開く	접근성 열기	เปิดการช่วยเหลือพิเศษ	បើកភាពងាយស្រួល	ເປີດການຊ່ວຍເຂົ້າເຖິງ
+Mở Thông tin ứng dụng	Open App info	アプリ情報を開く	앱 정보 열기	เปิดข้อมูลแอป	បើកព័ត៌មានកម្មវិធី	ເປີດຂໍ້ມູນແອັບ
+Có thể bật sau ở trang Dẫn đường.	You can turn these on later on the Navigation page.	後でナビページからオンにできます。	나중에 내비 페이지에서 켤 수 있습니다.	เปิดภายหลังได้ที่หน้านำทาง	អាចបើកពេលក្រោយនៅទំព័រនាំផ្លូវ។	ເປີດພາຍຫຼັງໄດ້ທີ່ໜ້ານຳທາງ.
+Nút bật SK Light bị mờ, không bấm được?	SK Light switch greyed out?	SK Light のスイッチがグレーで押せない？	SK Light 스위치가 회색으로 눌리지 않나요?	สวิตช์ SK Light เป็นสีเทากดไม่ได้?	ប៊ូតុង SK Light ពណ៌ប្រផេះ ចុចមិនបាន?	ສະວິດ SK Light ເປັນສີເທົາ ກົດບໍ່ໄດ້?
+Để đèn báo sắp rẽ và quá tốc độ theo Google Maps, Vietmap, Gofa, SK Light cần 2 quyền dưới đây. Android không cho app tự bật, nên bấm từng nút rồi bật SK Light trong trang Cài đặt mở ra.	For turn and speed alerts from Google Maps, Vietmap or Gofa, SK Light needs the 2 permissions below. Android does not let apps turn them on, so tap each button and switch SK Light on in the settings page that opens.					
+Đọc hướng rẽ, khoảng cách từ thông báo của Google Maps, Vietmap.	Reads turns and distance from Google Maps and Vietmap notifications.					
+Đọc app dẫn đường không có thông báo (Gofa) và tự chia đôi màn hình.	Reads navigation apps without notifications (Gofa) and splits the screen.					
+App cài ngoài CH Play nên máy chặn. Mở Thông tin ứng dụng, bấm dấu ⋮ ở góc trên, chọn "Cho phép cài đặt bị hạn chế", rồi bật lại.	Apps installed outside Play Store are restricted. Open App info, tap ⋮ at the top, choose "Allow restricted settings", then try again.					

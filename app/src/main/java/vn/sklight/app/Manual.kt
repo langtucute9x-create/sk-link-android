@@ -52,7 +52,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
     ),
     "5. Dẫn đường: báo rẽ và quá tốc độ" to listOf(
         "App đọc chỉ dẫn từ app bản đồ đang dẫn đường (Google Maps, Vietmap, Gofa…) để báo bằng đèn.",
-        "Lần đầu, trang Dẫn đường hiện thẻ Cần cấp quyền: cấp quyền đọc thông báo và bật Hỗ trợ tiếp cận cho SK Light. Cấp đủ thì thẻ tự ẩn.",
+        "Lần đầu mở app, SK Light hiện bảng 2 bước: bật quyền đọc thông báo và Hỗ trợ tiếp cận cho SK Light. Nút bật bị mờ thì mở Thông tin ứng dụng, bấm dấu ⋮, chọn Cho phép cài đặt bị hạn chế. Bỏ qua thì bật sau ở trang Dẫn đường.",
         "Báo đèn khi sắp rẽ: bật công tắc, chọn khoảng cách Báo trước (50 đến 500 m), chọn Kiểu 1, Kiểu 2 hoặc Kiểu 3 và tốc độ của kiểu đó. Bấm Thử nháy để xem từng kiểu trên đèn.",
         "Thời gian đèn chạy: chọn số giây đèn báo chạy, hoặc để tới khi rẽ xong.",
         "Nếu rẽ trái mà đèn lại chạy sang phải, bật Đảo chiều chạy.",
