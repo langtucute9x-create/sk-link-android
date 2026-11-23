@@ -584,3 +584,9 @@ Nhanh hay chậm chỉnh bằng thanh Tốc độ nháy & chạy ở thẻ Hiệ
 Hãy bật "Cho phép từ nguồn này" cho SK Light, rồi quay lại bấm Cài đặt.	Turn on "Allow from this source" for SK Light, then come back and tap Install.
 Đang dùng #.#.#. Bản mới nặng khoảng (# MB), nên dùng wifi.	Using #.#.#. The new version is about # MB; Wi-Fi recommended.
 Cần quyền micro để ra lệnh bằng giọng nói.	Microphone permission is needed for voice commands.
+Hiệu ứng khi báo rẽ	Turn alert effect	曲がる時のエフェクト	회전 알림 효과	เอฟเฟกต์เตือนเลี้ยว	បែបផែនជូនដំណឹងបត់	ເອັບເຟັກເຕືອນລ້ຽວ
+Tốc độ đèn chạy	Light run speed	流れる速さ	조명 흐름 속도	ความเร็วไฟวิ่ง	ល្បឿនភ្លើងរត់	ຄວາມໄວໄຟແລ່ນ
+Đuôi sao chổi vàng	Yellow comet tail	黄色のコメットテール	노란 혜성 꼬리	หางดาวหางสีเหลือง	កន្ទុយផ្កាយដុះកន្ទុយលឿង	ຫາງດາວຫາງສີເຫຼືອງ
+Cuộn đủ màu 3	Full-color scroll 3	フルカラースクロール 3	풀컬러 스크롤 3	เลื่อนครบสี 3	រមូរគ្រប់ពណ៌ 3	ເລື່ອນຄົບສີ 3
+Trôi đa sắc 3	Multicolor drift 3	マルチカラードリフト 3	멀티컬러 드리프트 3	ไหลหลากสี 3	រសាត់ចម្រុះពណ៌ 3	ໄຫຼຫຼາກສີ 3
+Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.	Before a turn, the lights run toward the turn using the effect chosen below. During the alert the app temporarily changes the box's flow direction, then restores it.

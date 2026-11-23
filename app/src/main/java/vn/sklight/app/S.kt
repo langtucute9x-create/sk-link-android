@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.55"
+    const val VER = "0.5.56"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -98,6 +98,8 @@ object S {
     val screenLines = mutableStateListOf<String>()        // chữ đọc được, để kiểm tra
     val signSeen = mutableStateOf("")                     // con số km/h thấy trong thông báo (nếu có)
     val turnStyle = mutableIntStateOf(0)                  // cảnh báo rẽ: 0 nháy vàng cả xe, 1 đèn chạy theo hướng rẽ
+    val turnFx = mutableIntStateOf(0)                     // hiệu ứng báo rẽ: chỉ số trong AlertBridge.TURN_FX
+    val turnSpd = mutableStateListOf(10, 10, 10)          // tốc độ (1..10) của từng hiệu ứng báo rẽ
     val turnFlip = mutableStateOf(false)                  // đảo chiều chạy của kiểu 1
     val alertKind = mutableIntStateOf(0)                  // xem AlertBridge
     val alertPhase = mutableStateOf(false)                // pha sáng / tối của nhịp nháy
@@ -149,6 +151,8 @@ object S {
         warnOn.value = sp.getBoolean("warnOn", false)
         turnStyle.intValue = sp.getInt("turnStyle", 0).coerceIn(0, 1)
         turnFlip.value = sp.getBoolean("turnFlip", false)
+        turnFx.intValue = sp.getInt("turnFx", 0).coerceIn(0, 2)
+        (sp.getString("turnSpd", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.take(3).forEachIndexed { i, v -> turnSpd[i] = v.coerceIn(1, 10) }
         alertDist.intValue = sp.getInt("alertDist", 150)
         alertMaxSec.intValue = sp.getInt("alertMaxSec", 0)
         speedWarn.value = sp.getBoolean("speedWarn", false)
@@ -177,7 +181,7 @@ object S {
         Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
         Theme.style.intValue = sp.getInt("themeStyle", 0).coerceIn(0, Theme.STYLES.size - 1)
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
-        Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.55, bỏ giá trị cũ do app tự đặt cho máy yếu)
+        Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.56, bỏ giá trị cũ do app tự đặt cho máy yếu)
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("pins", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.distinct().take(MAX_PINS).forEach { pins.add(it) }
@@ -194,7 +198,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)

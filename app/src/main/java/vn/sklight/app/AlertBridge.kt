@@ -111,6 +111,9 @@ object AlertBridge {
     }
 
     // ---- kiểu "đèn chạy theo hướng rẽ": hiệu ứng Trôi đa sắc kiểu 3 (vàng) của hộp, tốc độ tối đa, đổi hướng chạy theo bên rẽ ----
+    /** Hiệu ứng của hộp dùng khi báo rẽ: (id chế độ, tham số). 0 = Trôi đa sắc kiểu 3 (vàng), 1 = Đuôi sao chổi vàng, 2 = Cuộn đủ màu kiểu 3. */
+    val TURN_FX = listOf(10 to 3, 13 to 2, 12 to 3)
+    val TURN_NAMES = listOf("Trôi đa sắc 3", "Đuôi sao chổi vàng", "Cuộn đủ màu 3")
     private var flow = false                       // cảnh báo đang chạy bằng hiệu ứng của hộp
     private var hold: IntArray? = null             // khối 07 của người dùng, giữ lại để trả về sau cảnh báo
     private const val DIR_BITS = 0x3F              // 6 đoạn: cửa trước trái, trước phải, sau trái, sau phải, táp lô giữa, đồng hồ
@@ -129,7 +132,8 @@ object AlertBridge {
         val left = (k == 1) != S.turnFlip.value
         val d1 = (p[0] and DIR_BITS.inv()) or (if (left) DIR_BITS else 0)
         S.ble.send(Protocol.block07(d1, p[1], p[2]), 23, true)
-        S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 10, 3, 10), 3, true)
+        val fx = S.turnFx.intValue.coerceIn(0, TURN_FX.size - 1)
+        S.ble.send(Protocol.effect(S.sens.intValue, S.m1, TURN_FX[fx].first, TURN_FX[fx].second, S.turnSpd[fx].coerceIn(1, 10)), 3, true)
         flow = true
         return true
     }

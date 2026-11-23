@@ -20,11 +20,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -130,7 +133,31 @@ fun Chip(text: String, sel: Boolean, modifier: Modifier = Modifier, h: Dp = 41.d
     Box(
         modifier.height(h).block(sel, sh).clickable(onClick = onClick).padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center
-    ) { T(text, size, if (sel) FontWeight.Bold else FontWeight.SemiBold, if (sel) Color.White else Txt, align = TextAlign.Center) }
+    ) { FitT(text, size, if (sel) FontWeight.Bold else FontWeight.SemiBold, if (sel) Color.White else Txt) }
+}
+
+/**
+ * Chữ tự co cho vừa ô: thử một dòng trước, thu nhỏ dần tới 80%; vẫn không vừa thì cho xuống tối đa [lines] dòng rồi thu nhỏ tiếp tới 62%.
+ * Dùng cho chữ trong ô có kích thước cố định (ô chọn, ô chế độ) để không bao giờ bị cắt mất chữ khi cỡ chữ lớn hoặc ô hẹp.
+ */
+@Composable
+fun FitT(text: String, size: Int, weight: FontWeight = FontWeight.Normal, color: Color = Txt, modifier: Modifier = Modifier, align: TextAlign = TextAlign.Center, lines: Int = 2) {
+    val str = L.tr(text)
+    val base = size * Theme.scaleF
+    var k by remember(str, base) { mutableFloatStateOf(1f) }
+    var wrap by remember(str, base) { mutableStateOf(false) }
+    var ok by remember(str, base) { mutableStateOf(false) }
+    Text(
+        str, modifier = modifier.drawWithContent { if (ok) drawContent() },
+        fontSize = (base * k).sp, lineHeight = (base * k * 1.2f).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align,
+        maxLines = if (wrap) lines else 1, softWrap = wrap, overflow = TextOverflow.Clip,
+        onTextLayout = { r ->
+            if (!r.hasVisualOverflow) ok = true
+            else if (!wrap && k <= 0.82f && lines > 1) { wrap = true; k = 1f }
+            else if (k > 0.62f) k -= 0.07f
+            else ok = true
+        }
+    )
 }
 
 // ----- nút nguồn + thanh menu -----

@@ -17,7 +17,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -124,11 +126,15 @@ fun CarRow(sel: Int, onPick: (Int) -> Unit) {
                     .padding(top = 2.dp, bottom = 4.dp)
             ) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    CarIcon(k, on, col, Modifier.widthIn(max = 58.dp).fillMaxWidth().aspectRatio(80f / 112f))
-                    T(SEG_TINY[k], 10, if (on) FontWeight.Bold else FontWeight.Normal, if (on) Txt else Grey, align = TextAlign.Center)
-                }
-                if (box >= 0 && k >= 2) Box(Modifier.align(Alignment.TopEnd).padding(2.dp).size(16.dp).clip(CircleShape).background(col), contentAlignment = Alignment.Center) {
-                    T("${box + 1}", 10, FontWeight.Bold, Color.White)
+                    // số hộp phụ nằm ngay góc hình xe (không trôi ra góc ô khi ô rộng), cỡ chữ cố định theo cỡ vòng tròn
+                    Box(contentAlignment = Alignment.TopEnd) {
+                        CarIcon(k, on, col, Modifier.widthIn(max = 58.dp).fillMaxWidth().aspectRatio(80f / 112f))
+                        if (box >= 0 && k >= 2) Box(Modifier.size(18.dp).clip(CircleShape).background(col), contentAlignment = Alignment.Center) {
+                            val fs = with(LocalDensity.current) { 11.dp.toSp() }
+                            Text("${box + 1}", fontSize = fs, lineHeight = fs, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = Inter, maxLines = 1)
+                        }
+                    }
+                    FitT(SEG_TINY[k], 10, if (on) FontWeight.Bold else FontWeight.Normal, if (on) Txt else Grey, lines = 1)
                 }
             }
         }

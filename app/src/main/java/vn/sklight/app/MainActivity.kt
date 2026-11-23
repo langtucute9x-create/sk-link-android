@@ -56,10 +56,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -82,7 +84,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val scheme = if (Theme.dark) darkColorScheme(primary = Pink, surface = CardBg, surfaceContainerHigh = CardBg, onSurface = Txt, onSurfaceVariant = SubTxt)
             else lightColorScheme(primary = Pink)
-            MaterialTheme(colorScheme = scheme) { Root() }
+            // Nhiều màn hình ô tô đặt cỡ chữ hệ thống rất lớn (1,3–1,6 lần) làm chữ tràn khỏi ô. App có mục "Cỡ chữ" riêng nên chỉ nhận tối đa 1,15 lần từ máy.
+            val d = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(d.density, minOf(d.fontScale, 1.15f))) {
+                MaterialTheme(colorScheme = scheme) { Root() }
+            }
         }
     }
 
@@ -149,7 +155,7 @@ fun Root() {
                 VoicePanel()
                 key(tab, S.subPage.intValue) {
                     when (tab) {
-                        0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain() }, { LedEffects(cols) })
+                        0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                         1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                         2 -> {
                             val (granted, open) = navAccess()
@@ -304,16 +310,16 @@ fun LedMain() {
 
 /** Các nhóm chế độ + thẻ Hiệu ứng. [cols] = số cột của lưới chế độ. */
 @Composable
-fun LedEffects(cols: Int) {
+fun LedEffects(cols: Int, tune: Boolean = true) {       // tune = false: màn ngang, thẻ Tốc độ / Độ nhạy đã nằm cố định ở cột trái
     // thẻ Tốc độ / Độ nhạy nằm ngay dưới nhóm chứa chế độ đang chạy, để chọn chế độ xong chỉnh tốc độ luôn, khỏi cuộn xuống cuối trang
     val mode = S.mode.intValue
     val at = Effects.groups.indexOfFirst { g -> g.items.any { it.id == mode } }
     val pinnedNow = S.pins.contains(mode)      // chế độ đang chạy nằm trong mục Đã ghim: thẻ tốc độ đi theo lên đó
     PinnedCard(cols)
-    if (pinnedNow) EffectTuneCard()
-    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols, i == 0 && S.pins.isEmpty()); if (i == at && !pinnedNow) EffectTuneCard() }
+    if (tune && pinnedNow) EffectTuneCard()
+    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols, i == 0 && S.pins.isEmpty()); if (tune && i == at && !pinnedNow) EffectTuneCard() }
     MyModesCard(cols)
-    if (at < 0 && !pinnedNow) EffectTuneCard()          // đang chạy "Chế độ của tôi" (hoặc chế độ không thuộc nhóm nào): nằm dưới thẻ đó
+    if (tune && at < 0 && !pinnedNow) EffectTuneCard()          // đang chạy "Chế độ của tôi" (hoặc chế độ không thuộc nhóm nào): nằm dưới thẻ đó
 }
 
 /** Tốc độ nháy & chạy + độ nhạy nhịp điệu. */
@@ -349,9 +355,9 @@ fun ValueRow(icon: ImageVector, iconTint: Color, title: String, value: Int, boxB
 @Composable
 fun SliderRow(left: String, right: String, slider: @Composable (Modifier) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp)) {
-        T(left, 11, color = Grey, modifier = Modifier.width(44.dp))
+        T(left, 11, color = Grey, modifier = Modifier.widthIn(min = 40.dp).padding(end = 4.dp))
         slider(Modifier.weight(1f))
-        T(right, 11, color = Grey, modifier = Modifier.width(44.dp), align = TextAlign.End)
+        T(right, 11, color = Grey, modifier = Modifier.widthIn(min = 40.dp).padding(start = 4.dp), align = TextAlign.End)
     }
 }
 
@@ -381,9 +387,9 @@ fun EffectTile(e: Effect, m: Modifier) {
     ) {
         Icon(e.icon, null, tint = e.color, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(8.dp))
-        T(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f))
+        FitT(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f), TextAlign.Start)
         if (S.pins.contains(e.id)) Icon(Icons.Filled.PushPin, null, tint = Grey, modifier = Modifier.align(Alignment.Top).padding(top = 6.dp, end = 2.dp).size(11.dp))
-        Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(top = 5.dp)) }
+        Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(start = 4.dp, top = 5.dp)) }
     }
 }
 
@@ -415,7 +421,7 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
                     m.height(51.dp).glow(on, cur.color, RoundedCornerShape(Theme.r(8))).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(cur.color, 0.2f) else ChipBg)
                         .border(if (on) 2.dp else 1.dp, if (on) cur.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickSub(cur, i) }.padding(horizontal = 6.dp),
                     contentAlignment = Alignment.Center
-                ) { T(cur.subs[i], 11, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, align = TextAlign.Center) }
+                ) { FitT(cur.subs[i], 11, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt) }
             }
         }
     }
@@ -782,7 +788,20 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         SwitchRow("Báo đèn khi sắp rẽ", "Đèn vàng chạy theo hướng rẽ khi sắp tới chỗ rẽ", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
         SwitchRow("Đảo chiều chạy", "Bật nếu khi rẽ trái mà đèn lại chạy sang phải", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
-        T("Khi sắp rẽ, đèn vàng chạy theo hướng rẽ (hiệu ứng Trôi đa sắc kiểu 3 của hộp, tốc độ nhanh nhất). Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11, color = Grey)
+        T("Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11, color = Grey)
+        Spacer(Modifier.height(10.dp))
+        T("Hiệu ứng khi báo rẽ", 14, FontWeight.SemiBold)
+        Spacer(Modifier.height(8.dp))
+        val tf = S.turnFx.intValue.coerceIn(0, AlertBridge.TURN_FX.size - 1)
+        Grid(listOf(1, 2, 0), 3) { n, m -> Chip(AlertBridge.TURN_NAMES[n], tf == n, m, 44.dp, 12) { S.turnFx.intValue = n; S.saveSettings() } }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
+            T("Tốc độ đèn chạy", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Box(Modifier.height(27.dp).widthIn(min = 40.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                T("${S.turnSpd[tf]}", 14, FontWeight.ExtraBold, Pink)
+            }
+        }
+        SkSlider((S.turnSpd[tf] - 1) / 9f, { S.turnSpd[tf] = 1 + (it * 9).roundToInt(); S.saveSettings() }, Pink, tint(0.2f), Pink,
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, 10, "${S.turnSpd[tf]}")
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
             T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {

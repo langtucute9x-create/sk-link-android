@@ -90,7 +90,7 @@ fun AppearanceTheme() {
             ) {
                 Box(Modifier.size(20.dp).clip(CircleShape).background(c), contentAlignment = Alignment.Center) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp)) }
                 Spacer(Modifier.width(8.dp))
-                T(Theme.ACCENTS[i].first, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold)
+                FitT(Theme.ACCENTS[i].first, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, modifier = Modifier.weight(1f), align = androidx.compose.ui.text.style.TextAlign.Start)
             }
         }
     }
