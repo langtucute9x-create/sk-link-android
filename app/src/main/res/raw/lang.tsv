@@ -693,3 +693,18 @@ Chưa nhập dòng xe.	Enter the car model.	車種を入力してください。
 Chưa nhập đơn vị lắp đặt.	Enter the installer.	取付業者を入力してください。	설치 업체를 입력하세요.	ยังไม่ได้ใส่ผู้ติดตั้ง	សូមបញ្ចូលអ្នកដំឡើង។	ຍັງບໍ່ໄດ້ໃສ່ຜູ້ຕິດຕັ້ງ.
 Mã kích hoạt là 4 chữ cái in trên tem.	The activation code is the 4 letters printed on the label.	有効化コードはラベルに印字された4文字です。	활성화 코드는 라벨에 인쇄된 4글자입니다.	รหัสเปิดใช้งานคือตัวอักษร 4 ตัวบนสติกเกอร์	កូដបើកដំណើរការគឺអក្សរ 4 តួលើស្លាក។	ລະຫັດເປີດໃຊ້ງານແມ່ນຕົວອັກສອນ 4 ຕົວເທິງສະຕິກເກີ.
 Mã kích hoạt là mã giới thiệu 4 chữ in trên tem dán ở vỏ hộp sản phẩm. Cần có mạng khi kích hoạt.	The activation code is the 4-letter referral code on the product box label. Internet is required to activate.	有効化コードは製品箱のラベルにある4文字の紹介コードです。有効化にはインターネットが必要です。	활성화 코드는 제품 상자 라벨의 4글자 추천 코드입니다. 활성화하려면 인터넷이 필요합니다.	รหัสเปิดใช้งานคือรหัสแนะนำ 4 ตัวอักษรบนสติกเกอร์กล่องสินค้า ต้องมีอินเทอร์เน็ตขณะเปิดใช้งาน	កូដបើកដំណើរការគឺកូដណែនាំ 4 អក្សរលើស្លាកប្រអប់ផលិតផល។ ត្រូវការអ៊ីនធឺណិត។	ລະຫັດເປີດໃຊ້ງານແມ່ນລະຫັດແນະນຳ 4 ຕົວອັກສອນເທິງສະຕິກເກີກ່ອງສິນຄ້າ. ຕ້ອງມີອິນເຕີເນັດ.
+Kích hoạt SK Light	Activate SK Light	SK Light を有効化	SK Light 활성화	เปิดใช้งาน SK Light	បើកដំណើរការ SK Light	ເປີດໃຊ້ງານ SK Light
+Đăng ký bảo hành 24 tháng	Register 24-month warranty	24か月保証を登録	24개월 보증 등록	ลงทะเบียนรับประกัน 24 เดือน	ចុះឈ្មោះធានា 24 ខែ	ລົງທະບຽນຮັບປະກັນ 24 ເດືອນ
+Nhập mã	Enter code	コード入力	코드 입력	ใส่รหัส	បញ្ចូលកូដ	ໃສ່ລະຫັດ
+Thông tin bảo hành	Warranty info	保証情報	보증 정보	ข้อมูลการรับประกัน	ព័ត៌មានធានា	ຂໍ້ມູນຮັບປະກັນ
+Đang bảo hành	Under warranty	保証期間中	보증 중	อยู่ในประกัน	កំពុងធានា	ຢູ່ໃນປະກັນ
+Hết hạn	Expires	期限	만료	หมดอายุ	ផុតកំណត់	ໝົດອາຍຸ
+Cần hỗ trợ?	Need help?	お困りですか？	도움이 필요하세요?	ต้องการความช่วยเหลือ?	ត្រូវការជំនួយ?	ຕ້ອງການຊ່ວຍເຫຼືອ?
+Gọi 0868 055 555	Call 0868 055 555	0868 055 555 に電話	0868 055 555 전화	โทร 0868 055 555	ហៅ 0868 055 555	ໂທ 0868 055 555
+Mã của tôi dài hơn 4 ký tự	My code is longer than 4 characters	4文字より長いコード	4자보다 긴 코드	รหัสยาวกว่า 4 ตัว	កូដវែងជាង 4 តួ	ລະຫັດຍາວກວ່າ 4 ຕົວ
+Nhập mã 4 chữ trên tem	Enter the 4-letter code on the label	ラベルの4文字コードを入力	라벨의 4글자 코드 입력	ใส่รหัส 4 ตัวบนสติกเกอร์	បញ្ចូលកូដ 4 អក្សរលើស្លាក	ໃສ່ລະຫັດ 4 ຕົວເທິງສະຕິກເກີ
+Trang Cài đặt vẫn dùng được khi chưa kích hoạt.	Settings stays available before activation.	有効化前でも設定は使えます。	활성화 전에도 설정은 사용할 수 있습니다.	ยังใช้หน้าตั้งค่าได้ก่อนเปิดใช้งาน	ទំព័រការកំណត់នៅប្រើបានមុនពេលបើកដំណើរការ។	ຍັງໃຊ້ໜ້າຕັ້ງຄ່າໄດ້ກ່ອນເປີດໃຊ້ງານ.
+Mã này kích hoạt lần đầu. Điền thông tin xe để đăng ký bảo hành.	First activation of this code. Fill in the vehicle details to register the warranty.					
+Đã kết nối với hộp đèn. Nhập mã trên tem để mở khóa điều khiển.	Connected to the LED controller. Enter the code on the label to unlock the controls.					
+Nhập mã trên tem để dùng app điều khiển đèn trên máy này.	Enter the code on the label to control the lights from this device.					
+Mã giới thiệu 4 chữ cái in trên tem dán ở vỏ hộp sản phẩm.	The 4-letter referral code printed on the product box label.					
