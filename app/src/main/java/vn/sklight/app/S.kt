@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.38"
+    const val VER = "0.5.39"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -174,7 +174,7 @@ object S {
         czone.intValue = sp.getInt("czone", 0).coerceIn(0, 2)
         Auto.z2.intValue = sp.getInt("autoZ2", 0).coerceIn(0, Auto.Z2_NAMES.size)
         Seqs.load(sp.getString("seqs", "") ?: "")
-        X.loadSnap(1, sp.getString("snap1", "") ?: ""); X.loadSnap(2, sp.getString("snap2", "") ?: "")
+        X.loadSnaps(sp.getString("snaps", "") ?: "")
         ble = BleLed(app)
         main.post(nightLoop)
         Auto.resume()
@@ -450,7 +450,7 @@ object S {
      * Cảnh báo rẽ kiểu "đèn chạy" tạm đổi hướng chạy (khối 07) của hộp. Ghi lại giá trị gốc vào máy để nếu app bị tắt giữa chừng,
      * lần kết nối sau vẫn trả lại được. [p] = null: đã trả xong.
      */
-    fun saveSnap(n: Int, text: String) { try { sp.edit().putString("snap$n", text).apply() } catch (e: Exception) {} }
+    fun saveSnaps(text: String) { try { sp.edit().putString("snaps", text).apply() } catch (e: Exception) {} }
     fun holdP07(p: IntArray?) { try { sp.edit().putString("p07Hold", p?.joinToString(",") ?: "").apply() } catch (e: Exception) {} }
     /** Gọi sau khi kết nối: còn giá trị gốc chưa trả thì trả lại cho hộp. */
     fun restoreP07() {

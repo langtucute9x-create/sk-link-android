@@ -130,9 +130,9 @@ object X {
     // ---- chụp trạng thái hộp: hỏi mọi khối đọc được rồi ghi lại nguyên văn, để so trước / sau khi đổi một cài đặt ----
     @Volatile var snapOn = false
     private val snapCur = java.util.TreeMap<String, String>()
-    val snap1 = mutableStateListOf<String>()           // mỗi dòng "khối: dữ liệu"
-    val snap2 = mutableStateListOf<String>()
-    var snapBusy by mutableIntStateOf(0)               // 0 không, 1 đang chụp lần 1, 2 đang chụp lần 2
+    /** Các lần chụp, mỗi lần: dòng đầu là giờ chụp, các dòng sau "khối: dữ liệu". Nhớ qua lần mở app, tối đa 12 lần. */
+    val snaps = mutableStateListOf<String>()
+    var snapBusy by mutableStateOf(false)
     // các khối hỏi thử. Chỉ là lệnh ĐỌC (90 7C xx); khối nào hộp không có thì hộp tự bỏ qua. Không hỏi 0E (khối khôi phục gốc).
     private val SNAP_SUBS = (0x00..0x20).filter { it != 0x0E } + listOf(0x8D, 0x8F, 0x90)
 
@@ -144,26 +144,36 @@ object X {
         val body = d.copyOfRange(4, d.size - 1).joinToString(" ") { "%02X".format(it) }
         snapCur[key] = body
     }
-    fun snapshot(n: Int) {
-        if (snapBusy != 0) return
-        snapBusy = n; snapCur.clear(); snapOn = true
+    fun snapshot() {
+        if (snapBusy) return
+        snapBusy = true; snapCur.clear(); snapOn = true
         for (q in SNAP_SUBS) S.ble.send(Protocol.query(q))
         S.ble.send(Protocol.frame(Protocol.T_READ, 0x9C, 0x01))
         h.postDelayed({
             snapOn = false
-            val out = snapCur.map { it.key + ": " + it.value }
-            val dst = if (n == 1) snap1 else snap2
-            dst.clear(); dst.addAll(out)
-            S.saveSnap(n, out.joinToString("\n"))
-            snapBusy = 0
+            val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+            while (snaps.size >= 12) snaps.removeAt(0)
+            snaps.add(time + "\n" + snapCur.map { it.key + ": " + it.value }.joinToString("\n"))
+            S.saveSnaps(snaps.joinToString("\u0001"))
+            snapBusy = false
         }, 4500)
     }
-    fun loadSnap(n: Int, text: String) { val dst = if (n == 1) snap1 else snap2; dst.clear(); dst.addAll(text.split("\n").filter { it.isNotBlank() }) }
-    /** Các khối khác nhau giữa hai lần chụp: "khối: lần 1 -> lần 2". */
-    fun snapDiff(): List<String> {
-        val a = snap1.associate { it.substringBefore(": ") to it.substringAfter(": ", "") }
-        val b = snap2.associate { it.substringBefore(": ") to it.substringAfter(": ", "") }
+    fun loadSnaps(text: String) { snaps.clear(); snaps.addAll(text.split("\u0001").filter { it.isNotBlank() }) }
+    fun clearSnaps() { snaps.clear(); S.saveSnaps("") }
+    private fun blocks(snap: String) = snap.split("\n").drop(1).filter { it.contains(": ") }.associate { it.substringBefore(": ") to it.substringAfter(": ") }
+    /** Các khối khác nhau giữa lần chụp [i] và lần trước nó: "khối: trước -> sau". */
+    fun snapDiff(i: Int): List<String> {
+        if (i <= 0 || i >= snaps.size) return emptyList()
+        val a = blocks(snaps[i - 1]); val b = blocks(snaps[i])
         return (a.keys + b.keys).toSortedSet().filter { a[it] != b[it] }.map { it + ": " + (a[it] ?: "(không có)") + "  ->  " + (b[it] ?: "(không có)") }
+    }
+    fun snapText(): String {
+        val sb = StringBuilder("SK Light ${S.VER}, chụp trạng thái hộp ${S.devName.value}\n")
+        snaps.forEachIndexed { i, sn ->
+            sb.append("--- lần ${i + 1} lúc ").append(sn).append("\n")
+            if (i > 0) { sb.append("--- khác lần ${i}:\n"); for (l in snapDiff(i)) sb.append(l).append("\n") }
+        }
+        return sb.toString()
     }
 
     /** Hộp báo xe hỗ trợ chức năng gốc nào (trả lời 9C 01): b1 cùng thứ tự bit với b1 khối 05; b2: bit4 đèn khẩn cấp, bit3 điều hòa, bit2 chào mừng, bit1 điểm mù, bit0 áp suất lốp. */
@@ -436,26 +446,25 @@ fun FactoryPage() {
     Card {
         T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
-        T("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp lần 1, đổi đúng MỘT thứ (bằng nút cơ hoặc app gốc), kết nối lại rồi chụp lần 2. App chỉ đọc, không ghi gì vào hộp. Lần 1 được nhớ kể cả khi thoát app.", 12, color = SubTxt)
+        T("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp một lần, đổi đúng MỘT thứ (bằng app gốc hoặc nút cơ), kết nối lại rồi chụp tiếp. Làm lần lượt cho từng thứ cần tìm, cuối cùng bấm Sao chép để gửi một lần. App chỉ đọc, không ghi gì vào hộp. Các lần chụp được nhớ kể cả khi thoát app.", 12, color = SubTxt)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            for (n in 1..2) OutlineBtn(if (X.snapBusy == n) "Đang chụp…" else "Chụp lần $n", Modifier.weight(1f)) {
-                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.snapshot(n)
+            FillBtn(if (X.snapBusy) "Đang chụp…" else "Chụp lần ${X.snaps.size + 1}", Icons.Filled.Refresh, Pink, Modifier.weight(1.4f)) {
+                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.snapshot()
             }
+            OutlineBtn("Xóa hết", Modifier.weight(1f)) { X.clearSnaps() }
         }
         Spacer(Modifier.height(8.dp))
-        Kv("Lần 1", if (X.snap1.isEmpty()) "Chưa chụp" else "${X.snap1.size} khối")
-        Kv("Lần 2", if (X.snap2.isEmpty()) "Chưa chụp" else "${X.snap2.size} khối")
-        if (X.snap1.isNotEmpty() && X.snap2.isNotEmpty()) {
-            val diff = X.snapDiff()
-            T(if (diff.isEmpty()) "Hai lần chụp giống hệt nhau." else "Khác nhau ở ${diff.size} khối:", 13, FontWeight.Bold)
+        if (X.snaps.isEmpty()) T("Chưa chụp lần nào.", 12, color = SubTxt)
+        X.snaps.forEachIndexed { i, sn ->
+            val diff = X.snapDiff(i)
+            T("Lần ${i + 1} lúc ${sn.substringBefore("\n")}" + (if (i == 0) "" else if (diff.isEmpty()) ": giống lần ${i}" else ": khác lần ${i} ở ${diff.size} khối"), 13, FontWeight.Bold)
             for (l in diff) T(l, 11, color = SubTxt)
         }
         Spacer(Modifier.height(8.dp))
         OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
-            val text = "SK Light ${S.VER}, chụp trạng thái hộp ${S.devName.value}\n--- lần 1 ---\n" + X.snap1.joinToString("\n") + "\n--- lần 2 ---\n" + X.snap2.joinToString("\n") + "\n--- khác nhau ---\n" + X.snapDiff().joinToString("\n")
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("snap", text))
+            cm.setPrimaryClip(ClipData.newPlainText("snap", X.snapText()))
             Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
         }
     }
@@ -498,7 +507,7 @@ fun CarFuncPage() {
     }
     val rows = listOf(
         Triple(0, 0x80, "Cảnh báo xi nhan") to "Nháy đèn theo xi nhan",
-        Triple(1, 0x10, "Đèn khẩn cấp") to "Nháy theo đèn khẩn cấp (hazard)",
+        Triple(1, 0x10, "Nhắc nhở đèn hazard") to "Nháy theo đèn khẩn cấp",
         Triple(0, 0x40, "Cảnh báo phanh tay") to "Báo khi chưa nhả phanh tay",
         Triple(0, 0x20, "Cảnh báo dây an toàn") to "Báo khi chưa cài dây",
         Triple(0, 0x08, "Cảnh báo cửa") to "Báo khi cửa chưa đóng",
@@ -507,7 +516,7 @@ fun CarFuncPage() {
         Triple(0, 0x01, "Cảnh báo quá tốc độ") to "Báo khi vượt ngưỡng tốc độ bên dưới",
         Triple(1, 0x01, "Cảnh báo áp suất lốp") to "Báo khi lốp thiếu hơi",
         Triple(0, 0x02, "Hiệu ứng vòng tua") to "Đèn chạy theo vòng tua máy",
-        Triple(1, 0x08, "Điều hòa") to "Đèn đổi màu theo nhiệt độ điều hòa",
+        Triple(1, 0x08, "Chế độ khí hậu") to "Đèn đổi màu theo nhiệt độ điều hòa",
         Triple(0, 0x10, "Đèn theo đèn xe") to "Đèn hộp sáng theo đèn pha/đèn vị trí",
         Triple(1, 0x20, "Ẩn đèn gốc của xe") to "Ẩn đèn gốc khi hộp đang chạy"
     ).filter { ok(it.first.first, it.first.second) }
@@ -528,7 +537,7 @@ fun CarFuncPage() {
     // Theo app gốc: mỗi cảnh báo có 2 kiểu (ghi 0 / 1 vào nửa byte tương ứng); "đèn theo đèn xe" có 4 kiểu (2 bit cao của b2).
     // (tên, vị trí byte, số bit dịch, mặt nạ, số kiểu) + điều kiện hiện
     val groups = listOf(
-        listOf("Kiểu cảnh báo xi nhan", 5, 4, 0xF0, 2) to ok(0, 0x80),
+        listOf("Chế độ đèn xi-nhan", 5, 4, 0xF0, 2) to ok(0, 0x80),
         listOf("Kiểu cảnh báo cửa", 2, 4, 0xF0, 2) to ok(0, 0x08),
         listOf("Kiểu cảnh báo radar", 2, 0, 0x0F, 2) to ok(0, 0x04),
         listOf("Kiểu cảnh báo quá tốc độ", 5, 0, 0x0F, 2) to ok(0, 0x01),
@@ -543,7 +552,7 @@ fun CarFuncPage() {
             T(title, 13, FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             val cur = if (known) ((S.blk!![idx] and mask) shr shift) else -1
-            Grid((0 until n).toList(), 4) { v, m -> Chip("Kiểu ${v + 1}", cur == v, m, 42.dp, 12) { if (!S.setBlk(idx, mask, v shl shift)) need(ctx) } }
+            Grid((0 until n).toList(), 4) { v, m -> Chip("Chế độ ${v + 1}", cur == v, m, 42.dp, 12) { if (!S.setBlk(idx, mask, v shl shift)) need(ctx) } }
         }
     }
     if (ok(0, 0x01)) Card {
