@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.53"
+    const val VER = "0.5.54"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -36,6 +36,14 @@ object S {
     val bri = mutableStateListOf(100, 100, 100)
     val col = mutableStateListOf(0xFFFFFF, 0xFFFFFF, 0xFFFFFF)
     val customs = mutableStateListOf<Int>()
+    const val MAX_PINS = 9
+    val pins = mutableStateListOf<Int>()                  // id các chế độ đã ghim lên đầu trang Đèn
+    /** Ghim / bỏ ghim một chế độ. Trả 1 = vừa ghim, 0 = vừa bỏ ghim, -1 = đã đủ số lượng. */
+    fun togglePin(id: Int): Int {
+        if (pins.remove(id)) { saveSettings(); return 0 }
+        if (pins.size >= MAX_PINS) return -1
+        pins.add(id); saveSettings(); return 1
+    }
     val mode = mutableIntStateOf(0)                       // id hiệu ứng
     val sub = mutableStateListOf<Int>().also { l -> repeat(128) { l.add(0) } }   // kiểu con đang chọn theo id (đếm từ 0)
     val speed = mutableIntStateOf(5)
@@ -179,6 +187,7 @@ object S {
         Theme.fx.value = sp.getBoolean("themeFx", !lowEnd(app))     // máy yếu (ít RAM / ít nhân) thì mặc định bật "Giảm hiệu ứng"
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
+        (sp.getString("pins", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.distinct().take(MAX_PINS).forEach { pins.add(it) }
         (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }
         (sp.getString("col", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) col[i] = v and 0xFFFFFF }
         czone.intValue = sp.getInt("czone", 0).coerceIn(0, 2)
@@ -201,7 +210,7 @@ object S {
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx", Theme.fx.value)
-            .putString("customs", customs.joinToString(","))
+            .putString("customs", customs.joinToString(",")).putString("pins", pins.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).putString("seqs", Seqs.dump()).apply()
     }
 

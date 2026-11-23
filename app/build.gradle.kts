@@ -12,8 +12,8 @@ android {
         applicationId = "vn.sklight.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 66
-        versionName = "0.5.53"
+        versionCode = 67
+        versionName = "0.5.54"
     }
 
     // Co khoa rieng (GitHub Secrets) thi ky bang khoa do, khong thi dung khoa debug.
@@ -57,4 +57,5 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.zxing:core:3.5.3")
 }

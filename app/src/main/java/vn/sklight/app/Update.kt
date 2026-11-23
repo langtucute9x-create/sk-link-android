@@ -10,7 +10,11 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -193,6 +200,7 @@ fun UpdateDialog() {
     if (!Updater.showDialog.value) return
     val ctx = LocalContext.current
     val p = Updater.progress.intValue
+    var qr by remember { mutableStateOf(false) }
     val mb = if (i.size > 0) " (${(i.size / 1048576)} MB)" else ""
     AlertDialog(
         onDismissRequest = { Updater.showDialog.value = false },
@@ -211,6 +219,10 @@ fun UpdateDialog() {
                         OutlineBtn("Mở trình duyệt", Modifier.weight(1f)) { Updater.openBrowser(ctx) }
                     }
                 }
+                if (qr || Updater.noInstaller.value) {
+                    T("Quét mã này bằng điện thoại để tải file cài đặt:", 12, color = Grey)
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { QrCode(i.url, 170.dp) }
+                } else TextButton(onClick = { qr = true }) { T("Hiện mã QR để tải bằng điện thoại", 12, color = Pink) }
                 TextButton(onClick = { Updater.skip(ctx) }) { T("Bỏ qua bản này", 12, color = Grey) }
             }
         },
@@ -221,4 +233,16 @@ fun UpdateDialog() {
         },
         dismissButton = { TextButton(onClick = { Updater.showDialog.value = false }) { T("Để sau", 14, FontWeight.Bold) } }
     )
+}
+
+/** Mã QR vẽ bằng thư viện ZXing (giấy phép Apache 2.0). */
+@Composable
+fun QrCode(text: String, d: Dp) {
+    val m = remember(text) { try { QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, 0, 0, mapOf(EncodeHintType.MARGIN to 2)) } catch (e: Exception) { null } }
+    if (m == null) return
+    Canvas(Modifier.size(d).background(Color.White)) {
+        val n = m.width
+        val cell = size.width / n
+        for (y in 0 until m.height) for (x in 0 until n) if (m.get(x, y)) drawRect(Color.Black, Offset(x * cell, y * cell), Size(cell + 0.5f, cell + 0.5f))
+    }
 }

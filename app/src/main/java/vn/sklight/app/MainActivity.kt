@@ -308,9 +308,12 @@ fun LedEffects(cols: Int) {
     // thẻ Tốc độ / Độ nhạy nằm ngay dưới nhóm chứa chế độ đang chạy, để chọn chế độ xong chỉnh tốc độ luôn, khỏi cuộn xuống cuối trang
     val mode = S.mode.intValue
     val at = Effects.groups.indexOfFirst { g -> g.items.any { it.id == mode } }
-    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols); if (i == at) EffectTuneCard() }
+    val pinnedNow = S.pins.contains(mode)      // chế độ đang chạy nằm trong mục Đã ghim: thẻ tốc độ đi theo lên đó
+    PinnedCard(cols)
+    if (pinnedNow) EffectTuneCard()
+    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols, i == 0 && S.pins.isEmpty()); if (i == at && !pinnedNow) EffectTuneCard() }
     MyModesCard(cols)
-    if (at < 0) EffectTuneCard()          // đang chạy "Chế độ của tôi" (hoặc chế độ không thuộc nhóm nào): nằm dưới thẻ đó
+    if (at < 0 && !pinnedNow) EffectTuneCard()          // đang chạy "Chế độ của tôi" (hoặc chế độ không thuộc nhóm nào): nằm dưới thẻ đó
 }
 
 /** Tốc độ nháy & chạy + độ nhạy nhịp điệu. */
@@ -353,24 +356,57 @@ fun SliderRow(left: String, right: String, slider: @Composable (Modifier) -> Uni
 }
 
 @Composable
-fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
+/** Một ô chế độ. Chạm = chạy; chạm giữ = ghim lên đầu trang / bỏ ghim. */
+@Composable
+fun EffectTile(e: Effect, m: Modifier) {
+    val ctx = LocalContext.current
+    val on = S.mode.intValue == e.id
+    val sh = RoundedCornerShape(Theme.r(8))
+    Row(
+        m.height(56.dp).glow(on, e.color, sh).clip(sh).background(if (on) mix(e.color, 0.5f) else ChipBg)
+            .border(if (on) 2.dp else 1.dp, if (on) e.color else Bd, sh)
+            .pointerInput(e.id) {
+                detectTapGestures(
+                    onLongPress = {
+                        when (S.togglePin(e.id)) {
+                            1 -> Notice.show(ctx, L.tr("Đã ghim lên đầu trang: ${e.name}"))
+                            0 -> Notice.show(ctx, L.tr("Đã bỏ ghim: ${e.name}"))
+                            else -> Notice.show(ctx, L.tr("Đã ghim đủ ${S.MAX_PINS} chế độ, bỏ bớt để ghim thêm."))
+                        }
+                    },
+                    onTap = { S.pickEffect(e) }
+                )
+            }
+            .padding(start = 10.dp, end = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(e.icon, null, tint = e.color, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(8.dp))
+        T(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f))
+        if (S.pins.contains(e.id)) Icon(Icons.Filled.PushPin, null, tint = Grey, modifier = Modifier.align(Alignment.Top).padding(top = 6.dp, end = 2.dp).size(11.dp))
+        Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(top = 5.dp)) }
+    }
+}
+
+/** Các chế độ đã ghim, nằm trên cùng phần chế độ. */
+@Composable
+fun PinnedCard(cols: Int) {
+    val list = S.pins.mapNotNull { Effects.byId(it) }
+    if (list.isEmpty()) return
+    Card {
+        GroupTitle(Icons.Filled.PushPin, "ĐÃ GHIM")
+        Spacer(Modifier.height(14.dp))
+        Grid(list, cols, 9.dp, 11.dp) { e, m -> EffectTile(e, m) }
+    }
+}
+
+@Composable
+fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
     Card {
         GroupTitle(g.icon, g.name)
         Spacer(Modifier.height(14.dp))
-        Grid(g.items, cols, 9.dp, 11.dp) { e, m ->
-            val on = S.mode.intValue == e.id
-            Row(
-                m.height(56.dp).glow(on, e.color, RoundedCornerShape(Theme.r(8))).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(e.color, 0.5f) else ChipBg)
-                    .border(if (on) 2.dp else 1.dp, if (on) e.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickEffect(e) }
-                    .padding(start = 10.dp, end = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(e.icon, null, tint = e.color, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(8.dp))
-                T(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f))
-                Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(top = 5.dp)) }
-            }
-        }
+        Grid(g.items, cols, 9.dp, 11.dp) { e, m -> EffectTile(e, m) }
+        if (hint) { Spacer(Modifier.height(8.dp)); T("Mẹo: chạm giữ một chế độ để ghim lên đầu trang.", 11, color = Grey) }
         val cur = g.items.firstOrNull { it.id == S.mode.intValue && it.subs.isNotEmpty() }
         if (cur != null) {
             Spacer(Modifier.height(13.dp))

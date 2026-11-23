@@ -308,3 +308,279 @@ Máy chưa có giọng đọc tiếng Việt, nên app chưa trả lời bằng 
 Cài giọng đọc tiếng Việt	Install Vietnamese voice					
 Kiểm tra lại	Check again					
 Nghe thử	Play sample					
+Giảm hiệu ứng	Reduce effects	エフェクトを減らす	효과 줄이기	ลดเอฟเฟกต์	បន្ថយបែបផែន	ຫຼຸດເອັບເຟັກ
+Phong cách	Style	スタイル	스타일	สไตล์	រចនាប័ទ្ម	ສະໄຕລ໌
+Bo góc	Corners	角の丸み	모서리	มุมโค้ง	ជ្រុង	ມຸມ
+Màu chớp	Flash color	点滅カラー	깜빡임 색	สีกะพริบ	ពណ៌ភ្លឹបភ្លែត	ສີກະພິບ
+Màu cầu vồng	Rainbow	レインボー	무지개	สีรุ้ง	ពណ៌ឥន្ទធនូ	ສີຮຸ້ງ
+Màu thở	Breathing color	ブリージングカラー	숨쉬기 색	สีหายใจ	ពណ៌ដកដង្ហើម	ສີຫາຍໃຈ
+Ngược màu khu 1	Opposite of zone 1	ゾーン1の反対色	구역 1 반대색	สีตรงข้ามโซน 1	ពណ៌ផ្ទុយតំបន់ 1	ສີກົງຂ້າມໂຊນ 1
+Thêm hoặc xóa bối cảnh yêu thích	Add or remove favorite scenes	お気に入りシーンの追加・削除	즐겨찾는 장면 추가/삭제	เพิ่มหรือลบซีนโปรด	បន្ថែម ឬលុបឈុតដែលចូលចិត្ត	ເພີ່ມ ຫຼື ລຶບສາກທີ່ມັກ
+Xóa bối cảnh %s	Delete scene %s	シーン %s を削除	장면 %s 삭제	ลบซีน %s	លុបឈុត %s	ລຶບສາກ %s
+Nhạc đang phát	Now playing	再生中の曲	재생 중인 음악	เพลงที่กำลังเล่น	កំពុងចាក់តន្ត្រី	ເພງທີ່ກຳລັງຫຼິ້ນ
+Số lật	Flip clock	フリップ時計	플립 시계	นาฬิกาพลิก	នាឡិកាត្រឡប់	ໂມງພິກ
+Tối giản	Minimal	ミニマル	미니멀	มินิมอล	សាមញ្ញ	ລຽບງ່າຍ
+Vòng tốc độ	Speed ring	スピードリング	속도 링	วงแหวนความเร็ว	រង្វង់ល្បឿន	ວົງຄວາມໄວ
+Đồng hồ 2,5D	2.5D gauge	2.5Dメーター	2.5D 계기판	มาตรวัด 2.5D	នាឡិកាវាស់ 2.5D	ເຂັມວັດ 2.5D
+Đồng hồ kim	Analog clock	アナログ時計	아날로그 시계	นาฬิกาเข็ม	នាឡិកាទ្រនិច	ໂມງເຂັມ
+Chưa phát nhạc	No music playing	再生していません	재생 중인 음악 없음	ยังไม่ได้เล่นเพลง	មិនទាន់ចាក់តន្ត្រី	ຍັງບໍ່ໄດ້ຫຼິ້ນເພງ
+Cầu vồng mượt	Smooth rainbow	なめらかレインボー	부드러운 무지개	สายรุ้งนุ่มนวล	ឥន្ទធនូរលូន	ຮຸ້ງນຸ້ມນວນ
+Thở theo màu chọn	Breathe in chosen color	選んだ色でブリージング	선택한 색으로 숨쉬기	หายใจตามสีที่เลือก	ដកដង្ហើមតាមពណ៌ដែលជ្រើស	ຫາຍໃຈຕາມສີທີ່ເລືອກ
+Lửa	Fire	炎	불꽃	ไฟ	ភ្លើង	ໄຟ
+Cảnh sát	Police	ポリス	경찰	ตำรวจ	ប៉ូលិស	ຕຳຫຼວດ
+Sét	Lightning	稲妻	번개	ฟ้าแลบ	ផ្លេកបន្ទោរ	ຟ້າແມບ
+Hoàng hôn	Sunset	サンセット	노을	พระอาทิตย์ตก	ថ្ងៃលិច	ຕາເວັນຕົກ
+Đại dương	Ocean	オーシャン	바다	มหาสมุทร	មហាសមុទ្រ	ມະຫາສະໝຸດ
+Nến	Candle	キャンドル	촛불	เทียน	ទៀន	ທຽນ
+Cực quang	Aurora	オーロラ	오로라	แสงเหนือ	អូរ៉ូរ៉ា	ແສງເໜືອ
+Giáng sinh	Christmas	クリスマス	크리스마스	คริสต์มาส	បុណ្យណូអែល	ຄຣິສຕ໌ມາສ
+Tết	Lunar New Year	旧正月	설날	ตรุษญวน	ចូលឆ្នាំថ្មី	ປີໃໝ່ຫວຽດ
+Số hộp phụ của xe	Sub boxes in the car	車のサブボックス数	차량의 서브 박스 수	จำนวนกล่องเสริมของรถ	ចំនួនប្រអប់រងរបស់ឡាន	ຈຳນວນກ່ອງເສີມຂອງລົດ
+Hộp vừa ghép được	Boxes just paired	ペアリングしたボックス	방금 페어링된 박스	กล่องที่เพิ่งจับคู่	ប្រអប់ទើបផ្គូផ្គង	ກ່ອງທີ່ຫາກໍຈັບຄູ່
+Chưa ghép	Not paired	未ペアリング	페어링 안 됨	ยังไม่ได้จับคู่	មិនទាន់ផ្គូផ្គង	ຍັງບໍ່ໄດ້ຈັບຄູ່
+Trạng thái	Status	状態	상태	สถานะ	ស្ថានភាព	ສະຖານະ
+Đang quét… còn # giây	Scanning… # s left	スキャン中… 残り#秒	검색 중… #초 남음	กำลังสแกน… เหลือ # วินาที	កំពុងស្កេន… នៅសល់ # វិនាទី	ກຳລັງສະແກນ… ເຫຼືອ # ວິນາທີ
+Bắt đầu ghép nối	Start pairing	ペアリング開始	페어링 시작	เริ่มจับคู่	ចាប់ផ្តើមផ្គូផ្គង	ເລີ່ມຈັບຄູ່
+Xóa hộp phụ	Remove sub boxes	サブボックスを削除	서브 박스 삭제	ลบกล่องเสริม	លុបប្រអប់រង	ລຶບກ່ອງເສີມ
+Số lượng hộp phụ	Number of sub boxes	サブボックスの数	서브 박스 개수	จำนวนกล่องเสริม	ចំនួនប្រអប់រង	ຈຳນວນກ່ອງເສີມ
+Vị trí các hộp phụ	Sub box positions	サブボックスの位置	서브 박스 위치	ตำแหน่งกล่องเสริม	ទីតាំងប្រអប់រង	ຕຳແໜ່ງກ່ອງເສີມ
+Theo hộp	Set in box	ボックス側の設定	박스 설정	ตามกล่อง	តាមប្រអប់	ຕາມກ່ອງ
+Xóa hộp phụ?	Remove sub boxes?	サブボックスを削除しますか？	서브 박스를 삭제할까요?	ลบกล่องเสริมหรือไม่?	លុបប្រអប់រងឬ?	ລຶບກ່ອງເສີມບໍ?
+Xóa	Delete	削除	삭제	ลบ	លុប	ລຶບ
+Thuận	Forward	順方向	정방향	ตามทิศ	ទៅមុខ	ໄປໜ້າ
+Ngược	Reverse	逆方向	역방향	ย้อนทิศ	បញ្ច្រាស	ຍ້ອນກັບ
+Màu chào mừng tùy chỉnh	Custom welcome colors	ウェルカムカラーのカスタム	환영 색상 사용자 지정	สีต้อนรับกำหนดเอง	ពណ៌ស្វាគមន៍ផ្ទាល់ខ្លួន	ສີຕ້ອນຮັບກຳນົດເອງ
+Ánh sáng	Light	ライト	라이트	แสง	ពន្លឺ	ແສງ
+Màu gửi cho hộp	Color sent to box	ボックスへ送る色	박스로 보내는 색	สีที่ส่งไปยังกล่อง	ពណ៌ផ្ញើទៅប្រអប់	ສີທີ່ສົ່ງໄປກ່ອງ
+Bình thường	Normal	通常	일반	ปกติ	ធម្មតា	ປົກກະຕິ
+Đảo màu	Inverted	反転	반전	กลับสี	បញ្ច្រាសពណ៌	ກັບສີ
+Chọn loại xe	Choose car model	車種を選択	차종 선택	เลือกรุ่นรถ	ជ្រើសប្រភេទឡាន	ເລືອກລຸ້ນລົດ
+Thông tin chẩn đoán	Diagnostics	診断情報	진단 정보	ข้อมูลวินิจฉัย	ព័ត៌មានវិនិច្ឆ័យ	ຂໍ້ມູນວິນິດໄສ
+Đặt lại	Reset	リセット	초기화	รีเซ็ต	កំណត់ឡើងវិញ	ຣີເຊັດ
+Khôi phục cài đặt gốc	Factory reset	工場出荷時に戻す	공장 초기화	คืนค่าโรงงาน	កំណត់ដូចរោងចក្រ	ຄືນຄ່າໂຮງງານ
+Xóa hết	Clear all	すべて削除	모두 삭제	ลบทั้งหมด	លុបទាំងអស់	ລຶບທັງໝົດ
+Tiếp tục	Continue	続ける	계속	ดำเนินการต่อ	បន្ត	ສືບຕໍ່
+Cảnh báo xi nhan	Turn signal alert	ウインカー警告	방향지시등 알림	เตือนไฟเลี้ยว	ជូនដំណឹងភ្លើងបត់	ເຕືອນໄຟລ້ຽວ
+Nhắc nhở đèn hazard	Hazard light reminder	ハザードランプ通知	비상등 알림	เตือนไฟฉุกเฉิน	រំលឹកភ្លើងអាសន្ន	ເຕືອນໄຟສຸກເສີນ
+Cảnh báo phanh tay	Handbrake alert	サイドブレーキ警告	주차 브레이크 알림	เตือนเบรกมือ	ជូនដំណឹងហ្វ្រាំងដៃ	ເຕືອນເບຣກມື
+Cảnh báo dây an toàn	Seat belt alert	シートベルト警告	안전벨트 알림	เตือนเข็มขัดนิรภัย	ជូនដំណឹងខ្សែក្រវាត់	ເຕືອນສາຍນິລະໄພ
+Cảnh báo cửa	Door alert	ドア警告	도어 알림	เตือนประตู	ជូនដំណឹងទ្វារ	ເຕືອນປະຕູ
+Cảnh báo radar	Radar alert	レーダー警告	레이더 알림	เตือนเรดาร์	ជូនដំណឹងរ៉ាដា	ເຕືອນເຣດາ
+Cảnh báo điểm mù	Blind spot alert	死角警告	사각지대 알림	เตือนจุดบอด	ជូនដំណឹងចំណុចងងឹត	ເຕືອນຈຸດບອດ
+Cảnh báo quá tốc độ	Overspeed alert	速度超過警告	과속 알림	เตือนความเร็วเกิน	ជូនដំណឹងលើសល្បឿន	ເຕືອນຄວາມໄວເກີນ
+Cảnh báo áp suất lốp	Tire pressure alert	タイヤ空気圧警告	타이어 공기압 알림	เตือนลมยาง	ជូនដំណឹងសម្ពាធកង់	ເຕືອນລົມຢາງ
+Hiệu ứng vòng tua	RPM effect	回転数エフェクト	RPM 효과	เอฟเฟกต์รอบเครื่อง	បែបផែនជុំម៉ាស៊ីន	ເອັບເຟັກຮອບເຄື່ອງ
+Chế độ khí hậu	Climate mode	エアコン連動	공조 모드	โหมดแอร์	របៀបម៉ាស៊ីនត្រជាក់	ໂໝດແອ
+Đèn theo đèn xe	Follow car lights	車のライトに連動	차량 조명 연동	ตามไฟรถ	តាមភ្លើងឡាន	ຕາມໄຟລົດ
+Ẩn đèn gốc của xe	Hide the car's original light	純正ライトを隠す	순정 조명 숨기기	ซ่อนไฟเดิมของรถ	លាក់ភ្លើងដើមរបស់ឡាន	ເຊື່ອງໄຟເດີມຂອງລົດ
+Chức năng gốc xe	Car functions	車両連動機能	차량 연동 기능	ฟังก์ชันจากรถ	មុខងារពីឡាន	ຟັງຊັນຈາກລົດ
+Chào mừng khi mở cửa lái chính	Welcome when driver door opens	運転席ドアでウェルカム	운전석 문 열 때 환영	ต้อนรับเมื่อเปิดประตูคนขับ	ស្វាគមន៍ពេលបើកទ្វារអ្នកបើក	ຕ້ອນຮັບເມື່ອເປີດປະຕູຄົນຂັບ
+Chế độ đèn xi-nhan	Turn signal mode	ウインカーモード	방향지시등 모드	โหมดไฟเลี้ยว	របៀបភ្លើងបត់	ໂໝດໄຟລ້ຽວ
+Ngưỡng	Threshold	しきい値	임계값	เกณฑ์	កម្រិត	ເກນ
+Đọc dữ liệu	Read data	データを読む	데이터 읽기	อ่านข้อมูล	អានទិន្នន័យ	ອ່ານຂໍ້ມູນ
+Chưa có dữ liệu.	No data yet.	データがありません。	데이터가 없습니다.	ยังไม่มีข้อมูล	មិនទាន់មានទិន្នន័យ។	ຍັງບໍ່ມີຂໍ້ມູນ
+Loại xe đang đặt	Current car model	設定中の車種	설정된 차종	รุ่นรถที่ตั้งไว้	ប្រភេទឡានដែលបានកំណត់	ລຸ້ນລົດທີ່ຕັ້ງໄວ້
+# hãng, # dòng xe	# brands, # models	#メーカー、#車種	브랜드 #개, 모델 #개	# ยี่ห้อ, # รุ่น	# ម៉ាក, # ម៉ូដែល	# ຍີ່ຫໍ້, # ລຸ້ນ
+Danh sách	List	一覧	목록	รายการ	បញ្ជី	ລາຍການ
+Đang đọc từ hộp…	Reading from box…	ボックスから読み込み中…	박스에서 읽는 중…	กำลังอ่านจากกล่อง…	កំពុងអានពីប្រអប់…	ກຳລັງອ່ານຈາກກ່ອງ…
+Đọc lại	Read again	再読み込み	다시 읽기	อ่านอีกครั้ง	អានម្តងទៀត	ອ່ານອີກຄັ້ງ
+Đặt loại xe?	Set this car model?	この車種に設定しますか？	이 차종으로 설정할까요?	ตั้งรุ่นรถนี้หรือไม่?	កំណត់ប្រភេទឡាននេះឬ?	ຕັ້ງລຸ້ນລົດນີ້ບໍ?
+Đặt	Set	設定	설정	ตั้ง	កំណត់	ຕັ້ງ
+Giọng nam tiêu chuẩn	Standard male voice	標準の男性音声	표준 남성 음성	เสียงผู้ชายมาตรฐาน	សំឡេងប្រុសស្តង់ដារ	ສຽງຜູ້ຊາຍມາດຕະຖານ
+Giọng nữ tiêu chuẩn	Standard female voice	標準の女性音声	표준 여성 음성	เสียงผู้หญิงมาตรฐาน	សំឡេងស្រីស្តង់ដារ	ສຽງຜູ້ຍິງມາດຕະຖານ
+Phương thức thông báo	Announcement style	通知方法	안내 방식	รูปแบบการแจ้ง	របៀបប្រកាស	ຮູບແບບການແຈ້ງ
+Im lặng	Silent	サイレント	무음	เงียบ	ស្ងាត់	ງຽບ
+Thông báo chi tiết	Detailed announcements	詳細な通知	상세 안내	แจ้งโดยละเอียด	ប្រកាសលម្អិត	ແຈ້ງລະອຽດ
+Trước P	Front R	前 右	앞 우	หน้า ขวา	មុខ ស្តាំ	ໜ້າ ຂວາ
+Trước T	Front L	前 左	앞 좌	หน้า ซ้าย	មុខ ឆ្វេង	ໜ້າ ຊ້າຍ
+Sau P	Rear R	後 右	뒤 우	หลัง ขวา	ក្រោយ ស្តាំ	ຫຼັງ ຂວາ
+Sau T	Rear L	後 左	뒤 좌	หลัง ซ้าย	ក្រោយ ឆ្វេង	ຫຼັງ ຊ້າຍ
+Đồng hồ P	Dash R	ダッシュ 右	대시 우	คอนโซล ขวา	តាបឡូ ស្តាំ	ຄອນໂຊນ ຂວາ
+Đồng hồ T	Dash L	ダッシュ 左	대시 좌	คอนโซล ซ้าย	តាបឡូ ឆ្វេង	ຄອນໂຊນ ຊ້າຍ
+Chưa chọn hộp đèn	No LED controller selected	LEDコントローラー未選択	LED 컨트롤러 미선택	ยังไม่ได้เลือกกล่องควบคุมไฟ	មិនទាន់ជ្រើសប្រអប់ភ្លើង	ຍັງບໍ່ໄດ້ເລືອກກ່ອງຄວບຄຸມໄຟ
+Mất kết nối với hộp đèn	Disconnected from LED controller	LEDコントローラーとの接続が切れました	LED 컨트롤러 연결 끊김	ขาดการเชื่อมต่อกับกล่องควบคุมไฟ	ដាច់ការភ្ជាប់ជាមួយប្រអប់ភ្លើង	ຂາດການເຊື່ອມຕໍ່ກັບກ່ອງຄວບຄຸມໄຟ
+Vào Cài đặt để chọn hộp đèn.	Go to Settings to choose a controller.	設定でコントローラーを選んでください。	설정에서 컨트롤러를 선택하세요.	ไปที่ตั้งค่าเพื่อเลือกกล่องควบคุมไฟ	ចូលការកំណត់ដើម្បីជ្រើសប្រអប់ភ្លើង។	ໄປທີ່ຕັ້ງຄ່າເພື່ອເລືອກກ່ອງຄວບຄຸມໄຟ
+Đang tự thử nối lại…	Reconnecting…	再接続中…	다시 연결하는 중…	กำลังเชื่อมต่อใหม่…	កំពុងភ្ជាប់ឡើងវិញ…	ກຳລັງເຊື່ອມຕໍ່ໃໝ່…
+Đã ghim lên đầu trang: %s	Pinned to the top: %s	上部に固定しました: %s	상단에 고정됨: %s	ปักหมุดไว้ด้านบน: %s	បានខ្ទាស់នៅខាងលើ៖ %s	ປັກໝຸດໄວ້ດ້ານເທິງ: %s
+Đã bỏ ghim: %s	Unpinned: %s	固定を解除しました: %s	고정 해제됨: %s	เลิกปักหมุด: %s	បានដកខ្ទាស់៖ %s	ຍົກເລີກປັກໝຸດ: %s
+Đã ghim đủ # chế độ, bỏ bớt để ghim thêm.	# modes are pinned already. Unpin one to add more.	すでに#個固定されています。追加するには解除してください。	이미 #개 고정됨. 추가하려면 하나를 해제하세요.	ปักหมุดครบ # โหมดแล้ว เลิกปักหมุดบางอันเพื่อเพิ่ม	បានខ្ទាស់ # របៀបហើយ។ ដកខ្លះដើម្បីបន្ថែម។	ປັກໝຸດຄົບ # ໂໝດແລ້ວ ຍົກເລີກບາງອັນເພື່ອເພີ່ມ
+ĐÃ GHIM	PINNED	固定済み	고정됨	ปักหมุดแล้ว	បានខ្ទាស់	ປັກໝຸດແລ້ວ
+Mẹo: chạm giữ một chế độ để ghim lên đầu trang.	Tip: press and hold a mode to pin it to the top.	ヒント: モードを長押しすると上部に固定できます。	팁: 모드를 길게 눌러 상단에 고정하세요.	เคล็ดลับ: กดค้างที่โหมดเพื่อปักหมุดไว้ด้านบน	គន្លឹះ៖ ចុចឱ្យជាប់លើរបៀបដើម្បីខ្ទាស់នៅខាងលើ។	ເຄັດລັບ: ກົດຄ້າງທີ່ໂໝດເພື່ອປັກໝຸດໄວ້ດ້ານເທິງ
+Gán hộp này vào cửa	Assign this box to the door	このボックスをドアに割り当て	이 박스를 문에 지정	กำหนดกล่องนี้ให้ประตู	កំណត់ប្រអប់នេះទៅទ្វារ	ກຳນົດກ່ອງນີ້ໃຫ້ປະຕູ
+Báo đèn khi sắp rẽ	Light alert before turns	曲がる前にライトで通知	회전 전 조명 알림	ไฟเตือนก่อนเลี้ยว	ភ្លើងជូនដំណឹងមុនបត់	ໄຟເຕືອນກ່ອນລ້ຽວ
+Đảo chiều chạy	Reverse flow direction	流れる向きを反転	흐름 방향 반전	กลับทิศการวิ่ง	បញ្ច្រាសទិសរត់	ກັບທິດການແລ່ນ
+Thời gian đèn chạy	Light run time	点灯時間	조명 동작 시간	ระยะเวลาไฟวิ่ง	រយៈពេលភ្លើងរត់	ໄລຍະເວລາໄຟແລ່ນ
+# giây	# s	#秒	#초	# วินาที	# វិនាទី	# ວິນາທີ
+Tới khi rẽ xong	Until the turn is done	曲がり終わるまで	회전이 끝날 때까지	จนกว่าจะเลี้ยวเสร็จ	រហូតដល់បត់រួច	ຈົນກວ່າຈະລ້ຽວແລ້ວ
+Nháy đỏ khi quá tốc độ	Flash red when speeding	速度超過で赤く点滅	과속 시 빨간색 점멸	กะพริบแดงเมื่อเร็วเกิน	ភ្លឹបក្រហមពេលលើសល្បឿន	ກະພິບແດງເມື່ອໄວເກີນ
+Cả xe	Whole car	車全体	차량 전체	ทั้งคัน	ឡានទាំងមូល	ທັງຄັນ
+# km/h (từ app dẫn đường)	# km/h (from navigation app)	# km/h（ナビアプリより）	# km/h (내비 앱 기준)	# กม./ชม. (จากแอปนำทาง)	# គម/ម (ពីកម្មវិធីនាំផ្លូវ)	# ກມ/ຊມ (ຈາກແອັບນຳທາງ)
+Tốc độ xe	Vehicle speed	車速	차량 속도	ความเร็วรถ	ល្បឿនឡាន	ຄວາມໄວລົດ
+Chưa có	None yet	まだありません	아직 없음	ยังไม่มี	មិនទាន់មាន	ຍັງບໍ່ມີ
+Giới hạn đọc được	Detected limit	読み取った制限速度	인식된 제한속도	ขีดจำกัดที่อ่านได้	ដែនកំណត់ដែលអានបាន	ຂີດຈຳກັດທີ່ອ່ານໄດ້
+Đọc app dẫn đường	Read navigation app	ナビアプリの読み取り	내비 앱 읽기	อ่านแอปนำทาง	អានកម្មវិធីនាំផ្លូវ	ອ່ານແອັບນຳທາງ
+Chưa bật	Off	オフ	꺼짐	ยังไม่เปิด	មិនទាន់បើក	ຍັງບໍ່ເປີດ
+Đã bật	On	オン	켜짐	เปิดแล้ว	បានបើក	ເປີດແລ້ວ
+Quyền Hỗ trợ tiếp cận	Accessibility permission	ユーザー補助の権限	접근성 권한	สิทธิ์การช่วยเหลือพิเศษ	សិទ្ធិភាពងាយស្រួល	ສິດການຊ່ວຍເຂົ້າເຖິງ
+Cấp quyền thông báo	Grant notification access	通知へのアクセスを許可	알림 접근 허용	ให้สิทธิ์การแจ้งเตือน	ផ្តល់សិទ្ធិការជូនដំណឹង	ໃຫ້ສິດການແຈ້ງເຕືອນ
+Bật Hỗ trợ tiếp cận	Turn on Accessibility	ユーザー補助をオンにする	접근성 켜기	เปิดการช่วยเหลือพิเศษ	បើកភាពងាយស្រួល	ເປີດການຊ່ວຍເຂົ້າເຖິງ
+Có	Yes	はい	예	ใช่	បាទ/ចាស	ແມ່ນ
+Không	No	いいえ	아니요	ไม่	ទេ	ບໍ່
+Bắt đầu đọc	Start reading	読み取り開始	읽기 시작	เริ่มอ่าน	ចាប់ផ្តើមអាន	ເລີ່ມອ່ານ
+Dừng đọc	Stop reading	読み取り停止	읽기 중지	หยุดอ่าน	ឈប់អាន	ຢຸດອ່ານ
+Phiên bản hộp	Box version	ボックスのバージョン	박스 버전	เวอร์ชันกล่อง	កំណែប្រអប់	ເວີຊັນກ່ອງ
+Phiên bản CAN	CAN version	CANバージョン	CAN 버전	เวอร์ชัน CAN	កំណែ CAN	ເວີຊັນ CAN
+Ứng dụng	App	アプリ	앱	แอป	កម្មវិធី	ແອັບ
+Lắp đặt	Installation	取り付け	설치	การติดตั้ง	ការដំឡើង	ການຕິດຕັ້ງ
+Có bản mới #.#.#	Version #.#.# available	新バージョン #.#.# があります	새 버전 #.#.# 있음	มีเวอร์ชันใหม่ #.#.#	មានកំណែថ្មី #.#.#	ມີເວີຊັນໃໝ່ #.#.#
+Kiểm tra cập nhật	Check for updates	アップデートを確認	업데이트 확인	ตรวจสอบการอัปเดต	ពិនិត្យបច្ចុប្បន្នភាព	ກວດສອບການອັບເດດ
+Đang dùng #.#.#	Using #.#.#	使用中: #.#.#	사용 중: #.#.#	กำลังใช้ #.#.#	កំពុងប្រើ #.#.#	ກຳລັງໃຊ້ #.#.#
+Đang kiểm tra…	Checking…	確認中…	확인 중…	กำลังตรวจสอบ…	កំពុងពិនិត្យ…	ກຳລັງກວດສອບ…
+Yêu thích #	Favorite #	お気に入り #	즐겨찾기 #	รายการโปรด #	ចូលចិត្ត #	ທີ່ມັກ #
+CHẾ ĐỘ CỦA TÔI	MY MODES	マイモード	내 모드	โหมดของฉัน	របៀបរបស់ខ្ញុំ	ໂໝດຂອງຂ້ອຍ
+Chưa có chế độ riêng nào	No custom modes yet	カスタムモードはまだありません	아직 사용자 모드가 없습니다	ยังไม่มีโหมดของคุณ	មិនទាន់មានរបៀបផ្ទាល់ខ្លួន	ຍັງບໍ່ມີໂໝດຂອງທ່ານ
+Đã đủ # chế độ, xóa bớt để thêm.	# modes reached. Delete one to add more.	#個に達しました。追加するには削除してください。	#개에 도달했습니다. 추가하려면 삭제하세요.	ครบ # โหมดแล้ว ลบบางอันเพื่อเพิ่ม	គ្រប់ # របៀបហើយ។ លុបខ្លះដើម្បីបន្ថែម។	ຄົບ # ໂໝດແລ້ວ ລຶບບາງອັນເພື່ອເພີ່ມ
+Tạo mới	New	新規作成	새로 만들기	สร้างใหม่	បង្កើតថ្មី	ສ້າງໃໝ່
+Sửa %s	Edit %s	%s を編集	%s 편집	แก้ไข %s	កែ %s	ແກ້ໄຂ %s
+Sửa chế độ	Edit mode	モードを編集	모드 편집	แก้ไขโหมด	កែរបៀប	ແກ້ໄຂໂໝດ
+Tạo chế độ mới	Create new mode	新しいモードを作成	새 모드 만들기	สร้างโหมดใหม่	បង្កើតរបៀបថ្មី	ສ້າງໂໝດໃໝ່
+Thêm màu	Add color	色を追加	색 추가	เพิ่มสี	បន្ថែមពណ៌	ເພີ່ມສີ
+Bỏ màu đang chọn	Remove selected color	選択した色を削除	선택한 색 제거	ลบสีที่เลือก	ដកពណ៌ដែលជ្រើស	ລຶບສີທີ່ເລືອກ
+Màu cho ô #	Color for slot #	スロット # の色	# 번 칸 색	สีสำหรับช่อง #	ពណ៌សម្រាប់ប្រអប់ #	ສີສຳລັບຊ່ອງ #
+Tắt	Off	オフ	끔	ปิด	បិទ	ປິດ
+Kiểu chuyển màu	Transition	切り替え方	전환 방식	รูปแบบเปลี่ยนสี	របៀបប្តូរពណ៌	ຮູບແບບປ່ຽນສີ
+Mượt	Smooth	なめらか	부드럽게	นุ่มนวล	រលូន	ນຸ້ມນວນ
+Nhảy	Jump	ジャンプ	점프	กระโดด	លោត	ໂດດ
+Hai khu vực	Two zones	2つのゾーン	두 구역	สองโซน	តំបន់ពីរ	ສອງໂຊນ
+Cùng màu	Same color	同じ色	같은 색	สีเดียวกัน	ពណ៌ដូចគ្នា	ສີດຽວກັນ
+Lưu và chạy	Save and run	保存して実行	저장 후 실행	บันทึกและเล่น	រក្សាទុក និងដំណើរការ	ບັນທຶກ ແລະ ຫຼິ້ນ
+Kem ấm	Warm cream	ウォームクリーム	웜 크림	ครีมอุ่น	ក្រែមកក់ក្តៅ	ຄຣີມອຸ່ນ
+Lá non	Fresh leaf	若葉	새잎	ใบไม้อ่อน	ស្លឹកខ្ចី	ໃບອ່ອນ
+Mặc định	Default	デフォルト	기본	ค่าเริ่มต้น	លំនាំដើម	ຄ່າເລີ່ມຕົ້ນ
+Nâu ấm	Warm brown	ウォームブラウン	웜 브라운	น้ำตาลอุ่น	ត្នោតកក់ក្តៅ	ນ້ຳຕານອຸ່ນ
+Rừng đêm	Night forest	夜の森	밤의 숲	ป่ายามค่ำ	ព្រៃរាត្រី	ປ່າຍາມຄ່ຳ
+Tinh khôi	Pure white	ピュアホワイト	퓨어 화이트	ขาวบริสุทธิ์	សបរិសុទ្ធ	ຂາວບໍລິສຸດ
+Xanh băng	Ice blue	アイスブルー	아이스 블루	ฟ้าน้ำแข็ง	ខៀវទឹកកក	ຟ້ານ້ຳກ້ອນ
+Xanh đêm	Night blue	ナイトブルー	나이트 블루	น้ำเงินยามค่ำ	ខៀវរាត្រី	ຟ້າຍາມຄ່ຳ
+Đen tuyền	Pure black	ピュアブラック	퓨어 블랙	ดำสนิท	ខ្មៅសុទ្ធ	ດຳສະນິດ
+Chàm	Indigo	インディゴ	인디고	คราม	ពណ៌ត្រយ៉ង	ສີຄາມ
+Hổ phách	Amber	アンバー	앰버	อำพัน	ពណ៌អំបែរ	ສີອຳພັນ
+Tím hồng	Magenta	マゼンタ	마젠타	ม่วงชมพู	ស្វាយផ្កាឈូក	ມ່ວງບົວ
+Xanh lơ	Cyan	シアン	시안	ฟ้าอมเขียว	ខៀវខ្ចី	ຟ້າອົມຂຽວ
+Xám thép	Steel gray	スチールグレー	스틸 그레이	เทาเหล็ก	ប្រផេះដែក	ເທົາເຫຼັກ
+Tròn	Round	丸	둥글게	กลม	មូល	ມົນ
+Vuông	Square	四角	각지게	เหลี่ยม	ជ្រុង	ລ່ຽມ
+Bạn đang dùng bản mới nhất.	You're on the latest version.	最新バージョンです。	최신 버전입니다.	คุณใช้เวอร์ชันล่าสุดแล้ว	អ្នកកំពុងប្រើកំណែចុងក្រោយ។	ທ່ານໃຊ້ເວີຊັນຫຼ້າສຸດແລ້ວ
+Không kiểm tra được (cần có mạng).	Couldn't check (internet needed).	確認できません（ネット接続が必要）。	확인할 수 없습니다(인터넷 필요).	ตรวจสอบไม่ได้ (ต้องมีอินเทอร์เน็ต)	មិនអាចពិនិត្យបាន (ត្រូវការអ៊ីនធឺណិត)។	ກວດສອບບໍ່ໄດ້ (ຕ້ອງມີອິນເຕີເນັດ)
+Tải không được (%s). Kiểm tra mạng rồi thử lại.	Download failed (%s). Check the connection and try again.	ダウンロードできません（%s）。接続を確認して再試行してください。	다운로드 실패(%s). 연결을 확인하고 다시 시도하세요.	ดาวน์โหลดไม่ได้ (%s) ตรวจสอบเครือข่ายแล้วลองใหม่	ទាញយកមិនបាន (%s)។ ពិនិត្យបណ្តាញ រួចសាកម្តងទៀត។	ດາວໂຫຼດບໍ່ໄດ້ (%s) ກວດເຄືອຂ່າຍແລ້ວລອງໃໝ່
+Máy này không mở được trình cài đặt.	This device can't open the installer.	この端末ではインストーラーを開けません。	이 기기에서 설치 프로그램을 열 수 없습니다.	เครื่องนี้เปิดตัวติดตั้งไม่ได้	ឧបករណ៍នេះបើកកម្មវិធីដំឡើងមិនបាន។	ເຄື່ອງນີ້ເປີດຕົວຕິດຕັ້ງບໍ່ໄດ້
+Đã chép link tải.	Download link copied.	ダウンロードリンクをコピーしました。	다운로드 링크를 복사했습니다.	คัดลอกลิงก์ดาวน์โหลดแล้ว	បានចម្លងតំណទាញយក។	ສຳເນົາລິ້ງດາວໂຫຼດແລ້ວ
+Có bản mới #.#.#. Chạm để cập nhật	Version #.#.# available. Tap to update	新バージョン #.#.#。タップして更新	새 버전 #.#.#. 탭하여 업데이트	มีเวอร์ชันใหม่ #.#.# แตะเพื่ออัปเดต	មានកំណែថ្មី #.#.#។ ចុចដើម្បីអាប់ដេត	ມີເວີຊັນໃໝ່ #.#.# ແຕະເພື່ອອັບເດດ
+Đang tải bản #.#.#… #%	Downloading #.#.#… #%	#.#.# をダウンロード中… #%	#.#.# 다운로드 중… #%	กำลังดาวน์โหลด #.#.#… #%	កំពុងទាញយក #.#.#… #%	ກຳລັງດາວໂຫຼດ #.#.#… #%
+Đã tải xong bản #.#.#. Chạm để cài đặt	#.#.# downloaded. Tap to install	#.#.# のダウンロード完了。タップしてインストール	#.#.# 다운로드 완료. 탭하여 설치	ดาวน์โหลด #.#.# เสร็จแล้ว แตะเพื่อติดตั้ง	បានទាញយក #.#.# រួច។ ចុចដើម្បីដំឡើង	ດາວໂຫຼດ #.#.# ແລ້ວ ແຕະເພື່ອຕິດຕັ້ງ
+Đang tải… #%	Downloading… #%	ダウンロード中… #%	다운로드 중… #%	กำลังดาวน์โหลด… #%	កំពុងទាញយក… #%	ກຳລັງດາວໂຫຼດ… #%
+Đã tải xong. Bấm Cài đặt để tiếp tục.	Download complete. Tap Install to continue.	ダウンロード完了。「インストール」を押してください。	다운로드 완료. 설치를 눌러 계속하세요.	ดาวน์โหลดเสร็จแล้ว กดติดตั้งเพื่อดำเนินการต่อ	ទាញយករួច។ ចុច ដំឡើង ដើម្បីបន្ត។	ດາວໂຫຼດແລ້ວ ກົດຕິດຕັ້ງເພື່ອສືບຕໍ່
+Hoặc tải bằng trình duyệt rồi tự cài:	Or download with a browser and install manually:	またはブラウザでダウンロードして手動でインストール:	또는 브라우저로 내려받아 직접 설치:	หรือดาวน์โหลดด้วยเบราว์เซอร์แล้วติดตั้งเอง:	ឬទាញយកតាមកម្មវិធីរុករក រួចដំឡើងដោយខ្លួនឯង៖	ຫຼື ດາວໂຫຼດດ້ວຍບຣາວເຊີແລ້ວຕິດຕັ້ງເອງ:
+Chép link	Copy link	リンクをコピー	링크 복사	คัดลอกลิงก์	ចម្លងតំណ	ສຳເນົາລິ້ງ
+Mở trình duyệt	Open browser	ブラウザを開く	브라우저 열기	เปิดเบราว์เซอร์	បើកកម្មវិធីរុករក	ເປີດບຣາວເຊີ
+Quét mã này bằng điện thoại để tải file cài đặt:	Scan this code with your phone to download the installer:	スマホでこのコードを読み取り、インストールファイルをダウンロード:	휴대폰으로 이 코드를 스캔해 설치 파일을 받으세요:	สแกนโค้ดนี้ด้วยโทรศัพท์เพื่อดาวน์โหลดไฟล์ติดตั้ง:	ស្កេនកូដនេះដោយទូរស័ព្ទ ដើម្បីទាញយកឯកសារដំឡើង៖	ສະແກນໂຄ້ດນີ້ດ້ວຍໂທລະສັບເພື່ອດາວໂຫຼດໄຟລ໌ຕິດຕັ້ງ:
+Hiện mã QR để tải bằng điện thoại	Show QR code to download on a phone	スマホ用のQRコードを表示	휴대폰용 QR 코드 보기	แสดง QR เพื่อดาวน์โหลดด้วยโทรศัพท์	បង្ហាញកូដ QR ដើម្បីទាញយកតាមទូរស័ព្ទ	ສະແດງ QR ເພື່ອດາວໂຫຼດດ້ວຍໂທລະສັບ
+Bỏ qua bản này	Skip this version	このバージョンをスキップ	이 버전 건너뛰기	ข้ามเวอร์ชันนี้	រំលងកំណែនេះ	ຂ້າມເວີຊັນນີ້
+Đang tải…	Downloading…	ダウンロード中…	다운로드 중…	กำลังดาวน์โหลด…	កំពុងទាញយក…	ກຳລັງດາວໂຫຼດ…
+Cập nhật	Update	アップデート	업데이트	อัปเดต	អាប់ដេត	ອັບເດດ
+Để sau	Later	あとで	나중에	ไว้ทีหลัง	ពេលក្រោយ	ໄວ້ພາຍຫຼັງ
+Nút nổi SK Light	SK Light floating button	SK Light フローティングボタン	SK Light 플로팅 버튼	ปุ่มลอย SK Light	ប៊ូតុងអណ្តែត SK Light	ປຸ່ມລອຍ SK Light
+Bật nếu máy chạy chậm: bỏ khối nổi, bóng đổ và chuyển động	Turn on if the device is slow: removes depth, shadows and motion
+Chưa có chỉ đường. Mở app bản đồ và bắt đầu dẫn đường, chỉ dẫn sẽ hiện lớn ở đây.	No directions yet. Open a map app and start navigation; directions will show large here.
+Bật nguồn hộp phụ cần ghép, bấm Bắt đầu rồi đợi tối đa 60 giây.	Power on the sub box to pair, tap Start and wait up to 60 seconds.
+Vị trí cửa đã học được lưu trong hộp điều khiển. Cài lại app hoặc đổi điện thoại thì hộp vẫn chạy đúng như đã học, app chỉ hiện "Theo hộp" vì không đọc lại được. Chỉ gán lại (tab Chào mừng, chạm hộp phụ trên sơ đồ xe) khi muốn đổi.	Learned door positions are stored in the controller. After reinstalling the app or changing phones the box still works as learned; the app shows "Set in box" because it cannot read them back. Reassign (Welcome tab, tap a sub box on the car diagram) only when you want to change them.
+Tất cả hộp phụ đã ghép sẽ bị xóa khỏi hộp chính, phải ghép lại từ đầu.	All paired sub boxes will be removed from the main box and must be paired again.
+Chọn Thuận hoặc Ngược cho từng khu vực.	Choose Forward or Reverse for each zone.
+Màu chiều ngược	Reverse-direction color
+Màu chiều thuận	Forward-direction color
+Phiên bản hộp ảo ảnh	Phantom box version
+Chỉ đổi khi biết hộp thuộc bản nào: chọn sai thì một số hiệu ứng chạy không đúng.	Change only if you know the box version: a wrong choice makes some effects run incorrectly.
+Để Bình thường. Chỉ đổi sang Đảo màu nếu chọn đỏ mà đèn ra xanh băng.	Keep Normal. Switch to Inverted only if choosing red gives an ice-blue light.
+Chọn đúng xe để hộp nhận tín hiệu từ xe	Choose the right car so the box can read its signals
+Đọc thông tin chẩn đoán từ hộp	Read diagnostic information from the box
+Đưa hộp về cài đặt ban đầu của nhà sản xuất	Restore the box to the manufacturer's settings
+Hộp báo đã khôi phục xong.	The box reports the reset is complete.
+Đã gửi lệnh khôi phục, đang chờ hộp trả lời…	Reset command sent, waiting for the box…
+Chụp trạng thái hộp (kiểm tra)	Box state snapshot (diagnostic)
+Chụp lần #	Snapshot #
+Đang chụp…	Capturing…
+Chưa chụp lần nào.	No snapshots yet.
+Chưa có trong app này	Not in this app yet
+Nâng cấp phần mềm hộp cần tệp phần mềm của nhà sản xuất và dễ làm hỏng hộp nếu nạp lỗi, nên chưa làm. Cần thì dùng app gốc của hãng.	Firmware upgrades need the manufacturer's firmware file and can damage the box if flashing fails, so this is not available yet. Use the manufacturer's app if needed.
+Khôi phục cài đặt gốc?	Factory reset?
+Hộp sẽ xóa hết cài đặt: hộp phụ đã ghép, vị trí cửa, số LED, loại xe, chào mừng. Phải cài lại từ đầu.	The box will erase all settings: paired sub boxes, door positions, LED counts, car model, welcome. Everything must be set up again.
+Chắc chắn khôi phục?	Really reset?
+Không hoàn tác được. Giữ nguyên nguồn điện của hộp cho tới khi xong.	This cannot be undone. Keep the box powered until it finishes.
+Nháy đèn theo xi nhan	Flash with the turn signal
+Nháy theo đèn khẩn cấp	Flash with the hazard lights
+Báo khi chưa nhả phanh tay	Alert when the handbrake is on
+Báo khi chưa cài dây	Alert when the seat belt is unfastened
+Báo khi cửa chưa đóng	Alert when a door is open
+Báo khi gần vật cản	Alert near obstacles
+Báo khi có xe trong điểm mù	Alert when a vehicle is in the blind spot
+Báo khi vượt ngưỡng tốc độ bên dưới	Alert above the speed threshold below
+Báo khi lốp thiếu hơi	Alert on low tire pressure
+Đèn chạy theo vòng tua máy	Lights follow engine RPM
+Đèn đổi màu theo nhiệt độ điều hòa	Color follows the A/C temperature
+Đèn hộp sáng theo đèn pha/đèn vị trí	Lights follow the headlights / position lights
+Ẩn đèn gốc khi hộp đang chạy	Hide the original light while the box is running
+Hiệu ứng chào mừng chạy khi mở cửa lái	Welcome effect plays when the driver door opens
+Hộp tự báo bằng đèn khi nhận tín hiệu từ xe. Chưa đọc được xe hỗ trợ gì nên đang hiện tất cả; mục xe không hỗ trợ thì bật cũng không có tác dụng.	The box alerts with light when it receives signals from the car. Supported functions could not be read, so all are shown; unsupported ones have no effect when turned on.
+Hộp báo xe này (theo loại xe đang đặt) không hỗ trợ chức năng gốc nào.	The box reports this car (per the selected model) supports no car functions.
+Chỉ hiện các chức năng mà hộp báo xe này hỗ trợ (theo loại xe đang đặt).	Only functions the box reports as supported for this car (per the selected model) are shown.
+Kiểu cảnh báo cửa	Door alert style
+Kiểu cảnh báo radar	Radar alert style
+Kiểu cảnh báo quá tốc độ	Overspeed alert style
+Kiểu đèn theo đèn xe	Follow-car-lights style
+Kiểu hiển thị	Display style
+Ngưỡng quá tốc độ của hộp	Box overspeed threshold
+Chỉ đọc. Thông tin do hộp gửi về, sao chép gửi cho kỹ thuật khi cần.	Read only. Information sent by the box; copy it for a technician when needed.
+Hộp chưa gửi danh sách	The box hasn't sent the list
+Danh sách này nằm trong hộp đang kết nối: mỗi loại hộp hỗ trợ một nhóm xe riêng. Hộp gửi tên tiếng Trung, app đổi sang tên quốc tế; tên nào còn chữ Trung thì bấm Sao chép gửi SK để bổ sung.	This list lives in the connected box: each box type supports its own set of cars. The box sends Chinese names and the app converts them to international names; if a name still shows Chinese, tap Copy and send it to SK.
+Bạn đồng hành giọng nói	Voice companion
+Chưa đọc được cài đặt giọng nói từ hộp.	Couldn't read voice settings from the box.
+Thông báo chi tiết: thiết bị sẽ thông báo phản hồi và gợi ý trạng thái.	Detailed announcements: the device speaks responses and status hints.
+Im lặng: thiết bị làm theo lệnh nhưng không nói lại.	Silent: the device follows commands without speaking back.
+Kiểu thêm do app điều khiển: được nhớ khi đổi chế độ, đổi màu; chạy khi app còn mở và đang kết nối.	Extra styles driven by the app: remembered when you change mode or color; they run while the app is open and connected.
+Chạm một hộp phụ: đèn ở cửa gắn hộp đó sẽ nhấp nháy. Thấy cửa nào nháy thì chạm hình xe đang mở cửa đó. Giữ lâu một hộp để bỏ gán.	Tap a sub box: the lights on its door will blink. Then tap the car picture with that door open. Press and hold a box to unassign it.
+Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm hình xe hoặc ‹ › để đổi đoạn.	LED count: tap − / + to adjust one at a time, hold to go fast, tap the number to type. Tap a car picture or ‹ › to change segment.
+Quá tốc độ: đang nháy đỏ	Speeding: flashing red
+Sắp rẽ phải: đèn vàng đang chạy theo hướng rẽ	Right turn ahead: amber light running toward the turn
+Sắp rẽ trái: đèn vàng đang chạy theo hướng rẽ	Left turn ahead: amber light running toward the turn
+Đèn vàng chạy theo hướng rẽ khi sắp tới chỗ rẽ	Amber light runs toward the turn as it approaches
+Bật nếu khi rẽ trái mà đèn lại chạy sang phải	Turn on if the light runs right when turning left
+Khi sắp rẽ, đèn vàng chạy theo hướng rẽ (hiệu ứng Trôi đa sắc kiểu 3 của hộp, tốc độ nhanh nhất). Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.	Before a turn, an amber light runs toward the turn (the box's Multicolor drift style 3 at top speed). During the alert the app temporarily changes the box's flow direction, then restores it.
+Hết thời gian thì đèn trở về như cũ dù chưa qua chỗ rẽ; tới chỗ rẽ kế tiếp sẽ báo lại.	When time is up the lights return to normal even before the turn; the next turn triggers a new alert.
+Nháy đỏ liên tục khi chạy quá giới hạn trên biển báo	Flashes red while above the posted limit
+Khu nháy đỏ khi quá tốc độ (các khu còn lại giữ nguyên màu):	Zone that flashes red when speeding (other zones keep their color):
+Ảnh biển app đang đọc:	Sign image being read:
+Giới hạn tốc độ hiện có khi dùng app dẫn đường không có thông báo (như Gofa) và đã bật "Tự đọc" ở thẻ Đọc app dẫn đường bên dưới.	The speed limit is available when using a navigation app without notifications (such as Gofa) with "Auto-read" turned on in the Read navigation app card below.
+Cho app dẫn đường không có thông báo. Chỉ đọc màn hình của app bản đồ, cần quyền Hỗ trợ tiếp cận.	For navigation apps without notifications. Reads only the map app's screen; needs Accessibility permission.
+Tự đọc khi dùng Gofa và app bản đồ	Auto-read with Gofa and map apps
+Kiểm tra (dành cho kỹ thuật)	Diagnostics (for technicians)
+Sao chép thông báo để gửi	Copy notifications to send
+Đọc chữ trên màn hình	Read on-screen text
+Bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. Chữ chỉ đọc trên máy, không gửi đi đâu, tự tắt sau 5 phút.	Tap Start, open the navigation app for a few seconds, then come back. Text is read on the device only, sent nowhere, and reading stops after 5 minutes.
+Đang đọc thử	Test reading
+Đọc được	Read OK
+App đọc gần nhất	Last app read
+Chưa đọc được chữ nào.	No text read yet.
+Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…	Car-linked alerts: turn signals, doors, seat belt, overspeed, driver-door welcome…
+Giọng nói của hộp, cách thông báo và các câu lệnh	Box voice, announcement style and commands
+Hướng ánh sáng chạy của từng khu vực	Light flow direction for each zone
+Ghép nối, số lượng và vị trí hộp phụ	Pairing, count and positions of sub boxes
+Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc	Car model, box version, diagnostics, factory reset
+Tự ghép 2 đến 5 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.	Combine 2 to 5 colors into your own mode. Tap to run, tap the pencil to edit.
+Bấm ô có dấu cộng, chọn vài màu ưa thích là có ngay một hiệu ứng mang tên riêng.	Tap the plus tile and pick a few favorite colors to get an effect with its own name.
+Tên chế độ, ví dụ: Hoàng hôn tím	Mode name, e.g. Purple sunset
+Các màu theo thứ tự (chạm một ô để đổi màu ô đó)	Colors in order (tap a slot to change its color)
+Lấy màu đang chọn ở bánh xe màu	Use the color selected on the color wheel
+Nhanh hay chậm chỉnh bằng thanh Tốc độ nháy & chạy ở thẻ Hiệu ứng.	Adjust speed with the Flash & run speed slider in the Effects card.
+Hãy bật "Cho phép từ nguồn này" cho SK Light, rồi quay lại bấm Cài đặt.	Turn on "Allow from this source" for SK Light, then come back and tap Install.
+Đang dùng #.#.#. Bản mới nặng khoảng (# MB), nên dùng wifi.	Using #.#.#. The new version is about # MB; Wi-Fi recommended.
+Cần quyền micro để ra lệnh bằng giọng nói.	Microphone permission is needed for voice commands.
