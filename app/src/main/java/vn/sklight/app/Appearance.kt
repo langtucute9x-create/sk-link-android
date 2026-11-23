@@ -25,6 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -127,10 +130,18 @@ fun AppearanceIdle() {
     Card {
         GroupTitle(Icons.Filled.Wallpaper, "Màn hình chờ", 16)
         Spacer(Modifier.height(12.dp))
+        // hình demo: màn hình chờ thật thu nhỏ, đổi ngay khi chọn kiểu
+        val cfg = LocalConfiguration.current
+        val sw = cfg.screenWidthDp; val sh = cfg.screenHeightDp
+        val wideScr = sw > sh && sw >= 600
+        BoxWithConstraints(Modifier.fillMaxWidth().aspectRatio(sw.toFloat() / sh).clip(RoundedCornerShape(Theme.r(10))).border(1.dp, Bd, RoundedCornerShape(Theme.r(10)))) {
+            val k = maxWidth.value / sw
+            Box(Modifier.requiredSize(sw.dp, sh.dp).graphicsLayer(scaleX = k, scaleY = k, transformOrigin = TransformOrigin(0f, 0f))) { IdleScreen(wideScr, true) }
+        }
+        Spacer(Modifier.height(12.dp))
         Grid(IDLE_STYLES.indices.toList(), 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
-            OutlineBtn("Chọn ảnh của tôi", Modifier.weight(1f)) { try { pick.launch("image/*") } catch (e: Exception) { Toast.makeText(ctx, L.tr("Máy không có trình chọn ảnh."), Toast.LENGTH_SHORT).show() } }
-            OutlineBtn("Xem thử", Modifier.weight(1f)) { S.idleShow.value = true }
+            OutlineBtn("Chọn ảnh của tôi", Modifier.fillMaxWidth()) { try { pick.launch("image/*") } catch (e: Exception) { Toast.makeText(ctx, L.tr("Máy không có trình chọn ảnh."), Toast.LENGTH_SHORT).show() } }
         }
         Spacer(Modifier.height(8.dp))
         T("Bật hoặc tắt việc tự mở màn hình chờ khi xe chạy ở thẻ Khi lái xe.", 11, color = Grey)

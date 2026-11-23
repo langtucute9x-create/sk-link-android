@@ -12,7 +12,7 @@ android {
         applicationId = "vn.sklight.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 54
+        versionCode = 55
         versionName = "0.5.42"
     }
 

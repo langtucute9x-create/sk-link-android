@@ -332,11 +332,11 @@ private fun SpeedGauge(spd: Int, limit: Int, d: Dp, cA: Color, cB: Color) {
 }
 
 @Composable
-fun IdleScreen(wide: Boolean) {
+fun IdleScreen(wide: Boolean, preview: Boolean = false) {
     val ctx = LocalContext.current
     val cfg = LocalConfiguration.current
     val view = LocalView.current
-    DisposableEffect(Unit) { view.keepScreenOn = true; onDispose { view.keepScreenOn = false } }
+    if (!preview) DisposableEffect(Unit) { view.keepScreenOn = true; onDispose { view.keepScreenOn = false } }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         var n = 0
@@ -352,7 +352,7 @@ fun IdleScreen(wide: Boolean) {
     val fx = S.mode.intValue != 0                       // đang chạy hiệu ứng nhiều màu: dùng hai màu nhấn cố định
     val cL = if (!S.on.value) Color(0xFF3A4050) else if (fx) Color(0xFFFE2B48) else rgbColor(if (uni) S.col[0] else S.col[1])
     val cR = if (!S.on.value) Color(0xFF3A4050) else if (fx) Color(0xFF4E78FF) else rgbColor(if (uni) S.col[0] else S.col[2])
-    val exit = { S.idleShow.value = false; S.lastTouch = System.currentTimeMillis() }
+    val exit = { if (!preview) { S.idleShow.value = false; S.lastTouch = System.currentTimeMillis() } }
     val nav = S.navOn.value
     val spd = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else S.speedKmh.floatValue.roundToInt()
     val limit = S.speedLimit.intValue
@@ -368,7 +368,7 @@ fun IdleScreen(wide: Boolean) {
             drawCircle(Brush.radialGradient(listOf(cL.copy(alpha = 0.55f), Color.Transparent), a, r), r, a)
             drawCircle(Brush.radialGradient(listOf(cR.copy(alpha = 0.55f), Color.Transparent), b, r), r, b)
         }
-        Column(Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = if (wide) 40.dp else 20.dp, vertical = 22.dp)) {
+        Column((if (preview) Modifier.fillMaxSize() else Modifier.fillMaxSize().systemBarsPadding()).padding(horizontal = if (wide) 40.dp else 20.dp, vertical = 22.dp)) {
             if (!plain) Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(painterResource(R.drawable.sk_logo), "SK Ambient Light", Modifier.height(if (wide) 34.dp else 26.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.width(14.dp))
