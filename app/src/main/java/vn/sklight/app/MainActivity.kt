@@ -144,7 +144,8 @@ fun Root() {
     if (S.idleShow.value) IdleScreen(wide) else
     if (wide) {
         // màn ngang (màn hình ô tô): nội dung chia hai cột cuộn riêng; menu nằm trên (mặc định) hoặc thành cột bên trái (chọn ở Cài đặt giao diện)
-        val topMenu = S.menuTop.value && cfg.screenHeightDp >= 400
+        val topMenu = S.menuTop.value
+        val low = cfg.screenHeightDp < 420              // màn xe thấp: hàng menu trên nhỏ lại cho đỡ tốn chỗ
         val roomy = cfg.screenHeightDp >= 520
         val mid = !roomy && cfg.screenHeightDp >= 430
         val sideW = if (topMenu) 0 else if (roomy) 70 else if (mid) 64 else 54
@@ -175,11 +176,12 @@ fun Root() {
         if (topMenu) Column(frame.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Menu trên: logo, nguồn, bốn trang (có tên), nút mở màn hình chờ, nút mic to ở góc phải
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(42.dp), contentScale = ContentScale.Fit)
-                PowerBtn(52)
-                Tabs(tab, Modifier.weight(1f), 46, true) { tab = it; S.subPage.intValue = 0 }
-                IdleBtn(52)
-                if (L.cur.intValue == 0) MicBtn(60)
+                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (low) 34.dp else 42.dp), contentScale = ContentScale.Fit)
+                PowerBtn(if (low) 42 else 52)
+                Tabs(tab, Modifier.weight(1f), if (low) 38 else 46, true) { tab = it; S.subPage.intValue = 0 }
+                SplitBtn(if (low) 42 else 52)
+                IdleBtn(if (low) 42 else 52)
+                if (L.cur.intValue == 0) MicBtn(if (low) 46 else 60)
             }
             body()
         } else Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -187,7 +189,7 @@ fun Root() {
             Column(Modifier.width(sideW.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn(if (roomy) 56 else 46)
                 TabsV(tab, roomy) { tab = it; S.subPage.intValue = 0 }
-                if (roomy || mid) IdleBtn(if (roomy) 56 else 46)
+                if (roomy || mid) { SplitBtn(if (roomy) 56 else 46); IdleBtn(if (roomy) 56 else 46) }
                 Spacer(Modifier.weight(1f))
                 if (L.cur.intValue == 0) MicBtn(if (roomy) 66 else if (mid) 60 else 46)
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (roomy || mid) 40.dp else 48.dp), contentScale = ContentScale.Fit)
@@ -224,6 +226,7 @@ fun Root() {
             }
         }
     }
+    SplitPicker()
     NoticeHost(Modifier.align(Alignment.BottomCenter))
     }
     }
@@ -767,6 +770,7 @@ fun NavPage(toWelcome: () -> Unit) {
 @Composable
 fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     val k = S.alertKind.intValue
+    SplitCard()
 
     // ---- đang dẫn đường ----
     Card {

@@ -23,7 +23,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
  * Mọi thứ nằm trong bộ nhớ máy, không lưu ảnh, không gửi đi đâu.
  */
 class ScreenReader : AccessibilityService() {
-    companion object { @Volatile var connected = false }
+    companion object { @Volatile var connected = false; @Volatile var inst: ScreenReader? = null }
 
     private class Found {
         var instr = ""; var road = ""; var spd = ""
@@ -39,8 +39,9 @@ class ScreenReader : AccessibilityService() {
     private val offRun = Runnable { navLost() }
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
-    override fun onServiceConnected() { connected = true }
-    override fun onUnbind(intent: Intent?): Boolean { connected = false; return super.onUnbind(intent) }
+    override fun onServiceConnected() { connected = true; inst = this }
+    override fun onUnbind(intent: Intent?): Boolean { connected = false; inst = null; return super.onUnbind(intent) }
+    override fun onDestroy() { if (inst === this) inst = null; super.onDestroy() }
     override fun onInterrupt() {}
 
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {

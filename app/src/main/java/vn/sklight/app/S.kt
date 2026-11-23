@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.1.2"
+    const val VER = "1.2.0"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -152,6 +152,7 @@ object S {
         app = c.applicationContext
         Crash.install(app)
         Act.init(app)
+        Split.load(app)
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)
@@ -178,7 +179,7 @@ object S {
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
         floatStyle.intValue = sp.getInt("floatStyle", 0).coerceIn(0, 5)
-        menuTop.value = sp.getBoolean("menuTop", true)
+        menuTop.value = sp.getBoolean("menuTop2", true)
         voiceReply.value = sp.getBoolean("voiceReply", true)
         voiceQuiet.value = sp.getBoolean("voiceQuiet", true)
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
@@ -211,7 +212,7 @@ object S {
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
-            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle", floatStyle.intValue).putBoolean("menuTop", menuTop.value)
+            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)

@@ -58,6 +58,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Nếu rẽ trái mà đèn lại chạy sang phải, bật Đảo chiều chạy.",
         "Thử nháy 4 giây: bấm Rẽ trái, Rẽ phải hoặc Quá tốc độ để xem trước trên đèn.",
         "Nháy đỏ khi quá tốc độ: bật công tắc và chọn khu nháy đỏ. Chỉ hoạt động khi app bản đồ hiện biển giới hạn tốc độ.",
+        "Mở bản đồ bên cạnh: bấm nút chia đôi (thẻ Bản đồ bên cạnh ở trang Dẫn đường, hoặc nút trên thanh menu màn ngang), chọn app bản đồ một lần; lần sau bấm là SK Light và bản đồ chia đôi màn hình. Cần bật Hỗ trợ tiếp cận cho SK Light; màn hình xe phải hỗ trợ chia đôi.",
         "Để báo được khi SK Light không mở trên màn hình, hãy bật Tự kết nối khi khởi động máy ở thẻ Khi lái xe."
     ),
     "6. Khi lái xe" to listOf(
@@ -82,7 +83,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Giảm hiệu ứng: bật nếu máy chạy chậm, giao diện sẽ bỏ khối nổi, bóng đổ và chuyển động.",
         "Màn hình chờ: chọn kiểu và xem trước ngay trong trang này; bấm Chọn ảnh của tôi để dùng ảnh riêng.",
         "Nút nổi và màn hình nổi: chọn một trong sáu kiểu, có hình xem trước.",
-        "Vị trí menu khi màn hình ngang: để menu ở trên hoặc thành cột bên trái.",
+        "Vị trí menu khi màn hình ngang: mặc định ở trên; muốn thành cột bên trái thì chọn ở đây.",
         "Ở màn hình ngang, các dòng giải thích được ẩn cho gọn. Chạm biểu tượng chữ i ở góc thẻ để hiện.",
         "Cài đặt, mục Cài đặt ngôn ngữ: Việt, Anh, Nhật, Hàn, Thái, Khmer, Lào."
     ),

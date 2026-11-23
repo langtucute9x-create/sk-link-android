@@ -20,6 +20,8 @@
         <intent><action android:name="android.speech.RecognitionService" /></intent>
         <!-- Để dùng được bộ đọc chữ thành tiếng của máy (trả lời bằng tiếng nói) -->
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
+        <!-- Để liệt kê app bản đồ cho nút "Mở bản đồ bên cạnh" -->
+        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
     </queries>
 
     <application
