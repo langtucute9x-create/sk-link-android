@@ -281,7 +281,7 @@ object Voice {
     }
 
     /** Bắt đầu nghe (gọi trên luồng chính, đã có quyền micro). [attempt] = thứ tự bộ nhận giọng nói đang thử. */
-    fun start(ctx: Context, attempt: Int = 0) {
+    fun start(ctx: Context, attempt: Int = 0, retry: Int = 0) {
         val c = ctx.applicationContext
         val my = ++gen
         h.removeCallbacksAndMessages(null)
@@ -306,6 +306,13 @@ object Voice {
                 override fun onError(code: Int) {
                     if (my != gen) return
                     h.removeCallbacksAndMessages(null)
+                    // 11 = dịch vụ nhận giọng nói bị ngắt kết nối giữa chừng, 5 = lỗi phía máy khách, 8 = đang bận: tạo lại bộ nhận và thử một lần nữa.
+                    if ((code == 11 || code == 5 || code == 8) && retry < 1) {
+                        try { sr?.cancel(); sr?.destroy() } catch (_: Exception) {}
+                        sr = null
+                        h.postDelayed({ if (my == gen) start(c, attempt, retry + 1) }, 500)
+                        return
+                    }
                     settle(my) {
                         if (code == SpeechRecognizer.ERROR_NO_MATCH || code == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) Speaker.say(c, "Em chưa nghe rõ")
                         show(6, msg = when (code) {
@@ -313,6 +320,7 @@ object Voice {
                             SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Cần có mạng để nhận giọng nói."
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Bộ nhận giọng nói chưa có quyền micro. Vào Cài đặt máy, mục Ứng dụng, chọn Google, bật quyền Micro."
                             12, 13 -> "Bộ nhận giọng nói của máy chưa có tiếng Việt."
+                            11 -> "Bộ nhận giọng nói của Google bị ngắt kết nối (mã 11). Bấm mic để thử lại."
                             else -> "Bộ nhận giọng nói báo lỗi (mã $code)."
                         })
                     }
