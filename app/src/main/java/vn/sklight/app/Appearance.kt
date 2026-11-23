@@ -139,7 +139,8 @@ fun AppearanceIdle() {
         val wideScr = sw > sh && sw >= 600
         BoxWithConstraints(Modifier.fillMaxWidth().aspectRatio(sw.toFloat() / sh).clip(RoundedCornerShape(Theme.r(10))).border(1.dp, Bd, RoundedCornerShape(Theme.r(10)))) {
             val k = maxWidth.value / sw
-            Box(Modifier.requiredSize(sw.dp, sh.dp).graphicsLayer(scaleX = k, scaleY = k, transformOrigin = TransformOrigin(0f, 0f))) { IdleScreen(wideScr, true) }
+            // khung con to bằng cả màn hình nên được đặt CĂN GIỮA khung xem thử; phải thu nhỏ quanh tâm thì mới nằm trọn trong khung
+            Box(Modifier.requiredSize(sw.dp, sh.dp).graphicsLayer(scaleX = k, scaleY = k, transformOrigin = TransformOrigin(0.5f, 0.5f))) { IdleScreen(wideScr, true) }
         }
         Spacer(Modifier.height(12.dp))
         Grid(IDLE_STYLES.indices.toList(), 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
