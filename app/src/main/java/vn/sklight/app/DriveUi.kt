@@ -156,7 +156,7 @@ fun SceneRow() {
 
 // ===================== THẺ "KHI LÁI XE" TRONG CÀI ĐẶT =====================
 // 4 kiểu đầu giữ nguyên thứ tự cũ (số thứ tự đã lưu trong máy người dùng)
-val IDLE_STYLES = listOf("Đồng hồ + tốc độ", "Chỉ đồng hồ", "Tốc độ lớn", "Ảnh của tôi", "Đồng hồ kim", "Vòng tốc độ", "Dẫn đường", "Nhạc đang phát", "Tối giản")
+val IDLE_STYLES = listOf("Đồng hồ + tốc độ", "Chỉ đồng hồ", "Tốc độ lớn", "Ảnh của tôi", "Đồng hồ kim", "Vòng tốc độ", "Dẫn đường", "Nhạc đang phát", "Tối giản", "Đồng hồ 2,5D", "Số lật")
 fun photoFile(ctx: Context) = File(ctx.filesDir, "idle.jpg")
 
 @Composable
@@ -421,6 +421,16 @@ fun IdleScreen(wide: Boolean, preview: Boolean = false) {
                         Spacer(Modifier.height(6.dp))
                         T(date, 15, FontWeight.Medium, Color(0xFF8A919E))
                         if (spd > 0) { Spacer(Modifier.height(10.dp)); Text("$spd km/h", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = if (spdColor == LimitRed) LimitRed else Color(0xFF8A919E), fontFamily = Inter) }
+                    }
+                    style == 9 -> if (wide) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        Gauge25(spd, limit, round * 1.2f, accent)
+                        FlipClock(time, (big * 0.75f).dp, accent)
+                    } else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Gauge25(spd, limit, round * 1.1f, accent); Spacer(Modifier.height(16.dp)); FlipClock(time, (big * 0.6f).dp, accent)
+                    }
+                    style == 10 -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        FlipClock(time, (if (wide) big * 1.3f else big * 0.85f).dp, accent)
+                        if (spd > 0) { Spacer(Modifier.height(14.dp)); Text("$spd km/h", fontSize = (if (wide) 30 else 22).sp, fontWeight = FontWeight.Bold, color = spdColor, fontFamily = Inter) }
                     }
                     wide -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Big(time, big)
