@@ -163,25 +163,40 @@ fun Chip(text: String, sel: Boolean, modifier: Modifier = Modifier, h: Dp = 41.d
     ) { FitT(text, size, if (sel) FontWeight.Bold else FontWeight.SemiBold, if (sel) Color.White else Txt) }
 }
 
+/** true nếu có dòng bị ngắt giữa một từ (ví dụ "Huyề" / "n ảo") vì từ đó dài hơn bề rộng ô. */
+private fun brokenWord(r: androidx.compose.ui.text.TextLayoutResult, s: String): Boolean {
+    for (i in 0 until r.lineCount - 1) {
+        val e = r.getLineEnd(i)
+        if (e in 1 until s.length && !s[e - 1].isWhitespace() && !s[e].isWhitespace()) return true
+    }
+    return false
+}
+
 /**
- * Chữ tự co cho vừa ô: thử một dòng trước, thu nhỏ dần tới 80%; vẫn không vừa thì cho xuống tối đa [lines] dòng rồi thu nhỏ tiếp tới 62%.
- * Dùng cho chữ trong ô có kích thước cố định (ô chọn, ô chế độ) để không bao giờ bị cắt mất chữ khi cỡ chữ lớn hoặc ô hẹp.
+ * Chữ tự co cho vừa ô, không bao giờ ngắt giữa một từ.
+ * [wrapFirst] = false (ô chọn): thử một dòng trước, thu nhỏ dần tới 82%; vẫn không vừa thì cho xuống tối đa [lines] dòng rồi thu nhỏ tiếp.
+ * [wrapFirst] = true (ô chế độ): cho xuống dòng theo từ ngay ở cỡ chữ gốc, chỉ thu nhỏ khi quá [lines] dòng hoặc có từ dài hơn ô.
+ * Nhỏ nhất 70% cỡ gốc; tới đó vẫn không vừa thì hiện dấu ba chấm.
  */
 @Composable
-fun FitT(text: String, size: Int, weight: FontWeight = FontWeight.Normal, color: Color = Txt, modifier: Modifier = Modifier, align: TextAlign = TextAlign.Center, lines: Int = 2) {
+fun FitT(
+    text: String, size: Int, weight: FontWeight = FontWeight.Normal, color: Color = Txt, modifier: Modifier = Modifier,
+    align: TextAlign = TextAlign.Center, lines: Int = 2, wrapFirst: Boolean = false
+) {
     val str = L.tr(text)
     val base = size * Theme.scaleF
     var k by remember(str, base) { mutableFloatStateOf(1f) }
-    var wrap by remember(str, base) { mutableStateOf(false) }
+    var wrap by remember(str, base) { mutableStateOf(wrapFirst && lines > 1) }
     var ok by remember(str, base) { mutableStateOf(false) }
     Text(
         str, modifier = modifier.drawWithContent { if (ok) drawContent() },
         fontSize = (base * k).sp, lineHeight = (base * k * 1.2f).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align,
-        maxLines = if (wrap) lines else 1, softWrap = wrap, overflow = TextOverflow.Clip,
+        maxLines = if (wrap) lines else 1, softWrap = wrap, overflow = TextOverflow.Ellipsis,
         onTextLayout = { r ->
-            if (!r.hasVisualOverflow) ok = true
-            else if (!wrap && k <= 0.82f && lines > 1) { wrap = true; k = 1f }
-            else if (k > 0.62f) k -= 0.07f
+            val bad = r.hasVisualOverflow || (wrap && brokenWord(r, str))
+            if (!bad) ok = true
+            else if (!wrap && k <= 0.83f && lines > 1) { wrap = true; k = 1f }
+            else if (k > 0.71f) k -= 0.06f
             else ok = true
         }
     )

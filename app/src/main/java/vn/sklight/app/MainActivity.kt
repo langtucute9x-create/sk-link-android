@@ -404,14 +404,15 @@ fun EffectTile(e: Effect, m: Modifier) {
                     onTap = { S.pickEffect(e) }
                 )
             }
-            .padding(start = 10.dp, end = 6.dp),
+            .padding(start = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(e.icon, null, tint = e.color, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.width(8.dp))
-        FitT(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f), TextAlign.Start)
+        Icon(e.icon, null, tint = e.color, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(6.dp))
+        // tên xuống dòng theo từ (tối đa 3 dòng trong ô cao 56), chỉ thu nhỏ khi thật sự không vừa; không ngắt giữa từ
+        FitT(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f), TextAlign.Start, 3, true)
         if (S.pins.contains(e.id)) Icon(Icons.Filled.PushPin, null, tint = Grey, modifier = Modifier.align(Alignment.Top).padding(top = 6.dp, end = 2.dp).size(11.dp))
-        Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(start = 4.dp, top = 5.dp)) }
+        Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(start = 2.dp, top = 5.dp)) }
     }
 }
 
@@ -443,7 +444,7 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
                     m.height(51.dp).glow(on, cur.color, RoundedCornerShape(Theme.r(8))).clip(RoundedCornerShape(Theme.r(8))).background(if (on) mix(cur.color, 0.2f) else ChipBg)
                         .border(if (on) 2.dp else 1.dp, if (on) cur.color else Bd, RoundedCornerShape(Theme.r(8))).clickable { S.pickSub(cur, i) }.padding(horizontal = 6.dp),
                     contentAlignment = Alignment.Center
-                ) { FitT(cur.subs[i], 11, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt) }
+                ) { FitT(cur.subs[i], 11, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, lines = 3, wrapFirst = true) }
             }
         }
     }
