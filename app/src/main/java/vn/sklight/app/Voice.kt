@@ -607,7 +607,13 @@ fun CmdListApp() {
 fun VoicePage() {
     BackToSettings()
     BoxVoiceCard()
-    Card { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { CmdList() } }
+    Card {
+        T("Các câu lệnh", 16, FontWeight.ExtraBold)
+        Spacer(Modifier.height(4.dp))
+        Hint("Danh sách đầy đủ các câu lệnh nằm trong Cẩm nang sử dụng, mục Trợ lý giọng nói.", 12)
+        Spacer(Modifier.height(8.dp))
+        OutlineBtn("Xem các câu lệnh", Modifier.fillMaxWidth()) { S.manualOpen.intValue = 6; S.subPage.intValue = 12 }
+    }
     Card {
         GroupTitle(Icons.Filled.Mic, "Nút mic trên app", 16)
         Spacer(Modifier.height(4.dp))
@@ -626,8 +632,6 @@ fun VoicePage() {
         Spacer(Modifier.height(6.dp))
         Divider()
         SwitchRow("Tắt tiếng báo khi bấm mic", "Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.", S.voiceQuiet.value) { S.voiceQuiet.value = it; S.saveSettings() }
-        Divider(6.dp, 10.dp)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { CmdListApp() }
     }
 }
 

@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.0.3"
+    const val VER = "1.0.4"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -99,6 +99,7 @@ object S {
     val screenLines = mutableStateListOf<String>()        // chữ đọc được, để kiểm tra
     val signSeen = mutableStateOf("")                     // con số km/h thấy trong thông báo (nếu có)
     val turnStyle = mutableIntStateOf(0)                  // cảnh báo rẽ: 0 nháy vàng cả xe, 1 đèn chạy theo hướng rẽ
+    val manualOpen = mutableIntStateOf(0)                 // mục đang mở trong Cẩm nang sử dụng (-1 = đóng hết)
     val turnFx = mutableIntStateOf(0)                     // hiệu ứng báo rẽ: chỉ số trong AlertBridge.TURN_FX
     val turnSpd = mutableStateListOf(10, 10, 10)          // tốc độ (1..10) của từng hiệu ứng báo rẽ
     val turnFlip = mutableStateOf(false)                  // đảo chiều chạy của kiểu 1

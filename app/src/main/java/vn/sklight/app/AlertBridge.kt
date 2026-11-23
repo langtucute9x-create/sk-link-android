@@ -113,7 +113,8 @@ object AlertBridge {
     // ---- kiểu "đèn chạy theo hướng rẽ": hiệu ứng Trôi đa sắc kiểu 3 (vàng) của hộp, tốc độ tối đa, đổi hướng chạy theo bên rẽ ----
     /** Hiệu ứng của hộp dùng khi báo rẽ: (id chế độ, tham số). 0 = Trôi đa sắc kiểu 3 (vàng), 1 = Đuôi sao chổi vàng, 2 = Cuộn đủ màu kiểu 3. */
     val TURN_FX = listOf(10 to 3, 13 to 2, 12 to 3)
-    val TURN_NAMES = listOf("Trôi đa sắc 3", "Đuôi sao chổi vàng", "Cuộn đủ màu 3")
+    /** Tên hiện trên app, theo chỉ số của TURN_FX: Kiểu 1 = Đuôi sao chổi vàng, Kiểu 2 = Cuộn đủ màu chế độ 3, Kiểu 3 = Trôi đa sắc chế độ 3. */
+    val TURN_NAMES = listOf("Kiểu 3", "Kiểu 1", "Kiểu 2")
     private var flow = false                       // cảnh báo đang chạy bằng hiệu ứng của hộp
     private var hold: IntArray? = null             // khối 07 của người dùng, giữ lại để trả về sau cảnh báo
     private const val DIR_BITS = 0x3F              // 6 đoạn: cửa trước trái, trước phải, sau trái, sau phải, táp lô giữa, đồng hồ

@@ -53,7 +53,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
     "5. Dẫn đường: báo rẽ và quá tốc độ" to listOf(
         "App đọc chỉ dẫn từ app bản đồ đang dẫn đường (Google Maps, Vietmap, Gofa…) để báo bằng đèn.",
         "Lần đầu, trang Dẫn đường hiện thẻ Cần cấp quyền: cấp quyền đọc thông báo và bật Hỗ trợ tiếp cận cho SK Light. Cấp đủ thì thẻ tự ẩn.",
-        "Báo đèn khi sắp rẽ: bật công tắc, chọn khoảng cách Báo trước (50 đến 500 m), chọn một trong ba hiệu ứng và tốc độ của hiệu ứng đó.",
+        "Báo đèn khi sắp rẽ: bật công tắc, chọn khoảng cách Báo trước (50 đến 500 m), chọn Kiểu 1, Kiểu 2 hoặc Kiểu 3 và tốc độ của kiểu đó. Bấm Thử nháy để xem từng kiểu trên đèn.",
         "Thời gian đèn chạy: chọn số giây đèn báo chạy, hoặc để tới khi rẽ xong.",
         "Nếu rẽ trái mà đèn lại chạy sang phải, bật Đảo chiều chạy.",
         "Thử nháy 4 giây: bấm Rẽ trái, Rẽ phải hoặc Quá tốc độ để xem trước trên đèn.",
@@ -73,7 +73,8 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Ví dụ: “bật đèn”, “tắt đèn”, “màu đỏ”, “sáng hơn”, “tối hơn”, “độ sáng 50”, “chế độ thở”, “chế độ 15”, “tốc độ 8”, “khu vực 2 màu xanh”.",
         "Gọi bối cảnh và chế độ bằng tên của nó, ví dụ “thư giãn”, “thể thao”.",
         "Mỗi ô chế độ có một con số ở góc: nói “chế độ” kèm số đó để chạy.",
-        "Cài đặt, mục Trợ lý SK Light (AI): bật tắt trả lời bằng tiếng nói, tắt tiếng báo khi bấm micro, chọn giọng và cách thông báo của hộp, xem đủ các câu lệnh.",
+        "Cài đặt, mục Trợ lý SK Light (AI): bật tắt trả lời bằng tiếng nói, tắt tiếng báo khi bấm micro, chọn giọng và cách thông báo của hộp.",
+        "Danh sách đầy đủ các câu lệnh ở ngay bên dưới.",
         "Muốn app trả lời bằng tiếng nói, máy cần có giọng đọc tiếng Việt; trang Trợ lý có nút cài."
     ),
     "8. Giao diện và ngôn ngữ" to listOf(
@@ -115,7 +116,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
 
 @Composable
 fun ManualPage() {
-    var open by remember { mutableIntStateOf(0) }
+    var open by S.manualOpen
     BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.MenuBook, "Cẩm nang sử dụng", 16)
@@ -134,6 +135,7 @@ fun ManualPage() {
                     T("•", 13, FontWeight.Bold, Pink, Modifier.width(14.dp))
                     T(l, 13, color = SubTxt, modifier = Modifier.weight(1f))
                 }
+                if (i == 6) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Divider(4.dp, 6.dp); CmdList(); Divider(4.dp, 6.dp); CmdListApp() }
             }
         }
     }

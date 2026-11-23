@@ -571,7 +571,6 @@ Bấm Bắt đầu, mở app dẫn đường vài giây rồi quay lại đây. 
 App đọc gần nhất	Last app read
 Chưa đọc được chữ nào.	No text read yet.
 Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…	Car-linked alerts: turn signals, doors, seat belt, overspeed, driver-door welcome…
-Giọng nói của hộp, cách thông báo và các câu lệnh	Box voice, announcement style and commands
 Hướng ánh sáng chạy của từng khu vực	Light flow direction for each zone
 Ghép nối, số lượng và vị trí hộp phụ	Pairing, count and positions of sub boxes
 Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc	Car model, box version, diagnostics, factory reset
@@ -586,9 +585,6 @@ Hãy bật "Cho phép từ nguồn này" cho SK Light, rồi quay lại bấm C�
 Cần quyền micro để ra lệnh bằng giọng nói.	Microphone permission is needed for voice commands.
 Hiệu ứng khi báo rẽ	Turn alert effect	曲がる時のエフェクト	회전 알림 효과	เอฟเฟกต์เตือนเลี้ยว	បែបផែនជូនដំណឹងបត់	ເອັບເຟັກເຕືອນລ້ຽວ
 Tốc độ đèn chạy	Light run speed	流れる速さ	조명 흐름 속도	ความเร็วไฟวิ่ง	ល្បឿនភ្លើងរត់	ຄວາມໄວໄຟແລ່ນ
-Đuôi sao chổi vàng	Yellow comet tail	黄色のコメットテール	노란 혜성 꼬리	หางดาวหางสีเหลือง	កន្ទុយផ្កាយដុះកន្ទុយលឿង	ຫາງດາວຫາງສີເຫຼືອງ
-Cuộn đủ màu 3	Full-color scroll 3	フルカラースクロール 3	풀컬러 스크롤 3	เลื่อนครบสี 3	រមូរគ្រប់ពណ៌ 3	ເລື່ອນຄົບສີ 3
-Trôi đa sắc 3	Multicolor drift 3	マルチカラードリフト 3	멀티컬러 드리프트 3	ไหลหลากสี 3	រសាត់ចម្រុះពណ៌ 3	ໄຫຼຫຼາກສີ 3
 Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.	Before a turn, the lights run toward the turn using the effect chosen below. During the alert the app temporarily changes the box's flow direction, then restores it.
 Tốc độ đang đọc được: # km/h. Màn hình chờ chỉ tự mở khi xe chạy từ # km/h; xe đứng yên thì không mở.	Speed read: # km/h. The standby screen opens by itself only when the car moves at # km/h or more; it stays closed while parked.
 Nút nổi và màn hình nổi	Floating button and panel	フローティングボタンとパネル	플로팅 버튼과 패널	ปุ่มลอยและแผงลอย	ប៊ូតុង និងផ្ទាំងអណ្តែត	ປຸ່ມລອຍ ແລະ ແຜງລອຍ
@@ -602,3 +598,9 @@ Vị trí menu khi màn hình ngang	Menu position in landscape	横画面での�
 Menu ở trên	Menu on top	メニューを上に	메뉴 위쪽	เมนูด้านบน	ម៉ឺនុយខាងលើ	ເມນູດ້ານເທິງ
 Menu bên trái	Menu on the left	メニューを左に	메뉴 왼쪽	เมนูด้านซ้าย	ម៉ឺនុយខាងឆ្វេង	ເມນູດ້ານຊ້າຍ
 Nút nổi hiện trên các ứng dụng khác (ví dụ app bản đồ). Bật nó ở thẻ Khi lái xe trong trang Cài đặt, rồi về màn hình chính của máy để xem kiểu vừa chọn.	The floating button appears over other apps (such as the map app). Turn it on in the While driving card on the Settings page, then go to the device home screen to see the chosen style.
+Kiểu 1	Style 1	スタイル 1	스타일 1	แบบ 1	រចនាប័ទ្ម 1	ແບບ 1
+Kiểu 2	Style 2	スタイル 2	스타일 2	แบบ 2	រចនាប័ទ្ម 2	ແບບ 2
+Kiểu 3	Style 3	スタイル 3	스타일 3	แบบ 3	រចនាប័ទ្ម 3	ແບບ 3
+Xem các câu lệnh	View commands	コマンドを見る	명령어 보기	ดูคำสั่ง	មើលពាក្យបញ្ជា	ເບິ່ງຄຳສັ່ງ
+Danh sách đầy đủ các câu lệnh nằm trong Cẩm nang sử dụng, mục Trợ lý giọng nói.	The full command list is in the User guide, Voice assistant section.	コマンドの一覧は「使い方ガイド」の音声アシスタントの項目にあります。	전체 명령어 목록은 사용 설명서의 음성 비서 항목에 있습니다.	รายการคำสั่งทั้งหมดอยู่ในคู่มือการใช้งาน หัวข้อผู้ช่วยเสียง	បញ្ជីពាក្យបញ្ជាពេញលេញមាននៅក្នុងសៀវភៅណែនាំ ផ្នែកជំនួយការសំឡេង។	ລາຍການຄຳສັ່ງທັງໝົດຢູ່ໃນຄູ່ມືການໃຊ້ງານ ຫົວຂໍ້ຜູ້ຊ່ວຍສຽງ.
+Giọng nói của hộp, cách thông báo, nút mic trên app	Box voice, announcements, in-app mic button	ボックスの音声、通知方法、アプリのマイクボタン	박스 음성, 알림 방식, 앱 마이크 버튼	เสียงของกล่อง วิธีแจ้งเตือน ปุ่มไมค์ในแอป	សំឡេងប្រអប់ របៀបជូនដំណឹង ប៊ូតុងមីក្រូក្នុងកម្មវិធី	ສຽງຂອງກ່ອງ ວິທີແຈ້ງເຕືອນ ປຸ່ມໄມໃນແອັບ
