@@ -124,7 +124,7 @@ fun Root() {
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
-            if (S.idleOn.value && !S.idleShow.value && S.speedKmh.floatValue >= 10f && System.currentTimeMillis() - S.lastTouch > 10000) S.idleShow.value = true
+            if (S.idleOn.value && !S.idleShow.value && maxOf(S.speedKmh.floatValue, S.appSpeed.intValue.toFloat()) >= 10f && System.currentTimeMillis() - S.lastTouch > 10000) S.idleShow.value = true
         }
     }
 
@@ -138,16 +138,22 @@ fun Root() {
     if (S.idleShow.value) IdleScreen(wide) else
     if (wide) {
         // màn ngang (màn hình ô tô): menu dọc bên trái, nội dung chia hai cột cuộn riêng
-        val avail = cfg.screenWidthDp - 24 - 54 - 12
+        // Menu trái theo chiều cao màn hình: cao (màn hình xe lớn) = nút to, có tên trang; vừa = cỡ gọn nhưng mic vẫn to; thấp (điện thoại xoay ngang) = như cũ
+        val roomy = cfg.screenHeightDp >= 520
+        val mid = !roomy && cfg.screenHeightDp >= 430
+        val sideW = if (roomy) 70 else if (mid) 64 else 54
+        val avail = cfg.screenWidthDp - 24 - sideW - 12
         val leftW = (avail * 0.43f).coerceIn(346f, 392f)
         val cols = if (avail - leftW - 12f >= 470f) 4 else 3
         Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.width(54.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PowerBtn()
-                TabsV(tab) { tab = it; S.subPage.intValue = 0 }
-                if (L.cur.intValue == 0) MicBtn()
+            // Menu trái: nguồn ở trên cùng, bốn trang, nút mở màn hình chờ; nút mic to ở góc dưới (dễ bấm khi đang lái), logo nhỏ dưới cùng
+            Column(Modifier.width(sideW.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PowerBtn(if (roomy) 56 else 46)
+                TabsV(tab, roomy) { tab = it; S.subPage.intValue = 0 }
+                if (roomy || mid) IdleBtn(if (roomy) 56 else 46)          // mở màn hình chờ bằng tay (không cần chờ xe chạy)
                 Spacer(Modifier.weight(1f))
-                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(48.dp), contentScale = ContentScale.Fit)
+                if (L.cur.intValue == 0) MicBtn(if (roomy) 66 else if (mid) 60 else 46)
+                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (roomy || mid) 40.dp else 48.dp), contentScale = ContentScale.Fit)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 UpdateBanner()

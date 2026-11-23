@@ -318,15 +318,38 @@ object Voice {
         quiet(true)
         try {
             val r = if (comp != null) SpeechRecognizer.createSpeechRecognizer(c, comp) else SpeechRecognizer.createSpeechRecognizer(c)
+            // Chốt sớm: nhiều màn hình xe (ồn, mạng chậm) không tự nhận ra lúc người nói đã dứt câu nên chờ rất lâu.
+            // Chữ nghe được đứng yên 1 giây thì bảo bộ nhận chốt lại; bộ nhận vẫn chưa trả kết quả thì dùng luôn chữ đang có.
+            var done = false
+            var lastText = ""
+            val useHeard = Runnable {
+                val heard = S.voiceHeard.value
+                if (my == gen && !done && heard.isNotBlank()) {
+                    done = true
+                    h.removeCallbacksAndMessages(null)
+                    try { r.cancel() } catch (_: Exception) {}
+                    settle(my) { results(c, listOf(heard)) }
+                }
+            }
+            val stable = Runnable {
+                if (my == gen && !done) {
+                    try { r.stopListening() } catch (_: Exception) {}
+                    phase.intValue = 3
+                    h.postDelayed(useHeard, 1200)
+                }
+            }
             r.setRecognitionListener(object : RecognitionListener {
                 override fun onResults(b: Bundle?) {
-                    if (my != gen) return
+                    if (my != gen || done) return
+                    done = true
                     h.removeCallbacksAndMessages(null)
                     val list2: List<String> = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) ?: emptyList()
                     settle(my) { results(c, list2) }
                 }
                 override fun onError(code: Int) {
-                    if (my != gen) return
+                    if (my != gen || done) return
+                    // bộ nhận báo lỗi nhưng đã nghe được chữ: dùng chữ đó thay vì báo lỗi
+                    if (S.voiceHeard.value.isNotBlank() && code != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) { useHeard.run(); return }
                     h.removeCallbacksAndMessages(null)
                     // 11 = dịch vụ nhận giọng nói bị ngắt kết nối giữa chừng, 5 = lỗi phía máy khách, 8 = đang bận: tạo lại bộ nhận và thử một lần nữa.
                     if ((code == 11 || code == 5 || code == 8) && retry < 1) {
@@ -351,11 +374,17 @@ object Voice {
                 override fun onBeginningOfSpeech() { if (my == gen) phase.intValue = 2 }
                 override fun onRmsChanged(v: Float) { if (my == gen) level.floatValue = ((v + 2f) / 12f).coerceIn(0f, 1f) }
                 override fun onBufferReceived(b: ByteArray?) {}
-                override fun onEndOfSpeech() { if (my == gen) { phase.intValue = 3; level.floatValue = 0f } }
+                override fun onEndOfSpeech() {
+                    if (my == gen && !done) { phase.intValue = 3; level.floatValue = 0f; h.removeCallbacks(stable); h.removeCallbacks(useHeard); h.postDelayed(useHeard, 1500) }
+                }
                 override fun onPartialResults(b: Bundle?) {
                     if (my != gen) return
                     val t = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: return
-                    if (t.isNotBlank()) { S.voiceHeard.value = t; if (phase.intValue < 2) phase.intValue = 2 }
+                    if (done) return
+                    if (t.isNotBlank()) {
+                        S.voiceHeard.value = t; if (phase.intValue < 2) phase.intValue = 2
+                        if (t != lastText) { lastText = t; h.removeCallbacks(stable); h.removeCallbacks(useHeard); h.postDelayed(stable, 1000) }
+                    }
                 }
                 override fun onEvent(t: Int, b: Bundle?) {}
             })
@@ -364,6 +393,8 @@ object Voice {
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "vi-VN")
                 .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
                 .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 800L)
+                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 600L)
                 .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, c.packageName))
             sr = r
             show(1)

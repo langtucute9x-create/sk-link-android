@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Wallpaper
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -172,6 +173,16 @@ fun PowerBtn(size: Int = 46) {
     ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size((size / 2).dp)) }
 }
 
+/** Nút mở màn hình chờ bằng tay ở menu trái (màn ngang). Chạm vào màn hình chờ để quay lại. */
+@Composable
+fun IdleBtn(size: Int = 46) {
+    val src = remember { MutableInteractionSource() }
+    Box(
+        Modifier.size(size.dp).then(pressScale(src)).orb(false).clickable(src, LocalIndication.current) { S.idleShow.value = true },
+        contentAlignment = Alignment.Center
+    ) { Icon(Icons.Filled.Wallpaper, "Mở màn hình chờ", tint = SubTxt, modifier = Modifier.size((size * 0.48f).dp)) }
+}
+
 private fun trough(): Brush = if (Fx) Brush.verticalGradient(listOf(dim(CardBg, if (Theme.dark) 0.30f else 0.07f), CardBg)) else SolidColor(CardBg)
 
 /** Viên màu nhấn nằm dưới mục đang chọn của thanh menu. */
@@ -192,23 +203,30 @@ private fun tabPos(sel: Int): Float {
 
 /** Menu dọc cho màn ngang. */
 @Composable
-fun TabsV(sel: Int, onPick: (Int) -> Unit) {
+fun TabsV(sel: Int, big: Boolean = false, onPick: (Int) -> Unit) {
     val fx = Fx
     val a = Pink
     val pos = tabPos(sel)
     val sh = RoundedCornerShape(Theme.r(10))
     val rad = Theme.r(8)
     val tick = rememberTick()
+    val cw = if (big) 60.dp else 44.dp      // màn đủ cao: ô to hơn, có tên dưới biểu tượng
+    val ch = if (big) 58.dp else 46.dp
     Column(
         Modifier.clip(sh).background(trough()).border(1.dp, Bd, sh).padding(4.dp).drawBehind {
-            val h = 46.dp.toPx()
+            val h = ch.toPx()
             pill(a, fx, Offset(0f, pos * (h + 4.dp.toPx())), Size(size.width, h), rad.toPx())
         },
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         TAB_ITEMS.forEachIndexed { i, (label, icon) ->
-            Box(Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(rad)).clickable { if (sel != i) tick(); onPick(i) }, contentAlignment = Alignment.Center) {
-                Icon(icon, label, tint = if (sel == i) Color.White else SubTxt, modifier = Modifier.size(22.dp))
+            val on = sel == i
+            Column(
+                Modifier.size(cw, ch).clip(RoundedCornerShape(rad)).clickable { if (sel != i) tick(); onPick(i) },
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+            ) {
+                Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(if (big) 24.dp else 22.dp))
+                if (big) FitT(label, 10, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Color.White else SubTxt, Modifier.padding(horizontal = 2.dp), lines = 1)
             }
         }
     }

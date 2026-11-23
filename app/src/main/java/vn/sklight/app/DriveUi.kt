@@ -212,6 +212,10 @@ fun DriveCard() {
         }
         Divider()
         SwitchRow("Màn hình chờ khi xe chạy", "Xe đang chạy và 10 giây không chạm thì chuyển sang màn hình chờ. Chọn kiểu ở Cài đặt giao diện", S.idleOn.value) { S.idleOn.value = it; S.saveSettings() }
+        if (S.idleOn.value) {
+            val v = maxOf(S.speedKmh.floatValue.roundToInt(), S.appSpeed.intValue)
+            T("Tốc độ đang đọc được: $v km/h. Màn hình chờ chỉ tự mở khi xe chạy từ 10 km/h; xe đứng yên thì không mở.", 11, color = Grey)
+        }
         Divider()
         SwitchRow("Nút nổi trên màn hình", "Nút SK nổi trên ứng dụng khác: bật tắt, độ sáng, bối cảnh. Cần cấp quyền hiển thị trên ứng dụng khác", S.floatOn.value) {
             S.floatOn.value = it; S.saveSettings(); S.syncService(ctx)
