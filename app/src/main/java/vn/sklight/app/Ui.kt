@@ -248,3 +248,30 @@ fun SwitchRow(title: String, sub: String, on: Boolean, enabled: Boolean = true, 
 fun Divider(top: Dp = 0.dp, bottom: Dp = 0.dp) {
     Box(Modifier.padding(top = top, bottom = bottom).fillMaxWidth().height(1.dp).background(Div))
 }
+
+
+/** Xếp các thẻ con thành hai cột (thẻ nào vào cột đang ngắn hơn); phần tử đầu (dòng "quay lại") chiếm cả chiều ngang. Dùng cho trang Cài đặt con ở màn ngang. */
+@androidx.compose.runtime.Composable
+fun Masonry(gap: androidx.compose.ui.unit.Dp = 12.dp, content: @androidx.compose.runtime.Composable () -> Unit) {
+    androidx.compose.ui.layout.Layout(content = content) { ms, c ->
+        val g = gap.roundToPx()
+        val w = ((c.maxWidth - g) / 2).coerceAtLeast(0)
+        val cons = androidx.compose.ui.unit.Constraints(minWidth = w, maxWidth = w)
+        val full = androidx.compose.ui.unit.Constraints(maxWidth = c.maxWidth)
+        var top = 0
+        val placed = ArrayList<Triple<androidx.compose.ui.layout.Placeable, Int, Int>>()
+        val hs = intArrayOf(0, 0)
+        ms.forEachIndexed { i, m ->
+            if (i == 0) {
+                val p = m.measure(full); placed.add(Triple(p, -1, 0)); top = p.height + g; hs[0] = top; hs[1] = top
+            } else {
+                val p = m.measure(cons)
+                if (p.height == 0) { placed.add(Triple(p, 0, 0)); return@forEachIndexed }
+                val col = if (hs[0] <= hs[1]) 0 else 1
+                val y = hs[col]; hs[col] += p.height + g
+                placed.add(Triple(p, col, y))
+            }
+        }
+        layout(c.maxWidth, (maxOf(hs[0], hs[1]) - g).coerceAtLeast(0)) { placed.forEach { (p, col, y) -> p.placeRelative(if (col <= 0) 0 else w + g, y) } }
+    }
+}

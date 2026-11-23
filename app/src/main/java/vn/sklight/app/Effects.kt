@@ -57,4 +57,15 @@ object Effects {
     )
     val all: List<Effect> = groups.flatMap { it.items }
     fun byId(id: Int) = all.firstOrNull { it.id == id }
+
+    /** Số gọi bằng giọng nói. 1–9, 11, 12 giữ đúng tờ hướng dẫn của SK (mô-đun giọng nói trong hộp hiểu các số này); chế độ còn lại lấy số 10 rồi 13, 14… theo thứ tự trên màn hình. */
+    private val SK_NUM = mapOf(6 to 1, 7 to 2, 13 to 3, 15 to 4, 18 to 5, 19 to 6, 52 to 7, 53 to 8, 50 to 9, 12 to 11, 51 to 12)
+    val numbers: Map<Int, Int> = run {
+        val m = LinkedHashMap<Int, Int>(); m.putAll(SK_NUM)
+        var n = 10
+        for (e in all) { if (e.id == 0 || m.containsKey(e.id)) continue; m[e.id] = n; n = if (n == 10) 13 else n + 1 }
+        m
+    }
+    fun numOf(id: Int): Int? = numbers[id]
+    fun byNum(n: Int): Effect? = numbers.entries.firstOrNull { it.value == n }?.key?.let { byId(it) }
 }

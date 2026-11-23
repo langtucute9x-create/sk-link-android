@@ -115,6 +115,26 @@ object Voice {
     /** Việc cần làm sau khi đọc xong câu trả lời: 0 không, 1 nghe tiếp (vừa được gọi tên), 2 đóng thẻ, 3 đổi giọng đọc. */
     var after = 0
 
+    private val DIGIT = mapOf("không" to 0, "một" to 1, "mốt" to 1, "hai" to 2, "ba" to 3, "bốn" to 4, "tư" to 4, "năm" to 5, "lăm" to 5,
+        "sáu" to 6, "bảy" to 7, "bẩy" to 7, "tám" to 8, "chín" to 9)
+
+    /** Đọc số ở đầu danh sách chữ: "12", "mười hai", "hai mươi mốt"… Trả về null nếu không phải số. */
+    private fun viNum(w: List<String>): Int? {
+        if (w.isEmpty()) return null
+        w[0].toIntOrNull()?.let { return it }
+        if (w[0] == "mười") return 10 + (w.getOrNull(1)?.let { DIGIT[it] } ?: 0)
+        val d = DIGIT[w[0]] ?: return null
+        if (w.getOrNull(1) == "mươi") return d * 10 + (w.getOrNull(2)?.let { DIGIT[it] } ?: 0)
+        return d
+    }
+
+    /** "chế độ 15", "bật chế độ số mười lăm", "đổi hiệu ứng 20": chọn chế độ theo số in trên ô. */
+    private fun modeByNumber(t: String): Effect? {
+        val m = Regex("(?:chế độ|hiệu ứng)(?: số)? (.+)$").find(t) ?: return null
+        val n = viNum(m.groupValues[1].split(' ')) ?: return null
+        return Effects.byNum(n)
+    }
+
     /** [word] xuất hiện trong [t] thành cụm từ riêng (không dính vào chữ khác). */
     private fun has(t: String, word: String) = Regex("(^|\\s)" + Regex.escape(word) + "(\\s|$)").containsMatchIn(t)
 
@@ -220,6 +240,8 @@ object Voice {
             val l = Effects.all.filter { it.id != 0 }
             return pick(l[(l.indexOfFirst { it.id == S.mode.intValue } + 1) % l.size])
         }
+        // gọi theo số in trên ô chế độ (1–12 trùng tờ hướng dẫn của SK, từ 13 trở đi chỉ nút mic trên app hiểu)
+        modeByNumber(t)?.let { return pick(it) }
         // tờ hướng dẫn của SK: "chế độ một" … "chế độ mười hai" và tên riêng của từng chế độ
         for (g in GUIDE) if (g.first.any { has(t, "chế độ $it") || has(t, "chế độ số $it") }) Effects.byId(g.second)?.let { return pick(it) }
         for (g in GUIDE) if (g.third.any { has(t, it) } && (t.contains("chế độ") || t.contains("hiệu ứng"))) Effects.byId(g.second)?.let { return pick(it) }
@@ -367,7 +389,7 @@ object Voice {
 /**
  * Trả lời bằng tiếng nói: bộ đọc chữ thành tiếng có sẵn của máy (không dùng AI).
  * Bộ đọc mặc định của máy không có tiếng Việt thì thử bộ đọc của Google. Không có giọng tiếng Việt thì app im lặng
- * (chỉ hiện chữ trên thẻ) và báo một lần; cách cài nằm ở Cài đặt > Giọng nói AI.
+ * (chỉ hiện chữ trên thẻ) và báo một lần; cách cài nằm ở Cài đặt > Trợ lý SK Light (AI).
  */
 object Speaker {
     private const val GOOGLE = "com.google.android.tts"
@@ -440,7 +462,7 @@ object Speaker {
     private fun noVoice(ctx: Context) {
         if (told) return
         told = true
-        Toast.makeText(ctx.applicationContext, L.tr("Máy chưa có giọng đọc tiếng Việt nên app chưa trả lời bằng tiếng được. Vào Cài đặt, mục Giọng nói AI để cài."), Toast.LENGTH_LONG).show()
+        Toast.makeText(ctx.applicationContext, L.tr("Máy chưa có giọng đọc tiếng Việt nên app chưa trả lời bằng tiếng được. Vào Cài đặt, mục Trợ lý SK Light (AI) để cài."), Toast.LENGTH_LONG).show()
     }
 
     private fun speak(e: TextToSpeech, text: String, then: (() -> Unit)?) {
@@ -533,6 +555,7 @@ fun CmdList() {
     CmdLine("Tốc độ", "“tăng tốc”, “chậm lại”")
     CmdLine("Khác", "“đổi hướng”, “đổi giọng nói”")
     T("Chế độ theo số", 13, FontWeight.Bold)
+    T("Mọi chế độ đều có số in ở góc ô (xem trang Đèn). Nói “chế độ 15” hoặc “chế độ mười lăm” khi dùng nút mic trên app; mô-đun giọng nói trong hộp chỉ hiểu số 1 đến 12 như dưới đây.", 12, color = Grey)
     T("“chế độ một” Thể thao · “hai” Ma thuật · “ba” Đuôi sao chổi · “bốn” Xuân về hoa nở · “năm” Khúc tình ca mùa đông · “sáu” Nhảy theo nhạc · “bảy” Mây trôi nước chảy · “tám” Xếp chồng · “chín” Nhịp điệu năng động · “mười một” Cuộn đủ màu · “mười hai” Chiếu sáng năng động", 13, color = SubTxt)
 }
 
@@ -548,7 +571,7 @@ fun CmdListApp() {
     CmdLine("Chế độ", "gọi theo tên chế độ trên màn hình")
 }
 
-/** Trang "Giọng nói AI": cài đặt mô-đun giọng nói của hộp, câu lệnh, rồi tới phần nút mic của app. */
+/** Trang "Trợ lý SK Light (AI)": cài đặt mô-đun giọng nói của hộp, câu lệnh, rồi tới phần nút mic của app. */
 @Composable
 fun VoicePage() {
     BackToSettings()

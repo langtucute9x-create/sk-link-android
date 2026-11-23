@@ -152,10 +152,10 @@ fun Root() {
                             val (granted, open) = navAccess()
                             TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                         }
-                        else -> if (S.subPage.intValue >= 5) TwoCol(leftW.dp, { ExtraPage(S.subPage.intValue) }, { })
-                        else if (S.subPage.intValue == 4) TwoCol(leftW.dp, { VoicePage() }, { })
-                        else if (S.subPage.intValue == 3) TwoCol(leftW.dp, { CustomTestPage() }, { })
-                        else if (S.subPage.intValue == 2) TwoCol(leftW.dp, { LanguagePage() }, { })
+                        else -> if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
+                        else if (S.subPage.intValue == 4) WideSub { VoicePage() }
+                        else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
+                        else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                         else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
                         else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
                     }
@@ -218,6 +218,12 @@ fun PowerBtn(size: Int = 46) {
 
 private val TAB_ITEMS: List<Pair<String, ImageVector>> =
     listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
+
+/** Trang cài đặt con ở màn ngang: dùng hết chiều ngang, các thẻ tự xếp thành hai cột. */
+@Composable
+fun ColumnScope.WideSub(content: @Composable () -> Unit) {
+    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) { Masonry(12.dp, content) }
+}
 
 /** Hai cột cuộn riêng cho màn ngang. */
 @Composable
@@ -390,7 +396,8 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3) {
             ) {
                 Icon(e.icon, null, tint = e.color, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(8.dp))
-                T(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt)
+                T(e.name, 12, if (on) FontWeight.ExtraBold else FontWeight.SemiBold, if (on) Txt else SubTxt, Modifier.weight(1f))
+                Effects.numOf(e.id)?.let { T("$it", 10, FontWeight.Bold, Grey, Modifier.align(Alignment.Top).padding(top = 5.dp)) }
             }
         }
         val cur = g.items.firstOrNull { it.id == S.mode.intValue && it.subs.isNotEmpty() }
@@ -903,7 +910,7 @@ fun SettingsFeatures() {
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
         Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
-        Feature(Icons.Filled.Mic, "Giọng nói AI", "Giọng nói của hộp, cách thông báo và các câu lệnh") { S.subPage.intValue = 4 }
+        Feature(Icons.Filled.Mic, "Trợ lý SK Light (AI)", "Giọng nói của hộp, cách thông báo và các câu lệnh") { S.subPage.intValue = 4 }
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
