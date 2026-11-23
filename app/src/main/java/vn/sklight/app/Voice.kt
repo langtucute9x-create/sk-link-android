@@ -503,17 +503,17 @@ private fun micAllowed(ctx: Context) = ctx.checkSelfPermission(Manifest.permissi
 
 /** Nút mic: chạm để nói, chạm lần nữa để hủy. */
 @Composable
-fun MicBtn() {
+fun MicBtn(size: Int = 46) {
     val ctx = LocalContext.current
     val on = S.voiceState.intValue == 1
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) Voice.start(ctx) else Toast.makeText(ctx, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), Toast.LENGTH_LONG).show()
     }
     Box(
-        Modifier.size(46.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape)
+        Modifier.size(size.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape)
             .clickable { if (on) Voice.close() else if (micAllowed(ctx)) Voice.start(ctx) else ask.launch(Manifest.permission.RECORD_AUDIO) },
         contentAlignment = Alignment.Center
-    ) { Icon(Icons.Filled.Mic, "Ra lệnh bằng giọng nói", tint = if (on) Color.White else Pink, modifier = Modifier.size(24.dp)) }
+    ) { Icon(Icons.Filled.Mic, "Ra lệnh bằng giọng nói", tint = if (on) Color.White else Pink, modifier = Modifier.size((size / 2).dp)) }
 }
 
 @Composable

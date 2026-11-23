@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.41"
+    const val VER = "0.5.42"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -68,6 +68,7 @@ object S {
 
     // dẫn đường + cảnh báo (bản thử)
     val warnOn = mutableStateOf(false)                    // nháy đèn khi sắp rẽ
+    val alertMaxSec = mutableIntStateOf(0)                // đèn báo rẽ chạy tối đa bao nhiêu giây (0 = tới khi qua chỗ rẽ)
     val alertDist = mutableIntStateOf(150)                // báo trước bao nhiêu mét
     val navOn = mutableStateOf(false)
     val navDir = mutableStateOf("?")
@@ -141,6 +142,7 @@ object S {
         turnStyle.intValue = sp.getInt("turnStyle", 0).coerceIn(0, 1)
         turnFlip.value = sp.getBoolean("turnFlip", false)
         alertDist.intValue = sp.getInt("alertDist", 150)
+        alertMaxSec.intValue = sp.getInt("alertMaxSec", 0)
         speedWarn.value = sp.getBoolean("speedWarn", false)
         speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
         screenAuto.value = sp.getBoolean("screenAuto", false)
@@ -182,7 +184,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("alertDist", alertDist.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)

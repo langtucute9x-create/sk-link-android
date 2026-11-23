@@ -165,11 +165,15 @@ fun Root() {
     } else {
         Column(frame) {
             // menu cố định trên cùng, nội dung cuộn bên dưới
-            Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                PowerBtn()
-                Spacer(Modifier.width(8.dp))
-                Tabs(tab, Modifier.weight(1f)) { tab = it; S.subPage.intValue = 0 }
-                if (L.cur.intValue == 0) { Spacer(Modifier.width(8.dp)); MicBtn() }
+            Box {
+            Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                PowerBtn(36)
+                Spacer(Modifier.width(6.dp))
+                Tabs(tab, Modifier.weight(1f), 30) { tab = it; S.subPage.intValue = 0 }
+                if (L.cur.intValue == 0) { Spacer(Modifier.width(6.dp)); MicBtn(36) }
+            }
+            // chấm nhỏ ở góc trên phải: xanh = đã kết nối Bluetooth với hộp đèn, xám = chưa
+            Box(Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 4.dp).size(8.dp).clip(CircleShape).background(if (S.connected.value) OkGreen else Color(0xFFB8BCC6)))
             }
             Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
@@ -204,12 +208,12 @@ fun StatusRow(onPick: () -> Unit) {
 }
 
 @Composable
-fun PowerBtn() {
+fun PowerBtn(size: Int = 46) {
     val on = S.on.value
     Box(
-        Modifier.size(46.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
+        Modifier.size(size.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
         contentAlignment = Alignment.Center
-    ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size(24.dp)) }
+    ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size((size / 2).dp)) }
 }
 
 private val TAB_ITEMS: List<Pair<String, ImageVector>> =
@@ -242,19 +246,19 @@ fun TabsV(sel: Int, onPick: (Int) -> Unit) {
 }
 
 @Composable
-fun Tabs(sel: Int, modifier: Modifier = Modifier, onPick: (Int) -> Unit) {
+fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, onPick: (Int) -> Unit) {
     val items = TAB_ITEMS
     Row(
-        modifier.clip(RoundedCornerShape(Theme.r(10))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(4.dp),
+        modifier.clip(RoundedCornerShape(Theme.r(10))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(if (height < 36) 3.dp else 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         items.forEachIndexed { i, (label, icon) ->
             val on = sel == i
             Row(
-                Modifier.weight(1f).height(40.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
+                Modifier.weight(1f).height(height.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
             ) {
-                Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(22.dp))
+                Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(if (height < 36) 20.dp else 22.dp))
             }
         }
     }
@@ -735,6 +739,21 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         }
         SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, tint(0.2f), Pink,
             Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp)
+        Spacer(Modifier.height(10.dp))
+        T("Thời gian đèn chạy", 14, FontWeight.SemiBold)
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(0 to "Tới khi rẽ xong", 5 to "5 giây", 10 to "10 giây", 20 to "20 giây", 30 to "30 giây").forEach { (sec, label) ->
+                val on = S.alertMaxSec.intValue == sec
+                Box(
+                    Modifier.weight(if (sec == 0) 1.6f else 1f).height(34.dp).clip(RoundedCornerShape(Theme.r(8)))
+                        .background(if (on) Pink else tint(0.12f)).border(1.dp, if (on) Pink else tint(0.4f), RoundedCornerShape(Theme.r(8)))
+                        .clickable { S.alertMaxSec.intValue = sec; S.saveSettings() },
+                    contentAlignment = Alignment.Center
+                ) { T(label, 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Color.White else Txt) }
+            }
+        }
+        T("Hết thời gian thì đèn trở về như cũ dù chưa qua chỗ rẽ; tới chỗ rẽ kế tiếp sẽ báo lại.", 11, color = Grey, modifier = Modifier.padding(top = 6.dp))
     }
 
 }

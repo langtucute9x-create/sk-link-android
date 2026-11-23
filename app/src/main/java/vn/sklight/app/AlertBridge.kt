@@ -65,13 +65,21 @@ object AlertBridge {
         else -> false
     }
 
+    private var expiredKind = 0                   // bên rẽ đã hết thời gian báo, không báo lại cho tới khi qua chỗ rẽ
+    private val expire = Runnable {
+        if (System.currentTimeMillis() >= testUntil && (kind == 1 || kind == 2)) { expiredKind = kind; evaluate() }
+    }
+
     private fun wanted(): Int {
         if (System.currentTimeMillis() < testUntil) return testKind
         val d = S.navDist.intValue
+        var turn = 0
         if (S.warnOn.value && S.navOn.value && d in 0..S.alertDist.intValue) {
-            if (S.navDir.value == "L") return 1
-            if (S.navDir.value == "R") return 2
+            if (S.navDir.value == "L") turn = 1
+            if (S.navDir.value == "R") turn = 2
         }
+        if (turn == 0) expiredKind = 0
+        if (turn != 0 && turn != expiredKind) return turn
         // Quá tốc độ: vượt giới hạn quá 3 km/h thì báo, xuống bằng giới hạn thì tắt
         val lim = S.speedLimit.intValue
         if (S.speedWarn.value && lim > 0) {
@@ -93,6 +101,7 @@ object AlertBridge {
             // Sắp rẽ: chỉ dùng kiểu đèn chạy theo hướng rẽ (đã bỏ kiểu nháy vàng cả xe). Chưa đọc được hướng chạy từ hộp thì hỏi lại rồi thử tiếp.
             S.alertPhase.value = true
             tryFlow(k, 4)
+            if (S.alertMaxSec.intValue > 0 && System.currentTimeMillis() >= testUntil) h.postDelayed(expire, S.alertMaxSec.intValue * 1000L)
             return
         }
         // Quá tốc độ: nháy đỏ bằng lệnh màu, đưa hộp về Đơn sắc trước
@@ -139,6 +148,7 @@ object AlertBridge {
     /** Kết thúc cảnh báo đang chạy: trả đèn về như cũ. */
     private fun stop() {
         h.removeCallbacks(tick)
+        h.removeCallbacks(expire)
         S.alertPhase.value = false
         if (flow) { stopFlow(); return }
         if (kind == 0) return
