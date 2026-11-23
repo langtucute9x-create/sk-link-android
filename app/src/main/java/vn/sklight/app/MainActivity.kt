@@ -783,10 +783,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         } else {
             val dir = S.navDir.value
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(68.dp).clip(RoundedCornerShape(16.dp)).background(Pink), contentAlignment = Alignment.Center) {
-                    Icon(when (dir) { "L" -> Icons.Filled.TurnLeft; "R" -> Icons.Filled.TurnRight; "U" -> Icons.Filled.UTurnLeft; "O" -> Icons.Filled.RoundaboutRight; "A" -> Icons.Filled.Flag; else -> Icons.Filled.Straight },
-                        null, tint = Color.White, modifier = Modifier.size(40.dp))
-                }
+                TurnIcon(dir, 68.dp)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     T("Đang dẫn đường · ${S.navApp.value}", 12, FontWeight.Bold, Color(0xFF2E8B3D))
@@ -891,7 +888,11 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         }
         Spacer(Modifier.height(6.dp))
         Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
-        Kv("Giới hạn đọc được", if (S.speedLimit.intValue > 0) "${S.speedLimit.intValue} km/h" else "Chưa có")
+        Row(Modifier.heightIn(min = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+            T("Giới hạn đọc được", 13, modifier = Modifier.weight(1f))
+            if (S.speedLimit.intValue > 0) SpeedSign(S.speedLimit.intValue, 40.dp, (if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)) > S.speedLimit.intValue)
+            else T("Chưa có", 13, FontWeight.SemiBold)
+        }
         if (S.dev.value && S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
         if (S.dev.value) S.signThumb.value?.let { bmp ->
             Spacer(Modifier.height(6.dp))

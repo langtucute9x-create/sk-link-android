@@ -274,9 +274,7 @@ private fun NavCard(hero: Boolean, wide: Boolean) {
         Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0x1FFFFFFF)).border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp)).padding(if (hero) 18.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(box).clip(RoundedCornerShape(box / 4)).background(Pink), contentAlignment = Alignment.Center) {
-            Icon(dirIcon(S.navDir.value), null, tint = Color.White, modifier = Modifier.size(box * 0.62f))
-        }
+        TurnIcon(S.navDir.value, box)
         Spacer(Modifier.width(if (hero) 18.dp else 14.dp))
         Column(Modifier.weight(1f)) {
             val fs = if (hero) (if (wide) 64 else 50) else 30
@@ -284,7 +282,7 @@ private fun NavCard(hero: Boolean, wide: Boolean) {
             if (line.isNotEmpty()) Text(line, fontSize = (if (hero) 22 else 16).sp, fontWeight = FontWeight.SemiBold, color = Color.White, fontFamily = Inter, maxLines = if (hero) 2 else 1, overflow = TextOverflow.Ellipsis)
             if (hero && S.navApp.value.isNotEmpty()) Text(S.navApp.value, fontSize = 13.sp, color = DimTxt, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (S.speedLimit.intValue > 0) { Spacer(Modifier.width(10.dp)); LimitSign(S.speedLimit.intValue, if (hero) 76.dp else 52.dp) }
+        if (S.speedLimit.intValue > 0) { Spacer(Modifier.width(10.dp)); SpeedSign(S.speedLimit.intValue, if (hero) 76.dp else 52.dp, (if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else S.speedKmh.floatValue.roundToInt()) > S.speedLimit.intValue) }
     }
 }
 
