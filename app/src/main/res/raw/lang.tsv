@@ -666,3 +666,18 @@ Bấm Chọn hộp đèn để tìm hộp.	Tap Choose LED controller to search.	
 SK Light một nửa, app đang mở (bản đồ, nhạc…) nửa kia. Bấm nút rồi chọn app ở nửa màn hình còn lại. Cần bật Hỗ trợ tiếp cận cho SK Light.	SK Light on one half, an open app (map, music…) on the other. Tap the button, then pick the app on the other half. Accessibility must be on for SK Light.					
 Để hiện các app đang mở, hãy cho SK Light quyền xem mức sử dụng ứng dụng. Hoặc bật Hỗ trợ tiếp cận để máy tự hiện danh sách app đang mở.	To list open apps, give SK Light usage access. Or turn on Accessibility so the system shows open apps itself.					
 Nếu app mở toàn màn hình: bật Hỗ trợ tiếp cận cho SK Light (trang Dẫn đường) để app tự chia màn hình.	If the app opens full screen: turn on Accessibility for SK Light (Navigation page) so it can split the screen.					
+Tìm hộp đèn	Find LED controller	LEDコントローラーを探す	LED 컨트롤러 찾기	ค้นหากล่องไฟ	ស្វែងរកប្រអប់ភ្លើង	ຊອກຫາກ່ອງໄຟ
+Hộp đèn	LED controller	LEDコントローラー	LED 컨트롤러	กล่องไฟ	ប្រអប់ភ្លើង	ກ່ອງໄຟ
+Hộp hàm gốc	Car function box	車両機能ボックス	차량 기능 박스	กล่องฟังก์ชันรถ	ប្រអប់មុខងាររថយន្ត	ກ່ອງຟັງຊັນລົດ
+Đang quét · bật nguồn xe và đứng gần hộp	Scanning · power the car and stay near the box	スキャン中 · 車の電源を入れて近くに	검색 중 · 차량 전원을 켜고 가까이	กำลังสแกน · เปิดไฟรถและอยู่ใกล้กล่อง	កំពុងស្កេន · បើកភ្លើងរថយន្ត ហើយនៅជិតប្រអប់	ກຳລັງສະແກນ · ເປີດໄຟລົດ ແລະ ຢູ່ໃກ້ກ່ອງ
+Đã quét xong	Scan finished	スキャン完了	검색 완료	สแกนเสร็จแล้ว	ស្កេនរួចរាល់	ສະແກນສຳເລັດ
+Chưa thấy hộp nào	No box found yet	まだ見つかりません	아직 찾지 못함	ยังไม่พบกล่อง	មិនទាន់ឃើញប្រអប់	ຍັງບໍ່ພົບກ່ອງ
+Đã dùng trước	Used before	以前に使用	이전에 사용	เคยใช้แล้ว	ធ្លាប់ប្រើ	ເຄີຍໃຊ້ແລ້ວ
+Rất gần	Very close	とても近い	매우 가까움	ใกล้มาก	ជិតណាស់	ໃກ້ຫຼາຍ
+Gần	Close	近い	가까움	ใกล้	ជិត	ໃກ້
+Xa	Far	遠い	멂	ไกล	ឆ្ងាយ	ໄກ
+Chọn app sẽ nằm cạnh SK Light	Choose the app to sit next to SK Light	SK Light の横に置くアプリを選択	SK Light 옆에 둘 앱 선택	เลือกแอปที่จะอยู่ข้าง SK Light	ជ្រើសកម្មវិធីនៅក្បែរ SK Light	ເລືອກແອັບທີ່ຈະຢູ່ຂ້າງ SK Light
+Đang mở gần đây	Recently open	最近開いた	최근 열린 앱	เปิดล่าสุด	បើកថ្មីៗ	ເປີດຫຼ້າສຸດ
+Chia đôi	Split	分割	분할	แบ่งจอ	បំបែក	ແບ່ງຈໍ
+Kiểm tra hộp đã có điện, Bluetooth và vị trí của máy đang bật, và không có máy khác đang nối với hộp.	Check that the box has power, Bluetooth and location are on, and no other device is connected to the box.					
+Để chỉ hiện app đang mở, cho SK Light quyền xem mức sử dụng ứng dụng. Bật Hỗ trợ tiếp cận thì máy tự hiện danh sách app đang mở.	To show only open apps, give SK Light usage access. With Accessibility on, the system shows open apps itself.					

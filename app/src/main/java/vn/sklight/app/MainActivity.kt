@@ -1072,23 +1072,3 @@ fun Feature(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) 
     }
 }
 
-@Composable
-fun DevDialog(onClose: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = { S.ble.stopScan(); onClose() },
-        confirmButton = { TextButton(onClick = { S.ble.stopScan(); onClose() }) { T("Đóng", 14, FontWeight.Bold) } },
-        dismissButton = { TextButton(onClick = { S.ble.scan() }) { T(if (S.scanning.value) "Đang quét thiết bị..." else "Quét lại", 14, FontWeight.Bold, Pink) } },
-        title = { T("Chọn hộp đèn", 17, FontWeight.Bold) },
-        text = {
-            Column {
-                if (S.devices.isEmpty()) T(if (S.scanning.value) "Đang tìm hộp CTH2 / CZH2…" else "Không thấy hộp nào. Bật nguồn hộp đèn rồi quét lại.", 13, color = Grey)
-                for (d in S.devices.sortedByDescending { it.rssi }) {
-                    Row(Modifier.fillMaxWidth().clickable { S.ble.connect(d.mac); onClose() }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) { T(d.name, 15, FontWeight.SemiBold); T(d.mac, 11, color = Grey) }
-                        T("${d.rssi} dBm", 12, color = Grey)
-                    }
-                }
-            }
-        }
-    )
-}

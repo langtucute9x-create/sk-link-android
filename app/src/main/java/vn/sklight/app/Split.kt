@@ -35,7 +35,10 @@ import androidx.compose.ui.unit.dp
 // Dự phòng khi chưa bật Hỗ trợ tiếp cận / máy không cho: hộp chọn trong các app dùng gần đây (cần quyền xem mức sử dụng),
 // mở app đó với cờ LAUNCH_ADJACENT.
 object Split {
-    class App(val pkg: String, val name: String)
+    class App(val pkg: String, val name: String, val last: Long = 0L)
+    private val MAPS = listOf("maps", "vietmap", "waze", "navitel", "osmand", "sygic", "navi", "here.app", "organicmaps", "magicearth",
+        "tomtom", "goong", "map4d", "amap", "autonavi", "baidumap", "petal", "gofa", "bản đồ")
+    fun isMap(a: App) = MAPS.any { a.pkg.lowercase().contains(it) || a.name.lowercase().contains(it) }
 
     val inSplit = mutableStateOf(false)         // SK Light đang ở chế độ chia đôi (MainActivity cập nhật)
     val picking = mutableStateOf(false)
@@ -67,13 +70,14 @@ object Split {
             val p = r.activityInfo?.packageName ?: continue
             if (p != c.packageName && p != home) names[p] = try { r.loadLabel(pm).toString() } catch (_: Exception) { p }
         }
-        if (!recent) return names.map { App(it.key, it.value) }.sortedBy { it.name.lowercase() }
+        if (!recent) return names.map { App(it.key, it.value) }.sortedWith(compareBy<App>({ !isMap(it) }, { it.name.lowercase() }))
         val um = c.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return emptyList()
         val now = System.currentTimeMillis()
         val st = try { um.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 12 * 3600_000L, now) } catch (_: Exception) { null } ?: return emptyList()
         return st.filter { it.lastTimeUsed > now - 12 * 3600_000L && names.containsKey(it.packageName) }
             .groupBy { it.packageName }.map { (p, l) -> p to l.maxOf { it.lastTimeUsed } }
-            .sortedByDescending { it.second }.map { App(it.first, names[it.first] ?: it.first) }
+            .sortedByDescending { it.second }.map { App(it.first, names[it.first] ?: it.first, it.second) }
+            .sortedBy { !isMap(it) }                 // app bản đồ lên đầu, trong mỗi nhóm vẫn mới nhất trước
     }
 
     fun open(c: Context, p: String) {
@@ -110,36 +114,3 @@ fun SplitCard() {
     }
 }
 
-@Composable
-fun SplitPicker() {
-    if (!Split.picking.value) return
-    val ctx = LocalContext.current
-    var tick by remember { mutableIntStateOf(0) }
-    val allowed = remember(tick) { Split.usageAllowed(ctx) }
-    var all by remember { mutableStateOf(false) }
-    val list = remember(all, allowed, tick) { Split.apps(ctx, allowed && !all) }
-    AlertDialog(
-        onDismissRequest = { Split.picking.value = false },
-        confirmButton = { TextButton(onClick = { Split.picking.value = false }) { T("Đóng", 14, FontWeight.Bold, Pink) } },
-        title = { T(if (allowed && !all) "Chọn app đang mở" else "Chọn app", 17, FontWeight.Bold) },
-        text = {
-            Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (!allowed) {
-                    T("Để hiện các app đang mở, hãy cho SK Light quyền xem mức sử dụng ứng dụng. Hoặc bật Hỗ trợ tiếp cận để máy tự hiện danh sách app đang mở.", 13, color = SubTxt)
-                    OutlineBtn("Cho phép xem app đang mở", Modifier.fillMaxWidth()) {
-                        try { ctx.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {}
-                    }
-                    OutlineBtn("Kiểm tra lại", Modifier.fillMaxWidth()) { tick++ }
-                    T("Mọi ứng dụng", 13, FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
-                }
-                if (list.isEmpty()) T("Không tìm thấy app nào.", 13, color = Grey)
-                list.forEach { a ->
-                    Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { Split.open(ctx, a.pkg) }, verticalAlignment = Alignment.CenterVertically) {
-                        T(a.name, 15, FontWeight.SemiBold)
-                    }
-                }
-                if (allowed) OutlineBtn(if (all) "Chỉ hiện app đang mở" else "Hiện mọi ứng dụng", Modifier.fillMaxWidth()) { all = !all }
-            }
-        }
-    )
-}
