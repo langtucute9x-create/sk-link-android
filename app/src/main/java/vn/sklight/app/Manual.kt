@@ -109,7 +109,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Giọng nói không nhận lệnh: kiểm tra mạng, quyền micro của SK Light và của app Google.",
         "Chữ quá to hoặc quá nhỏ: Cài đặt giao diện, mục Cỡ chữ.",
         "Máy chạy giật: bật Giảm hiệu ứng trong Cài đặt giao diện.",
-        "Các chức năng theo tín hiệu của xe (xi nhan, cửa, dây an toàn…) đang được hoàn thiện và sẽ có trong bản sau."
+        "Mục Chức năng gốc xe (đèn báo theo xi nhan, cửa, dây an toàn…) đã có trong Cài đặt nhưng đang được hoàn thiện; hướng dẫn chi tiết sẽ bổ sung sau."
     )
 )
 

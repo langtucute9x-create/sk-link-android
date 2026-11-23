@@ -441,7 +441,7 @@ fun FactoryPage() {
     }
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
-        if (S.dev.value) Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc thông tin chẩn đoán từ hộp") { S.subPage.intValue = 10 }
+        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc thông tin chẩn đoán từ hộp") { S.subPage.intValue = 10 }
     }
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
@@ -450,7 +450,7 @@ fun FactoryPage() {
         }
         if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
     }
-    if (S.dev.value) Card {
+    Card {
         T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
         Hint("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp một lần, đổi đúng MỘT thứ (bằng app gốc hoặc nút cơ), kết nối lại rồi chụp tiếp. Làm lần lượt cho từng thứ cần tìm, cuối cùng bấm Sao chép để gửi một lần. App chỉ đọc, không ghi gì vào hộp. Các lần chụp được nhớ kể cả khi thoát app.", 12)
@@ -475,7 +475,7 @@ fun FactoryPage() {
             Notice.show(ctx, L.tr("Đã sao chép"))
         }
     }
-    if (S.dev.value) Card {
+    Card {
         T("Chưa có trong app này", 14, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
         Hint("Nâng cấp phần mềm hộp cần tệp phần mềm của nhà sản xuất và dễ làm hỏng hộp nếu nạp lỗi, nên chưa làm. Cần thì dùng app gốc của hãng.", 12)

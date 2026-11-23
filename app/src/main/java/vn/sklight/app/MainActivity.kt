@@ -1017,12 +1017,12 @@ fun SettingsFeatures() {
     }
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
-        // Chức năng gốc xe chưa kiểm chứng xong trên xe thật: tạm chỉ hiện ở chế độ kỹ thuật
-        if (S.dev.value) Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
+        // Chức năng gốc xe chưa kiểm chứng xong trên xe thật nhưng chủ dự án yêu cầu luôn hiện (sẽ hoàn thiện sau)
+        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
         Feature(Icons.Filled.Mic, "Trợ lý SK Light (AI)", "Giọng nói của hộp, cách thông báo và các câu lệnh") { S.subPage.intValue = 4 }
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
-        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
+        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
     }
     Card {
         Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
