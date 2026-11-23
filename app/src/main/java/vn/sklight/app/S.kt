@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.31"
+    const val VER = "0.5.32"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -166,8 +166,12 @@ object S {
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }
+        (sp.getString("col", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) col[i] = v and 0xFFFFFF }
+        czone.intValue = sp.getInt("czone", 0).coerceIn(0, 2)
+        Auto.z2.intValue = sp.getInt("autoZ2", 0).coerceIn(0, Auto.Z2_NAMES.size)
         ble = BleLed(app)
         main.post(nightLoop)
+        Auto.resume()
     }
 
     fun saveSettings() {
@@ -182,7 +186,7 @@ object S {
             .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue)
             .putString("customs", customs.joinToString(","))
-            .putString("boxPos", boxPos.joinToString(",")).apply()
+            .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).apply()
     }
 
     fun addDev(d: Dev) {
@@ -218,7 +222,8 @@ object S {
     /** Trả lời 7C 02: (độ nhạy << 4 | mode1) | id hiệu ứng | kiểu con | tốc độ. */
     fun onEffect(b1: Int, id: Int, param: Int, spd: Int) {
         m1 = b1 and 0x0F
-        if (!syncing()) return
+        // kiểu vùng 2 của app không đụng tới chế độ của hộp nên vẫn lấy chế độ từ hộp; chỉ bỏ qua khi app đang chạy chế độ tự tạo cả xe
+        if (System.currentTimeMillis() >= syncUntil || Auto.main.intValue != 0 || alertKind.intValue != 0) return
         val e = Effects.byId(id) ?: return
         if (id >= 100) return
         mode.intValue = id
@@ -283,14 +288,19 @@ object S {
         else Protocol.color(false, col[1], col[2], invert.value)
 
     fun setColor(rgb: Int) {
-        if (Auto.running() && Auto.usesBase()) { col[czone.intValue] = rgb; on.value = true; sceneSel.intValue = -1; return }   // chế độ tự tạo chạy tiếp với màu mới
-        if (Auto.running()) { Auto.leave(); if (mode.intValue >= 100) mode.intValue = 0 }
+        // chế độ tự tạo cả xe không dùng màu gốc (cầu vồng, lửa…): chọn màu là rời chế độ đó. Kiểu vùng 2 của app thì chạy tiếp.
+        if (Auto.main.intValue != 0 && !Auto.usesBase()) { Auto.leave(); if (mode.intValue >= 100) mode.intValue = 0 }
         col[czone.intValue] = rgb
         on.value = true; sceneSel.intValue = -1
-        ble.send(colorFrame(), 2, true)
+        saveColSoon()
+        if (!Auto.running()) ble.send(colorFrame(), 2, true)      // đang có chế độ / kiểu vùng 2 của app thì nhịp kế tiếp tự gửi màu mới
     }
 
-    fun setColorZone(z: Int) { czone.intValue = z; if (!Auto.running()) ble.send(colorFrame(), 2, true) }
+    private val saveCol = Runnable { try { sp.edit().putString("col", col.joinToString(",")).putInt("czone", czone.intValue).apply() } catch (e: Exception) {} }
+    /** Nhớ màu đang chọn (ghi sau nửa giây để kéo bánh xe màu không ghi liên tục). */
+    private fun saveColSoon() { main.removeCallbacks(saveCol); main.postDelayed(saveCol, 500) }
+
+    fun setColorZone(z: Int) { czone.intValue = z; saveColSoon(); if (!Auto.running()) ble.send(colorFrame(), 2, true) }
 
     fun addCustom() {
         val c = col[czone.intValue]
@@ -326,7 +336,8 @@ object S {
         mode.intValue = sc.mode
         if (sc.mode in sub.indices) sub[sc.mode] = sc.sub
         speed.intValue = sc.speed
-        if (sc.z2 != z2.intValue) setZ2(sc.z2)                 // chưa đọc được khối 0D thì bỏ qua, giữ nguyên chế độ vùng 2 của hộp
+        if (sc.z2 != 0) Auto.clearZ2(false)                    // bối cảnh dùng kiểu vùng 2 của hộp: bỏ kiểu của app
+        if (sc.z2 != z2.intValue && Auto.z2.intValue == 0) setZ2(sc.z2)      // chưa đọc được khối 0D thì bỏ qua, giữ nguyên chế độ vùng 2 của hộp
         val b = if (Night.active) minOf(sc.bri, nightBri.intValue) else sc.bri       // ban đêm không sáng quá mức ban đêm
         for (i in 0..2) bri[i] = b
         sendBright()

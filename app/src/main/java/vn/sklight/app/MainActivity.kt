@@ -313,7 +313,7 @@ fun LedMain() {
                 val on = if (hw) (S.z2.intValue == i && Auto.z2.intValue == 0) else Auto.z2.intValue == i - 2
                 Row(m.heightIn(min = 40.dp).clickable {
                     if (hw) {
-                        if (Auto.z2.intValue != 0) Auto.stop()
+                        Auto.clearZ2()
                         if (!S.setZ2(i)) { S.refreshBlocks(); Toast.makeText(S.app, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show() }
                     } else if (!S.connected.value) Toast.makeText(S.app, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show()
                     else Auto.startZ2(i - 2)
@@ -325,7 +325,7 @@ fun LedMain() {
                     T(opts[i], 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Txt else Grey)
                 }
             }
-            if (Auto.z2.intValue != 0) { Spacer(Modifier.height(4.dp)); T("Kiểu thêm do app điều khiển, chạy khi app còn mở.", 11, color = Grey) }
+            if (Auto.z2.intValue != 0) { Spacer(Modifier.height(4.dp)); T("Kiểu thêm do app điều khiển: được nhớ khi đổi chế độ, đổi màu; chạy khi app còn mở và đang kết nối.", 11, color = Grey) }
         }
     }
 }
