@@ -131,14 +131,17 @@ class BleLed(private val ctx: Context) {
             ready(g)
         }
 
-        override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) { ready(g) }
+        override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) {
+            val h = descDone
+            if (h != null) h() else if (tap == null) ready(g)          // đang thử kênh JieLi: bật báo thêm không được chạy lại phần "đã kết nối"
+        }
 
         override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic) {
             val v = c.value
-            if (v != null) rx(v)
+            if (v != null) onNotify(c, v)
         }
 
-        override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) { rx(value) }
+        override fun onCharacteristicChanged(g: BluetoothGatt, c: BluetoothGattCharacteristic, value: ByteArray) { onNotify(c, value) }
 
         @Deprecated("API < 33")
         override fun onCharacteristicRead(g: BluetoothGatt, c: BluetoothGattCharacteristic, status: Int) {
@@ -188,6 +191,183 @@ class BleLed(private val ctx: Context) {
             if (!ok) readDone?.invoke(null) else main.postDelayed(timeout, 1500)
         }
         main.postDelayed({ next() }, 300)          // chờ hàng đợi ghi đang chạy dừng hẳn
+    }
+
+    // ---------------- thử kênh riêng của chip JieLi (RCSP): hỏi địa chỉ Bluetooth của chính hộp ----------------
+    // Mục đích: iPhone không đọc được địa chỉ Bluetooth, nên cần một cách khác để nhận ra từng hộp (kích hoạt theo hộp).
+    // Khung RCSP (theo thư viện jl_bt_ota của JieLi): FE DC BA | cờ | mã lệnh | dài (2 byte) | số thứ tự | dữ liệu | EF.
+    // Lệnh 03 (GetTargetInfo) chỉ HỎI thông tin; thuộc tính 17 trong câu trả lời là địa chỉ BLE, thuộc tính 2 là địa chỉ EDR.
+    @Volatile private var tap: ((String, ByteArray) -> Unit)? = null
+    @Volatile private var descDone: (() -> Unit)? = null
+
+    private fun sh(u: UUID) = u.toString().let { if (it.endsWith("-0000-1000-8000-00805f9b34fb")) it.substring(4, 8) else it }
+
+    private fun onNotify(c: BluetoothGattCharacteristic, v: ByteArray) {
+        val h = tap
+        val own = c.uuid == nId && c.service?.uuid == svcId
+        if (h != null) h(sh(c.service?.uuid ?: svcId) + "/" + sh(c.uuid), v.copyOf())
+        if (h == null || own) rx(v)               // báo từ kênh khác (chỉ bật lúc thử) không đưa vào bộ đọc lệnh đèn
+    }
+
+    class JlResult(val log: List<String>, val bleAddr: String?, val edrAddr: String?, val channel: String?)
+
+    fun jlProbe(done: (JlResult) -> Unit) {
+        val g = gatt ?: run { done(JlResult(listOf("Chưa kết nối hộp đèn."), null, null, null)); return }
+        paused = true
+        Thread {
+            val log = ArrayList<String>()
+            var ble: String? = null; var edr: String? = null; var chan: String? = null
+            try {
+                val inbox = java.util.concurrent.LinkedBlockingQueue<Pair<String, ByteArray>>()
+                tap = { ch, v -> inbox.offer(ch to v) }
+                fun hx(b: ByteArray) = b.joinToString(" ") { "%02X".format(it) }
+                fun mac(b: ByteArray) = b.joinToString(":") { "%02X".format(it) }
+                fun wr(c: BluetoothGattCharacteristic, data: ByteArray): Boolean {
+                    val type = if (c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                    repeat(6) {
+                        val ok = try {
+                            if (Build.VERSION.SDK_INT >= 33) g.writeCharacteristic(c, data, type) == 0
+                            else { c.writeType = type; c.value = data; g.writeCharacteristic(c) }
+                        } catch (_: Exception) { false }
+                        if (ok) { log.add("   → " + hx(data)); return true }
+                        Thread.sleep(70)
+                    }
+                    log.add("   → (máy không gửi được) " + hx(data)); return false
+                }
+                /** Chờ báo về tối đa [ms]; ghi lại mọi gói; [stop] trả true thì dừng sớm. */
+                fun collect(ms: Long, stop: (ByteArray) -> Boolean): Boolean {
+                    val end = System.currentTimeMillis() + ms
+                    while (true) {
+                        val left = end - System.currentTimeMillis()
+                        if (left <= 0) return false
+                        val it = inbox.poll(left, java.util.concurrent.TimeUnit.MILLISECONDS) ?: return false
+                        log.add("   ← " + it.first + ": " + hx(it.second))
+                        if (stop(it.second)) return true
+                    }
+                }
+                /** Tìm khung trả lời của lệnh 03 trong dữ liệu đã nhận; trả về (trạng thái, phần thuộc tính). */
+                fun reply03(b: ByteArray): Pair<Int, ByteArray>? {
+                    var i = 0
+                    while (i + 8 <= b.size) {
+                        if ((b[i].toInt() and 0xFF) == 0xFE && (b[i + 1].toInt() and 0xFF) == 0xDC && (b[i + 2].toInt() and 0xFF) == 0xBA) {
+                            val flag = b[i + 3].toInt() and 0xFF; val op = b[i + 4].toInt() and 0xFF
+                            val len = ((b[i + 5].toInt() and 0xFF) shl 8) or (b[i + 6].toInt() and 0xFF)
+                            val end = i + 7 + len
+                            if (end >= b.size) return null                 // chưa đủ khung, chờ gói tiếp
+                            if ((b[end].toInt() and 0xFF) == 0xEF) {
+                                if (op == 0x03 && flag and 0x80 == 0 && len >= 2) return (b[i + 7].toInt() and 0xFF) to b.copyOfRange(i + 9, end)
+                                i = end + 1; continue
+                            }
+                        }
+                        i++
+                    }
+                    return null
+                }
+                fun attrs(d: ByteArray) {
+                    var i = 0
+                    while (i + 2 <= d.size) {
+                        val n = d[i].toInt() and 0xFF
+                        if (n == 0 || i + 1 + n > d.size) break
+                        val t = d[i + 1].toInt() and 0xFF
+                        val v = d.copyOfRange(i + 2, i + 1 + n)
+                        log.add("   • thuộc tính $t: " + hx(v))
+                        if (t == 17 && v.size >= 7) ble = mac(v.copyOfRange(1, 7))
+                        if (t == 2 && v.size >= 6) edr = mac(v.copyOfRange(0, 6))
+                        i += n + 1
+                    }
+                }
+                Thread.sleep(350)                                          // chờ hàng đợi lệnh đèn dừng hẳn
+                val std = setOf("1800", "1801", "180a")
+                val svcs = (g.services ?: emptyList()).filter { sh(it.uuid) !in std }
+                log.add("--- Bật báo ở các kênh ---")
+                for (s in svcs) for (c in s.characteristics ?: emptyList()) {
+                    val p = c.properties
+                    val nt = p and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
+                    val ind = p and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
+                    if (!nt && !ind) continue
+                    if (s.uuid == svcId && c.uuid == nId) continue          // kênh lệnh đèn đã bật sẵn
+                    val d = c.getDescriptor(cccd) ?: continue
+                    try { g.setCharacteristicNotification(c, true) } catch (_: Exception) {}
+                    val sem = java.util.concurrent.Semaphore(0)
+                    descDone = { sem.release() }
+                    val v = if (nt) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+                    val ok = try {
+                        if (Build.VERSION.SDK_INT >= 33) g.writeDescriptor(d, v) == 0 else { d.value = v; g.writeDescriptor(d) }
+                    } catch (_: Exception) { false }
+                    val got = ok && sem.tryAcquire(1500, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    descDone = null
+                    log.add(sh(s.uuid) + "/" + sh(c.uuid) + ": " + if (got) "đã bật" else "không bật được")
+                    Thread.sleep(80)
+                }
+                collect(400) { false }                                      // gói hộp tự gửi ngay sau khi bật báo (nếu có)
+                // Kênh để ghi: ưu tiên dịch vụ AE00 (kênh RCSP chuẩn của JieLi), kênh lệnh đèn AE30/AE01 thử sau cùng.
+                val ws = ArrayList<Pair<BluetoothGattService, BluetoothGattCharacteristic>>()
+                for (s in svcs) for (c in s.characteristics ?: emptyList()) {
+                    val p = c.properties
+                    if (p and (BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) == 0) continue
+                    if (p and BluetoothGattCharacteristic.PROPERTY_READ != 0) { log.add("Bỏ qua " + sh(s.uuid) + "/" + sh(c.uuid) + " (ô cấu hình, không phải kênh lệnh)"); continue }
+                    ws.add(s to c)
+                }
+                fun rank(x: Pair<BluetoothGattService, BluetoothGattCharacteristic>) = when {
+                    sh(x.first.uuid) == "ae00" -> 0
+                    x.first.uuid != svcId -> 1
+                    x.second.uuid != wId -> 2
+                    else -> 3
+                }
+                ws.sortBy { rank(it) }
+                val auth = try { com.jieli.jl_bt_ota.impl.RcspAuth.open() } catch (t: Throwable) { null }
+                if (auth == null) log.add("Máy này không nạp được thư viện xác thực JieLi (" + com.jieli.jl_bt_ota.impl.RcspAuth.error + "): chỉ thử hỏi thẳng.")
+                var sn = 0
+                for ((s, c) in ws) {
+                    if (chan != null || gatt !== g) break
+                    val name = sh(s.uuid) + "/" + sh(c.uuid)
+                    log.add("--- Thử kênh $name ---")
+                    inbox.clear()
+                    fun ask(): Boolean {
+                        val acc = java.io.ByteArrayOutputStream()
+                        val f = byteArrayOf(0xFE.toByte(), 0xDC.toByte(), 0xBA.toByte(), 0xC0.toByte(), 0x03, 0x00, 0x06, (sn++ and 0xFF).toByte(), -1, -1, -1, -1, 0x00, 0xEF.toByte())
+                        if (!wr(c, f)) return false
+                        return collect(1300) { v ->
+                            acc.write(v)
+                            val r = reply03(acc.toByteArray())
+                            if (r != null) { chan = name; log.add("   Hộp TRẢ LỜI lệnh hỏi thông tin, trạng thái " + r.first + ":"); attrs(r.second); true } else false
+                        }
+                    }
+                    if (ask()) break
+                    if (auth == null) { log.add("   Không trả lời."); continue }
+                    // Bước xác thực của JieLi: app gửi số ngẫu nhiên → hộp trả bản mã hóa → app báo "pass" → hộp gửi số của nó → app trả bản mã hóa → hộp báo "pass".
+                    log.add("   Không trả lời khi hỏi thẳng, thử xác thực JieLi:")
+                    var rnd = auth.getRandomAuthData()
+                    var k = 0
+                    while (rnd != null && rnd.any { (it.toInt() and 0xFF) == 0x2E } && k++ < 30) rnd = auth.getRandomAuthData()      // tránh byte mở đầu lệnh đèn
+                    if (rnd == null || rnd.size != 17) { log.add("   Thư viện không tạo được số ngẫu nhiên."); continue }
+                    if (!wr(c, rnd)) continue
+                    var devEnc: ByteArray? = null
+                    collect(1500) { v -> if (v.size == 17 && v[0].toInt() == 1) { devEnc = v; true } else false }
+                    val de = devEnc
+                    if (de == null) { log.add("   Hộp không trả lời xác thực ở kênh này."); continue }
+                    val exp = auth.getEncryptedAuthData(rnd)
+                    log.add("   Hộp trả lời xác thực: " + if (exp != null && exp.contentEquals(de)) "KHỚP khóa chuẩn của JieLi" else "KHÔNG khớp khóa chuẩn (hộp dùng khóa riêng)")
+                    wr(c, byteArrayOf(2, 0x70, 0x61, 0x73, 0x73))
+                    var devRnd: ByteArray? = null
+                    collect(2500) { v -> if (v.size == 17 && v[0].toInt() == 0) { devRnd = v; true } else false }
+                    val dr = devRnd
+                    if (dr == null) log.add("   Hộp không gửi số của nó.")
+                    else {
+                        val e = auth.getEncryptedAuthData(dr)
+                        if (e != null) wr(c, e)
+                        val pass = collect(2500) { v -> v.size == 5 && v[0].toInt() == 2 }
+                        log.add(if (pass) "   Xác thực XONG." else "   Hộp không báo xác thực xong.")
+                    }
+                    if (ask()) break
+                    log.add("   Sau xác thực vẫn không trả lời lệnh hỏi thông tin.")
+                }
+                if (ws.isEmpty()) log.add("Hộp không có kênh ghi nào để thử.")
+            } catch (t: Throwable) { log.add("Lỗi khi thử: $t") }
+            tap = null; descDone = null; paused = false
+            val r = JlResult(log, ble, edr, chan)
+            main.post { done(r) }
+        }.start()
     }
 
     private fun discover(g: BluetoothGatt) {

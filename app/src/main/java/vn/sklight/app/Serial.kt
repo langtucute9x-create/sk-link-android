@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -54,6 +55,8 @@ fun SerialPage() {
     var lines by remember { mutableStateOf<List<String>>(emptyList()) }
     var found by remember { mutableStateOf<List<String>>(emptyList()) }
     var busy by remember { mutableStateOf(false) }
+    var jl by remember { mutableStateOf<BleLed.JlResult?>(null) }
+    var jlBusy by remember { mutableStateOf(false) }
     BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.Fingerprint, "Tìm số seri hộp", 16)
@@ -106,6 +109,49 @@ fun SerialPage() {
             }
             Spacer(Modifier.height(8.dp))
             Hint("Bấm Sao chép rồi gửi kết quả cho kỹ thuật. Muốn so sánh, làm lại với một hộp khác: mã nào khác nhau giữa hai hộp mới là mã riêng.", 12)
+        }
+    }
+    // ----- Thử đọc ID hộp qua kênh riêng của chip Bluetooth (để iPhone nhận ra từng hộp) -----
+    Card {
+        GroupTitle(Icons.Filled.Memory, "Thử đọc ID hộp qua kênh chip", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Hỏi chip Bluetooth của hộp địa chỉ của chính nó, để sau này iPhone cũng nhận ra từng hộp. Chỉ hỏi, không thay đổi gì trên hộp. Mất khoảng 20 giây, trong lúc đó đèn tạm không nhận lệnh.", 12)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FillBtn(if (jlBusy) "Đang thử…" else "Bắt đầu thử", Icons.Filled.Search, Pink, Modifier.weight(1f)) {
+                if (jlBusy) return@FillBtn
+                if (!S.connected.value) { Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")); return@FillBtn }
+                jlBusy = true
+                S.ble.jlProbe { r -> jl = r; jlBusy = false }
+            }
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
+                val r = jl ?: return@FillBtn
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val head = listOf("SK Light ${S.VER} · ${S.devName.value} · ID ${S.savedMac}", "Kênh trả lời: ${r.channel ?: "không có"}", "Địa chỉ BLE hộp tự báo: ${r.bleAddr ?: "không có"}", "Địa chỉ EDR hộp tự báo: ${r.edrAddr ?: "không có"}")
+                cm.setPrimaryClip(ClipData.newPlainText("jl", (head + r.log).joinToString("\n")))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
+        }
+    }
+    jl?.let { r ->
+        Card {
+            T("Kết quả thử kênh chip", 15, FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            val id = S.savedMac.uppercase()
+            fun same(a: String?) = a != null && (a == id || a.split(":").reversed().joinToString(":") == id)
+            when {
+                same(r.bleAddr) -> T("ĐỌC ĐƯỢC ID hộp: ${r.bleAddr}. TRÙNG với ID thiết bị, iPhone dùng được kích hoạt theo hộp.", 13, FontWeight.Bold, AccentText)
+                same(r.edrAddr) -> T("ĐỌC ĐƯỢC ID hộp ở ô địa chỉ thứ hai: ${r.edrAddr}. TRÙNG với ID thiết bị.", 13, FontWeight.Bold, AccentText)
+                r.bleAddr != null || r.edrAddr != null -> T("Hộp có trả địa chỉ (${r.bleAddr ?: "-"} / ${r.edrAddr ?: "-"}) nhưng KHÁC ID thiết bị $id. Gửi kết quả cho kỹ thuật.", 13, FontWeight.Bold, color = Txt)
+                r.channel != null -> T("Hộp có trả lời ở kênh ${r.channel} nhưng không kèm địa chỉ. Gửi kết quả cho kỹ thuật.", 13, color = SubTxt)
+                else -> T("Chưa đọc được: hộp không trả lời ở kênh nào. Gửi kết quả cho kỹ thuật.", 13, color = SubTxt)
+            }
+            Spacer(Modifier.height(10.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(ChipBg).padding(10.dp)) {
+                for (x in r.log) T(x, 11, color = Txt)
+            }
+            Spacer(Modifier.height(8.dp))
+            Hint("Bấm Sao chép rồi gửi kết quả cho kỹ thuật.", 12)
         }
     }
 }

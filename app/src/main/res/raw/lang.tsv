@@ -735,3 +735,9 @@ Nút bật SK Light bị mờ, không bấm được?	SK Light switch greyed out
 Đọc app dẫn đường không có thông báo (Gofa) và tự chia đôi màn hình.	Reads navigation apps without notifications (Gofa) and splits the screen.					
 App cài ngoài CH Play nên máy chặn. Mở Thông tin ứng dụng, bấm dấu ⋮ ở góc trên, chọn "Cho phép cài đặt bị hạn chế", rồi bật lại.	Apps installed outside Play Store are restricted. Open App info, tap ⋮ at the top, choose "Allow restricted settings", then try again.					
 Cổ điển	Classic	クラシック	클래식	คลาสสิก	បុរាណ	ຄລາສສິກ
+Thử đọc ID hộp qua kênh chip	Try reading the box ID via the chip channel					
+Hỏi chip Bluetooth của hộp địa chỉ của chính nó, để sau này iPhone cũng nhận ra từng hộp. Chỉ hỏi, không thay đổi gì trên hộp. Mất khoảng 20 giây, trong lúc đó đèn tạm không nhận lệnh.	Asks the box Bluetooth chip for its own address, so an iPhone can later tell boxes apart. Read only, nothing on the box is changed. Takes about 20 seconds; the lights do not accept commands meanwhile.					
+Bắt đầu thử	Start test					
+Đang thử…	Testing…					
+Kết quả thử kênh chip	Chip channel test result					
+Bấm Sao chép rồi gửi kết quả cho kỹ thuật.	Tap Copy and send the result to support.					
