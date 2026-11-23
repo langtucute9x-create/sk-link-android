@@ -37,7 +37,7 @@ object SeqTest {
     private val tick = Runnable { step() }
 
     fun start(k: Int) {
-        if (!S.connected.value) { Toast.makeText(S.app, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show(); return }
+        if (!S.connected.value) { Notice.show(S.app, L.tr("Chưa kết nối hộp đèn.")); return }
         h.removeCallbacks(tick)
         // kiểu 1..3: đang chạy hiệu ứng thì đưa hộp về Đơn sắc để lệnh màu có tác dụng. Kiểu 4, 5 để nguyên khu vực 1 đang chạy gì thì chạy.
         if (k <= 3 && S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)

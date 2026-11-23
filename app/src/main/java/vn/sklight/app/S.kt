@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "0.5.49"
+    const val VER = "0.5.50"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -131,6 +131,13 @@ object S {
         }
     }
 
+    private fun lowEnd(c: Context): Boolean = try {
+        val am = c.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val mi = android.app.ActivityManager.MemoryInfo()
+        am.getMemoryInfo(mi)
+        am.isLowRamDevice || mi.totalMem < 1_600_000_000L || Runtime.getRuntime().availableProcessors() < 4
+    } catch (e: Exception) { false }
+
     fun init(c: Context) {
         if (inited) return
         inited = true
@@ -169,7 +176,7 @@ object S {
         Theme.font.intValue = sp.getInt("themeFont", 0).coerceIn(0, Theme.FONTS.size - 1)
         Theme.style.intValue = sp.getInt("themeStyle", 0).coerceIn(0, Theme.STYLES.size - 1)
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
-        Theme.fx.value = sp.getBoolean("themeFx", true)
+        Theme.fx.value = sp.getBoolean("themeFx", !lowEnd(app))     // máy yếu (ít RAM / ít nhân) thì mặc định bật "Giảm hiệu ứng"
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
         (sp.getString("customs", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEach { customs.add(it) }
         (sp.getString("boxPos", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 4) boxPos[i] = v }

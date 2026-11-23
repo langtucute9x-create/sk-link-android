@@ -86,11 +86,21 @@ fun MyModesCard(cols: Int) {
         Spacer(Modifier.height(6.dp))
         T("Tự ghép 2 đến 5 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12, color = Grey)
         Spacer(Modifier.height(12.dp))
+        if (Seqs.list.isEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                EmptyOrbs()
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    T("Chưa có chế độ riêng nào", 14, FontWeight.Bold)
+                    T("Bấm ô có dấu cộng, chọn vài màu ưa thích là có ngay một hiệu ứng mang tên riêng.", 12, color = Grey)
+                }
+            }
+        }
         Grid((Seqs.list.indices.toList() + listOf(-1)), cols, 9.dp, 11.dp) { i, m ->
             if (i < 0) {
                 Row(
                     m.height(56.dp).clip(RoundedCornerShape(Theme.r(8))).background(CardBg).border(1.dp, Pink, RoundedCornerShape(Theme.r(8)))
-                        .clickable { if (Seqs.list.size >= Seqs.MAX) Toast.makeText(ctx, L.tr("Đã đủ ${Seqs.MAX} chế độ, xóa bớt để thêm."), Toast.LENGTH_SHORT).show() else open(-1) },
+                        .clickable { if (Seqs.list.size >= Seqs.MAX) Notice.show(ctx, L.tr("Đã đủ ${Seqs.MAX} chế độ, xóa bớt để thêm.")) else open(-1) },
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(Icons.Filled.Add, null, tint = Pink, modifier = Modifier.size(20.dp))

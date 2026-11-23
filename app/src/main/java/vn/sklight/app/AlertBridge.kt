@@ -173,5 +173,5 @@ object AlertBridge {
         }
     }
 
-    private fun toast(t: String) = Toast.makeText(S.app, L.tr(t), Toast.LENGTH_LONG).show()
+    private fun toast(t: String) = Notice.show(S.app, L.tr(t), true)
 }

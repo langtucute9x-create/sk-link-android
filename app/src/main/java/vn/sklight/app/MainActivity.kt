@@ -71,6 +71,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
+    override fun onWindowFocusChanged(hasFocus: Boolean) { super.onWindowFocusChanged(hasFocus); Notice.winFocus = hasFocus }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Crash.install(this)
@@ -194,6 +195,7 @@ fun Root() {
             }
         }
     }
+    NoticeHost(Modifier.align(Alignment.BottomCenter))
     }
     if (pickDev) DevDialog { pickDev = false }
     UpdateDialog()
@@ -283,8 +285,8 @@ fun LedMain() {
                 Row(m.heightIn(min = 40.dp).clickable {
                     if (hw) {
                         Auto.clearZ2()
-                        if (!S.setZ2(i)) { S.refreshBlocks(); Toast.makeText(S.app, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show() }
-                    } else if (!S.connected.value) Toast.makeText(S.app, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show()
+                        if (!S.setZ2(i)) { S.refreshBlocks(); Notice.show(S.app, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại.")) }
+                    } else if (!S.connected.value) Notice.show(S.app, L.tr("Chưa kết nối hộp đèn."))
                     else Auto.startZ2(i - 2)
                 }, verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
@@ -451,7 +453,7 @@ fun WelcomePage() { WelcomeTop(); WelcomeDiagram() }
 fun WelcomeTop() {
     val ctx = LocalContext.current
     val ver = S.blkVer.intValue      // đọc để vẽ lại khi hộp trả lời
-    fun needBlock() = Toast.makeText(ctx, L.tr("Chưa đọc được cài đặt chào mừng từ hộp (v$ver). Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show()
+    fun needBlock() = Notice.show(ctx, L.tr("Chưa đọc được cài đặt chào mừng từ hộp (v$ver). Kiểm tra kết nối rồi thử lại."))
     Card {
         SwitchRow("Hiệu ứng chào mừng", "Bật/Tắt", S.blkBit(1, 0x04)) { if (!S.setBlk(1, 0x04, if (it) 0x04 else 0)) { S.refreshBlocks(); needBlock() } }
         Divider()
@@ -687,7 +689,7 @@ fun navAccess(): Pair<Boolean, () -> Unit> {
     LaunchedEffect(Unit) { while (true) { granted = listenerOn(ctx); delay(1000) } }
     val open: () -> Unit = {
         try { ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        catch (e: Exception) { Toast.makeText(ctx, L.tr("Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\"."), Toast.LENGTH_LONG).show() }
+        catch (e: Exception) { Notice.show(ctx, L.tr("Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\"."), true) }
     }
     return granted to open
 }
@@ -862,7 +864,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             OutlineBtn("Sao chép thông báo để gửi", Modifier.fillMaxWidth()) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
-                Toast.makeText(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."), Toast.LENGTH_SHORT).show()
+                Notice.show(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."))
             }
             Divider(12.dp, 10.dp)
             // đọc chữ trên màn hình
@@ -885,7 +887,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
                 OutlineBtn("Sao chép để gửi", Modifier.weight(1f)) {
                     val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, chữ trên màn hình (${S.screenPkg.value}):\n" + S.screenLines.joinToString("\n")))
-                    Toast.makeText(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."), Toast.LENGTH_SHORT).show()
+                    Notice.show(ctx, L.tr("Đã sao chép ${S.screenLines.size} dòng."))
                 }
             }
         }
@@ -926,7 +928,7 @@ fun SettingsFeatures() {
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") {
-            Toast.makeText(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."), Toast.LENGTH_SHORT).show()
+            Notice.show(ctx, L.tr("Nội dung cẩm nang sẽ có khi app hoàn thiện."))
         }
     }
     Card {

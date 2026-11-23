@@ -147,7 +147,7 @@ class BleLed(private val ctx: Context) {
             S.connected.value = true
             S.devName.value = g.device.name ?: g.device.address
             S.conn.value = "Đã kết nối"
-            android.widget.Toast.makeText(ctx, L.tr("Đã kết nối với " + S.devName.value), android.widget.Toast.LENGTH_SHORT).show()
+            Notice.show(ctx, L.tr("Đã kết nối với " + S.devName.value))
             S.isCzh.value = (g.device.name ?: "").contains("CZH2")
             // Gói mở app + độ sáng trước; các lệnh hỏi gửi sau 700 ms để câu trả lời không rơi vào khoảng "vừa gửi lệnh" bị bỏ qua.
             main.postDelayed({

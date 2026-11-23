@@ -263,7 +263,7 @@ private val PRE_SHOW = intArrayOf(0xFF0000, 0xFFE600, 0x00D93A, 0x00D5E6, 0x1E4B
 
 private fun need(ctx: Context) {
     S.refreshBlocks()
-    Toast.makeText(ctx, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại."), Toast.LENGTH_SHORT).show()
+    Notice.show(ctx, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại."))
 }
 
 @Composable
@@ -445,7 +445,7 @@ fun FactoryPage() {
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
         Feature(Icons.Filled.Refresh, "Khôi phục cài đặt gốc", "Đưa hộp về cài đặt ban đầu của nhà sản xuất") {
-            if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else reset = 1
+            if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else reset = 1
         }
         if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
     }
@@ -456,7 +456,7 @@ fun FactoryPage() {
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             FillBtn(if (X.snapBusy) "Đang chụp…" else "Chụp lần ${X.snaps.size + 1}", Icons.Filled.Refresh, Pink, Modifier.weight(1.4f)) {
-                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.snapshot()
+                if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else X.snapshot()
             }
             OutlineBtn("Xóa hết", Modifier.weight(1f)) { X.clearSnaps() }
         }
@@ -471,7 +471,7 @@ fun FactoryPage() {
         OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
             val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             cm.setPrimaryClip(ClipData.newPlainText("snap", X.snapText()))
-            Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
+            Notice.show(ctx, L.tr("Đã sao chép"))
         }
     }
     Card {
@@ -585,7 +585,7 @@ fun DiagPage() {
             FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("diag", (X.diag + listOf("--- khung thô ---") + X.diagRaw).joinToString("\n")))
-                Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
+                Notice.show(ctx, L.tr("Đã sao chép"))
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -615,13 +615,13 @@ fun CarModelPage() {
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FillBtn("Đọc lại", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) {
-                if (!S.connected.value) Toast.makeText(ctx, L.tr("Chưa kết nối hộp đèn."), Toast.LENGTH_SHORT).show() else X.readCars()
+                if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else X.readCars()
             }
             FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
                 val lines = X.cars.map { "${it.first}/${it.second}: ${it.third} = ${CarNames.tr(it.third)}" } + listOf("đang đặt: ${X.carCur}", "--- khung thô ---") + X.carRaw
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("cars", lines.joinToString("\n")))
-                Toast.makeText(ctx, L.tr("Đã sao chép"), Toast.LENGTH_SHORT).show()
+                Notice.show(ctx, L.tr("Đã sao chép"))
             }
         }
     }

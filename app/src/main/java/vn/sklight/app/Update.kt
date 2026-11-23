@@ -93,7 +93,7 @@ object Updater {
                     if (manual) showDialog.value = true
                 } else if (manual) {
                     msg.value = if (err.isEmpty()) "Bạn đang dùng bản mới nhất." else "Không kiểm tra được (cần có mạng)."
-                    android.widget.Toast.makeText(app, L.tr(msg.value), android.widget.Toast.LENGTH_SHORT).show()
+                    Notice.show(app, L.tr(msg.value))
                 }
             }
         }.start()
@@ -161,7 +161,7 @@ object Updater {
         val i = info.value ?: return
         try {
             (c.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("SK Light", i.url))
-            android.widget.Toast.makeText(c, L.tr("Đã chép link tải."), android.widget.Toast.LENGTH_SHORT).show()
+            Notice.show(c, L.tr("Đã chép link tải."))
         } catch (e: Exception) {}
     }
 
@@ -182,7 +182,8 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
     ) {
         Icon(Icons.Filled.SystemUpdate, null, tint = Color.White, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
-        T("Có bản mới ${i.name}. Chạm để cập nhật", 12, FontWeight.Bold, Color.White, Modifier.weight(1f))
+        val p = Updater.progress.intValue
+        T(if (p in 0..100) "Đang tải bản ${i.name}… $p%" else if (p == 101) "Đã tải xong bản ${i.name}. Chạm để cài đặt" else "Có bản mới ${i.name}. Chạm để cập nhật", 12, FontWeight.Bold, Color.White, Modifier.weight(1f))
     }
 }
 
@@ -200,7 +201,7 @@ fun UpdateDialog() {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 T("Đang dùng ${S.VER}. Bản mới nặng khoảng${mb.ifEmpty { " vài chục MB" }}, nên dùng wifi.", 12, color = Grey)
                 if (i.notes.isNotBlank()) T(i.notes, 13)
-                if (p in 0..100) T("Đang tải… $p%", 13, FontWeight.Bold, Pink)
+                if (p in 0..100) { T("Đang tải… $p%", 13, FontWeight.Bold, Pink); SkProgress(p / 100f) }
                 if (p == 101) T("Đã tải xong. Bấm Cài đặt để tiếp tục.", 13, FontWeight.Bold, Pink)
                 if (Updater.msg.value.isNotEmpty()) T(Updater.msg.value, 12, color = Pink)
                 if (Updater.noInstaller.value) {

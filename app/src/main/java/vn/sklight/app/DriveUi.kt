@@ -216,7 +216,7 @@ fun DriveCard() {
         SwitchRow("Nút nổi trên màn hình", "Nút SK nổi trên ứng dụng khác: bật tắt, độ sáng, bối cảnh. Cần cấp quyền hiển thị trên ứng dụng khác", S.floatOn.value) {
             S.floatOn.value = it; S.saveSettings(); S.syncService(ctx)
             if (it && !Settings.canDrawOverlays(ctx)) {
-                Toast.makeText(ctx, L.tr("Bật quyền \"Hiển thị trên ứng dụng khác\" cho SK Light rồi quay lại."), Toast.LENGTH_LONG).show()
+                Notice.show(ctx, L.tr("Bật quyền \"Hiển thị trên ứng dụng khác\" cho SK Light rồi quay lại."), true)
                 try { ctx.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {}
             }
         }

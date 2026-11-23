@@ -462,7 +462,7 @@ object Speaker {
     private fun noVoice(ctx: Context) {
         if (told) return
         told = true
-        Toast.makeText(ctx.applicationContext, L.tr("Máy chưa có giọng đọc tiếng Việt nên app chưa trả lời bằng tiếng được. Vào Cài đặt, mục Trợ lý SK Light (AI) để cài."), Toast.LENGTH_LONG).show()
+        Notice.show(ctx.applicationContext, L.tr("Máy chưa có giọng đọc tiếng Việt nên app chưa trả lời bằng tiếng được. Vào Cài đặt, mục Trợ lý SK Light (AI) để cài."), true)
     }
 
     private fun speak(e: TextToSpeech, text: String, then: (() -> Unit)?) {
@@ -515,7 +515,7 @@ object Speaker {
             Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$GOOGLE"))
         )
         for (i in tries) { try { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); return } catch (e: Exception) {} }
-        Toast.makeText(ctx.applicationContext, L.tr("Máy này không mở được CH Play."), Toast.LENGTH_LONG).show()
+        Notice.show(ctx.applicationContext, L.tr("Máy này không mở được CH Play."), true)
     }
 
     fun stop() { onDone = null; try { tts?.stop() } catch (e: Exception) {} }
@@ -529,7 +529,7 @@ fun MicBtn(size: Int = 46) {
     val ctx = LocalContext.current
     val on = S.voiceState.intValue == 1
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) Voice.start(ctx) else Toast.makeText(ctx, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), Toast.LENGTH_LONG).show()
+        if (ok) Voice.start(ctx) else Notice.show(ctx, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), true)
     }
     Box(
         Modifier.size(size.dp).orb(on)
@@ -664,7 +664,7 @@ fun VoicePanel(modifier: Modifier = Modifier) {
                         try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$id")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                         catch (e: Exception) {
                             try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$id")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                            catch (e2: Exception) { Toast.makeText(ctx, L.tr("Máy này không mở được CH Play."), Toast.LENGTH_LONG).show() }
+                            catch (e2: Exception) { Notice.show(ctx, L.tr("Máy này không mở được CH Play."), true) }
                         }
                     }
                     OutlineBtn("Đóng", Modifier.weight(1f)) { Voice.close() }
