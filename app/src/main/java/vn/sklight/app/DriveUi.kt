@@ -357,6 +357,7 @@ fun IdleScreen(wide: Boolean, preview: Boolean = false) {
     val cL = if (!S.on.value) Color(0xFF3A4050) else if (fx) Color(0xFFFE2B48) else rgbColor(if (uni) S.col[0] else S.col[1])
     val cR = if (!S.on.value) Color(0xFF3A4050) else if (fx) Color(0xFF4E78FF) else rgbColor(if (uni) S.col[0] else S.col[2])
     val exit = { if (!preview) { S.idleShow.value = false; S.lastTouch = System.currentTimeMillis() } }
+    val nextStyle = { S.idleStyle.intValue = (style + 1) % IDLE_STYLES.size; S.saveSettings(); S.lastTouch = System.currentTimeMillis() }
     val nav = S.navOn.value
     val spd = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else S.speedKmh.floatValue.roundToInt()
     val limit = S.speedLimit.intValue
@@ -377,6 +378,16 @@ fun IdleScreen(wide: Boolean, preview: Boolean = false) {
                 Image(painterResource(R.drawable.sk_logo), "SK Ambient Light", Modifier.height(if (wide) 34.dp else 26.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.width(14.dp))
                 T(date, if (wide) 16 else 13, FontWeight.SemiBold, DimTxt, Modifier.weight(1f))
+                // đổi kiểu màn hình chờ ngay tại đây: mỗi lần chạm sang kiểu kế tiếp
+                Row(
+                    Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).border(1.dp, Color(0x59FFFFFF), RoundedCornerShape(22.dp))
+                        .clickable(enabled = !preview, onClick = nextStyle).padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Autorenew, "Đổi kiểu màn hình chờ", tint = Color.White, modifier = Modifier.size(20.dp))
+                    if (wide) { Spacer(Modifier.width(8.dp)); T(IDLE_STYLES[style.coerceIn(0, IDLE_STYLES.size - 1)], 14, FontWeight.Bold, Color.White) }
+                }
+                Spacer(Modifier.width(10.dp))
                 Box(
                     Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).border(1.dp, Color(0x59FFFFFF), RoundedCornerShape(22.dp)).clickable(onClick = exit).padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center
@@ -469,6 +480,11 @@ fun IdleScreen(wide: Boolean, preview: Boolean = false) {
                 }
             }
         }
+        // kiểu Tối giản không có hàng nút phía trên: để một nút mờ ở góc để vẫn đổi được kiểu
+        if (plain && !preview) Box(
+            Modifier.align(Alignment.TopEnd).systemBarsPadding().padding(10.dp).size(46.dp).clip(CircleShape).clickable(onClick = nextStyle),
+            contentAlignment = Alignment.Center
+        ) { Icon(Icons.Filled.Autorenew, "Đổi kiểu màn hình chờ", tint = Color(0x66FFFFFF), modifier = Modifier.size(22.dp)) }
     }
 }
 
