@@ -305,8 +305,17 @@ fun LedMain() {
 /** Các nhóm chế độ + thẻ Hiệu ứng. [cols] = số cột của lưới chế độ. */
 @Composable
 fun LedEffects(cols: Int) {
-    Effects.groups.forEach { g -> EffectGroupCard(g, cols) }
+    // thẻ Tốc độ / Độ nhạy nằm ngay dưới nhóm chứa chế độ đang chạy, để chọn chế độ xong chỉnh tốc độ luôn, khỏi cuộn xuống cuối trang
+    val mode = S.mode.intValue
+    val at = Effects.groups.indexOfFirst { g -> g.items.any { it.id == mode } }
+    Effects.groups.forEachIndexed { i, g -> EffectGroupCard(g, cols); if (i == at) EffectTuneCard() }
     MyModesCard(cols)
+    if (at < 0) EffectTuneCard()          // đang chạy "Chế độ của tôi" (hoặc chế độ không thuộc nhóm nào): nằm dưới thẻ đó
+}
+
+/** Tốc độ nháy & chạy + độ nhạy nhịp điệu. */
+@Composable
+fun EffectTuneCard() {
     Card {
         GroupTitle(Icons.Filled.Tune, "Hiệu ứng", 19)
         Spacer(Modifier.height(14.dp))
