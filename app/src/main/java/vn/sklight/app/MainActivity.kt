@@ -119,7 +119,10 @@ fun Root() {
         l.toTypedArray()
     }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (S.savedMac.isEmpty()) { S.ble.scan(); pickDev = true } else S.autoConnect()
+        // lần đầu mở app: xin luôn quyền đọc thông báo + Hỗ trợ tiếp cận (phải bật trong Cài đặt máy), xong mới chọn hộp đèn
+        val needSetup = !Setup.asked(ctx0) && !(Setup.notifOn(ctx0) && Setup.accOn(ctx0))
+        if (S.savedMac.isEmpty()) { if (needSetup) Setup.pickAfter = true else { S.ble.scan(); pickDev = true } } else S.autoConnect()
+        if (needSetup) Setup.show.value = true
         Gps.start(ctx0); S.syncService(ctx0)
     }
     LaunchedEffect(Unit) { launcher.launch(perms) }
@@ -234,6 +237,7 @@ fun Root() {
     NoticeHost(Modifier.align(Alignment.BottomCenter))
     }
     }
+    SetupSheet(Setup.show.value) { Setup.show.value = false; if (Setup.pickAfter) { Setup.pickAfter = false; S.ble.scan(); pickDev = true } }
     if (pickDev) DevDialog { pickDev = false }
     UpdateDialog()
 }
@@ -752,10 +756,7 @@ fun navAccess(): Pair<Boolean, () -> Unit> {
     val ctx = LocalContext.current
     var granted by remember { mutableStateOf(listenerOn(ctx)) }
     LaunchedEffect(Unit) { while (true) { granted = listenerOn(ctx); delay(1000) } }
-    val open: () -> Unit = {
-        try { ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        catch (e: Exception) { Notice.show(ctx, L.tr("Không mở được trang cấp quyền. Vào Cài đặt máy, tìm \"Truy cập thông báo\"."), true) }
-    }
+    val open: () -> Unit = { Setup.show.value = true }       // mở bảng hướng dẫn 2 bước (có cách gỡ "cài đặt bị hạn chế")
     return granted to open
 }
 
