@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.0.4"
+    const val VER = "1.1.0"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -151,6 +151,7 @@ object S {
         inited = true
         app = c.applicationContext
         Crash.install(app)
+        Act.init(app)
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)

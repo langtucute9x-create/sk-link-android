@@ -135,6 +135,8 @@ fun Root() {
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
     val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Theme.pal.bgTop, Theme.pal.bgBot))).systemBarsPadding()
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
+    // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
+    val lock = S.connected.value && !Act.ok.value
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
@@ -153,8 +155,8 @@ fun Root() {
             UpdateBanner()
             Strip()
             VoicePanel()
-            key(tab, S.subPage.intValue) {
-                when (tab) {
+            key(tab, S.subPage.intValue, lock) {
+                if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
@@ -166,7 +168,7 @@ fun Root() {
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                     else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                    else TwoCol(leftW.dp, { SettingsDevice(pick); DriveCard() }, { SettingsFeatures() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); WarrantyCard(); DriveCard() }, { SettingsFeatures() })
                 }
             }
         }
@@ -212,7 +214,7 @@ fun Root() {
                 Modifier.weight(1f).verticalScroll(remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                when (tab) {
+                if (lock && tab < 3) ActivationPage(true) else when (tab) {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
@@ -982,7 +984,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); DriveCard(); SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); WarrantyCard(); DriveCard(); SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {

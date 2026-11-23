@@ -290,6 +290,7 @@ fun ExtraPage(sp: Int) {
         9 -> CarFuncPage()
         11 -> CarModelPage()
         12 -> ManualPage()
+        13 -> ActivationPage(false)
         else -> DiagPage()
     }
 }

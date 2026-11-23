@@ -111,6 +111,16 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Chữ quá to hoặc quá nhỏ: Cài đặt giao diện, mục Cỡ chữ.",
         "Máy chạy giật: bật Giảm hiệu ứng trong Cài đặt giao diện.",
         "Mục Chức năng gốc xe (đèn báo theo xi nhan, cửa, dây an toàn…) đã có trong Cài đặt nhưng đang được hoàn thiện; hướng dẫn chi tiết sẽ bổ sung sau."
+    ),
+    "12. Kích hoạt app và bảo hành" to listOf(
+        "App tải về mở bình thường. Khi đã kết nối với hộp đèn mà máy chưa kích hoạt, các trang điều khiển bị khóa và hiện ô nhập mã kích hoạt.",
+        "Mã kích hoạt in trên tem dán ở vỏ hộp sản phẩm. Cần có mạng khi kích hoạt; sau đó dùng không cần mạng.",
+        "Lần đầu dùng mã: điền tên khách hàng, số điện thoại và nơi lắp đặt để đăng ký bảo hành. Bảo hành 24 tháng tính từ ngày kích hoạt đầu tiên.",
+        "Mỗi số điện thoại chỉ đăng ký bảo hành được một lần.",
+        "Máy khác dùng cùng mã chỉ cần nhập mã, không điền lại thông tin.",
+        "Xóa app rồi cài lại trên cùng một máy: mở app khi có mạng, app tự nhận lại, không cần nhập mã.",
+        "Xem bảo hành: Cài đặt, thẻ Bảo hành hiện ngày kích hoạt và số ngày còn bảo hành.",
+        "Nếu app báo mã đã hết lượt kích hoạt hoặc mã bị khóa, gọi hotline 0868 055 555."
     )
 )
 

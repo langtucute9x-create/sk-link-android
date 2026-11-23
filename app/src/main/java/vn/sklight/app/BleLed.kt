@@ -152,9 +152,9 @@ class BleLed(private val ctx: Context) {
             // Gói mở app + độ sáng trước; các lệnh hỏi gửi sau 700 ms để câu trả lời không rơi vào khoảng "vừa gửi lệnh" bị bỏ qua.
             main.postDelayed({
                 val init = Protocol.init()
-                send(init[0])
+                put(init[0])
                 if (S.on.value) S.sendBright()          // kết nối lại không bao giờ tự tắt đèn của hộp
-                main.postDelayed({ S.restoreP07(); S.syncUntil = System.currentTimeMillis() + 4000; send(Protocol.query(0x01)); for (f in init.drop(1)) send(f) }, 700)
+                main.postDelayed({ S.restoreP07(); S.syncUntil = System.currentTimeMillis() + 4000; send(Protocol.query(0x01)); for (f in init.drop(1)) put(f) }, 700)
             }, 800)
         }
     }
@@ -162,6 +162,12 @@ class BleLed(private val ctx: Context) {
     // ---------------- gửi ----------------
     /** key >= 0: lệnh cùng key chưa gửi sẽ bị thay bằng lệnh mới (kéo thanh trượt không dồn hàng đợi). */
     fun send(data: ByteArray, key: Int = -1, isSet: Boolean = false) {
+        // Máy chưa kích hoạt: không gửi lệnh ghi xuống hộp (khóa điều khiển); lệnh hỏi trạng thái vẫn đi.
+        if (!Act.ok.value && data.size > 1 && (data[1].toInt() and 0xFF) == Protocol.T_WRITE) return
+        put(data, key, isSet)
+    }
+
+    private fun put(data: ByteArray, key: Int = -1, isSet: Boolean = false) {
         if (isSet) lastSetMs = System.currentTimeMillis()
         if (key >= 0) q.removeIf { it.key == key }
         q.add(Item(key, data))
