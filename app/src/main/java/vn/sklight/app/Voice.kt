@@ -532,7 +532,7 @@ fun MicBtn(size: Int = 46) {
         if (ok) Voice.start(ctx) else Toast.makeText(ctx, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), Toast.LENGTH_LONG).show()
     }
     Box(
-        Modifier.size(size.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape)
+        Modifier.size(size.dp).orb(on)
             .clickable { if (on) Voice.close() else if (micAllowed(ctx)) Voice.start(ctx) else ask.launch(Manifest.permission.RECORD_AUDIO) },
         contentAlignment = Alignment.Center
     ) { Icon(Icons.Filled.Mic, "Ra lệnh bằng giọng nói", tint = if (on) Color.White else Pink, modifier = Modifier.size((size / 2).dp)) }

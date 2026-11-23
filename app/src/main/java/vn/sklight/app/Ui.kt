@@ -61,6 +61,7 @@ object Theme {
     val corner = mutableIntStateOf(1)      // 0 vuông, 1 vừa (gốc), 2 tròn
     val font = mutableIntStateOf(0)
     val scale = mutableIntStateOf(1)
+    val fx = mutableStateOf(true)          // hiệu ứng nổi khối + chuyển động (tắt = "Giảm hiệu ứng")
     val nightNow = mutableStateOf(false)   // đang là ban đêm (cho chế độ tự động)
     val MODES = listOf("Sáng", "Tối", "Tự động")
     /** Tên phong cách: (khi sáng, khi tối). */
@@ -135,30 +136,12 @@ fun T(text: String, size: Int = 14, weight: FontWeight = FontWeight.Normal, colo
 }
 
 @Composable
-fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(CardBg)
-            .border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(15.dp),
-        content = content
-    )
-}
-
-@Composable
 fun GroupTitle(icon: ImageVector, text: String, size: Int = 17) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = 30.dp)) {
         Icon(icon, null, tint = Pink, modifier = Modifier.size(26.dp))
         Spacer(Modifier.width(10.dp))
         T(text, size, FontWeight.ExtraBold)
     }
-}
-
-@Composable
-fun Chip(text: String, sel: Boolean, modifier: Modifier = Modifier, h: Dp = 41.dp, size: Int = 13, onClick: () -> Unit) {
-    Box(
-        modifier.height(h).clip(RoundedCornerShape(Theme.r(8))).background(if (sel) Pink else ChipBg)
-            .border(1.dp, if (sel) Pink else Bd, RoundedCornerShape(Theme.r(8))).clickable(onClick = onClick).padding(horizontal = 4.dp),
-        contentAlignment = Alignment.Center
-    ) { T(text, size, if (sel) FontWeight.Bold else FontWeight.SemiBold, if (sel) Color.White else Txt, align = TextAlign.Center) }
 }
 
 /** Lưới đều cột: mỗi ô nhận Modifier.weight(1f). */
@@ -178,61 +161,6 @@ fun <X> Grid(items: List<X>, cols: Int, gap: Dp = 9.dp, rowGap: Dp = gap, cell: 
 fun ZoneTabs(sel: Int, onPick: (Int) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
         listOf("Đồng nhất", "Khu vực 1", "Khu vực 2").forEachIndexed { i, t -> Chip(t, sel == i, Modifier.weight(1f)) { onPick(i) } }
-    }
-}
-
-/** Thanh trượt vẽ tay cho giống app gốc. [frac] 0..1. */
-@Composable
-fun SkSlider(
-    frac: Float, onFrac: (Float) -> Unit, color: Color, rest: Color, thumb: Color, modifier: Modifier = Modifier,
-    trackH: Dp = 9.dp, thumbD: Dp = 25.dp, dots: Int = 0
-) {
-    val cb by rememberUpdatedState(onFrac)
-    Canvas(
-        modifier.height(30.dp)
-            .pointerInput(Unit) { detectTapGestures { o -> val r = thumbD.toPx() / 2f; cb(((o.x - r) / (size.width - 2f * r)).coerceIn(0f, 1f)) } }
-            .pointerInput(Unit) { detectDragGestures { ch, _ -> val r = thumbD.toPx() / 2f; cb(((ch.position.x - r) / (size.width - 2f * r)).coerceIn(0f, 1f)) } }
-    ) {
-        val r = thumbD.toPx() / 2f
-        val w = size.width - 2f * r
-        val cy = size.height / 2f
-        val th = trackH.toPx()
-        val f = frac.coerceIn(0f, 1f)
-        drawRoundRect(rest, Offset(r, cy - th / 2f), Size(w, th), CornerRadius(th / 2f, th / 2f))
-        drawRoundRect(color, Offset(r, cy - th / 2f), Size(w * f, th), CornerRadius(th / 2f, th / 2f))
-        if (dots > 1) for (i in 0 until dots) drawCircle(Color(0xBFFFFFFF), 2.dp.toPx(), Offset(r + w * i / (dots - 1), cy))
-        drawCircle(Color(0x40172032), r, Offset(r + w * f, cy + 1.5.dp.toPx()))
-        drawCircle(thumb, r, Offset(r + w * f, cy))
-    }
-}
-
-/** Nút bấm một lần hoặc giữ để chạy nhanh. */
-@Composable
-fun RepeatBtn(icon: ImageVector, desc: String, modifier: Modifier = Modifier, onStep: () -> Unit) {
-    val cb by rememberUpdatedState(onStep)
-    val scope = rememberCoroutineScope()
-    Box(
-        modifier.size(44.dp, 40.dp).clip(RoundedCornerShape(Theme.r(8))).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(8)))
-            .pointerInput(Unit) {
-                detectTapGestures(onPress = {
-                    cb()
-                    val job = scope.launch { delay(400); while (true) { cb(); delay(60) } }
-                    tryAwaitRelease()
-                    job.cancel()
-                })
-            },
-        contentAlignment = Alignment.Center
-    ) { Icon(icon, desc, tint = Txt, modifier = Modifier.size(18.dp)) }
-}
-
-@Composable
-fun SkSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
-    Box(
-        Modifier.size(52.dp, 32.dp).clip(RoundedCornerShape(16.dp)).background(if (on) Pink else Color(0xFFE6E0E9))
-            .border(2.dp, if (on) Pink else Color(0xFF79747E), RoundedCornerShape(16.dp)).clickable { onChange(!on) },
-        contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart
-    ) {
-        Box(Modifier.padding(horizontal = if (on) 4.dp else 6.dp).size(if (on) 24.dp else 16.dp).clip(CircleShape).background(if (on) Color.White else Color(0xFF79747E)))
     }
 }
 

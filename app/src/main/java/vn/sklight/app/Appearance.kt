@@ -50,6 +50,9 @@ fun AppearanceTheme() {
         T("Tự động: giao diện tối từ ${Night.hm(w.first)} đến ${Night.hm(w.second)}, ngoài giờ đó là giao diện sáng. Giờ lấy theo mục Tự dịu đèn ban đêm.", 11, color = Grey)
     }
     Card {
+        SwitchRow("Giảm hiệu ứng", "Bật nếu máy chạy chậm: bỏ khối nổi, bóng đổ và chuyển động", !Theme.fx.value) { Theme.fx.value = !it; S.saveSettings() }
+    }
+    Card {
         GroupTitle(Icons.Filled.Style, "Phong cách", 16)
         Spacer(Modifier.height(12.dp))
         Grid(Theme.STYLES.indices.toList(), 3) { i, m ->

@@ -211,16 +211,7 @@ fun StatusRow(onPick: () -> Unit) {
     }
 }
 
-@Composable
-fun PowerBtn(size: Int = 46) {
-    val on = S.on.value
-    Box(
-        Modifier.size(size.dp).clip(CircleShape).background(if (on) Pink else CardBg).border(1.dp, if (on) Pink else Bd, CircleShape).clickable { S.setPower(!on) },
-        contentAlignment = Alignment.Center
-    ) { Icon(Icons.Filled.PowerSettingsNew, if (on) "Tắt đèn" else "Bật đèn", tint = if (on) Color.White else Grey, modifier = Modifier.size((size / 2).dp)) }
-}
-
-private val TAB_ITEMS: List<Pair<String, ImageVector>> =
+val TAB_ITEMS: List<Pair<String, ImageVector>> =
     listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
 
 /** Trang cài đặt con ở màn ngang: dùng hết chiều ngang, các thẻ tự xếp thành hai cột. */
@@ -235,42 +226,6 @@ fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composab
     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.width(leftW).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
-    }
-}
-
-/** Menu dọc cho màn ngang. */
-@Composable
-fun TabsV(sel: Int, onPick: (Int) -> Unit) {
-    Column(
-        Modifier.clip(RoundedCornerShape(Theme.r(10))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        TAB_ITEMS.forEachIndexed { i, (label, icon) ->
-            val on = sel == i
-            Box(
-                Modifier.size(44.dp, 46.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
-                contentAlignment = Alignment.Center
-            ) { Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(22.dp)) }
-        }
-    }
-}
-
-@Composable
-fun Tabs(sel: Int, modifier: Modifier = Modifier, height: Int = 40, onPick: (Int) -> Unit) {
-    val items = TAB_ITEMS
-    Row(
-        modifier.clip(RoundedCornerShape(Theme.r(10))).background(CardBg).border(1.dp, Bd, RoundedCornerShape(Theme.r(10))).padding(if (height < 36) 3.dp else 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        items.forEachIndexed { i, (label, icon) ->
-            val on = sel == i
-            Row(
-                Modifier.weight(1f).height(height.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (on) Pink else Color.Transparent).clickable { onPick(i) },
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(icon, label, tint = if (on) Color.White else SubTxt, modifier = Modifier.size(if (height < 36) 20.dp else 22.dp))
-            }
-        }
     }
 }
 
@@ -291,7 +246,7 @@ fun LedMain() {
             T("${S.bri[S.zone.intValue]}%", 15, FontWeight.ExtraBold, Pink)
         }
         SkSlider(S.bri[S.zone.intValue] / 100f, { S.setBright((it * 100).roundToInt()) }, Pink, SoftTrack, Color.White,
-            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 10.dp))
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 10.dp), label = "${S.bri[S.zone.intValue]}%")
         Divider(16.dp, 14.dp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.Palette, null, tint = Pink, modifier = Modifier.size(24.dp))
@@ -354,12 +309,12 @@ fun LedEffects(cols: Int) {
         Spacer(Modifier.height(14.dp))
         ValueRow(Icons.Filled.Speed, Cyan, "Tốc độ nháy & chạy", S.speed.intValue, Color(0xFFD9FBF9), Cyan, Color(0xFF12C9C0))
         SliderRow("Chậm", "Nhanh") { m ->
-            SkSlider((S.speed.intValue - 1) / 9f, { S.setSpeed(1 + (it * 9).roundToInt()) }, Cyan, Color(0xFFD9FBF9), Cyan, m, 8.dp, 21.dp, 10)
+            SkSlider((S.speed.intValue - 1) / 9f, { S.setSpeed(1 + (it * 9).roundToInt()) }, Cyan, Color(0xFFD9FBF9), Cyan, m, 8.dp, 21.dp, 10, "${S.speed.intValue}")
         }
         Divider(14.dp, 14.dp)
         ValueRow(Icons.Filled.GraphicEq, Pink, "Độ nhạy nhịp điệu", S.sens.intValue, tint(0.2f), tint(0.6f), AccentText)
         SliderRow("Thấp", "Cao") { m ->
-            SkSlider(S.sens.intValue / 7f, { S.setSens((it * 7).roundToInt()) }, Pink, tint(0.2f), Pink, m, 8.dp, 21.dp, 8)
+            SkSlider(S.sens.intValue / 7f, { S.setSens((it * 7).roundToInt()) }, Pink, tint(0.2f), Pink, m, 8.dp, 21.dp, 8, "${S.sens.intValue}")
         }
     }
 }
@@ -468,7 +423,9 @@ fun Swatches(modifier: Modifier = Modifier) {
                         }
                     } else {
                         val on = c == cur
-                        Box(
+                        if (Fx) ColorOrb(rgbColor(c), on, Modifier.pointerInput(c) { detectTapGestures(onLongPress = { if (!PRESETS.contains(c)) S.removeCustom(c) }, onTap = { S.setColor(c) }) }) {
+                            if (on) Icon(Icons.Filled.Check, null, tint = if (c == 0xFFFFFF || c == 0xFFE114) Color(0xFF172032) else Color.White, modifier = Modifier.size(20.dp))
+                        } else Box(
                             Modifier.size(39.dp).clip(RoundedCornerShape(Theme.r(6))).background(rgbColor(c))
                                 .border(if (on) 2.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(Theme.r(6)))
                                 .pointerInput(c) { detectTapGestures(onLongPress = { if (!PRESETS.contains(c)) S.removeCustom(c) }, onTap = { S.setColor(c) }) },
@@ -810,7 +767,7 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
             }
         }
         SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, tint(0.2f), Pink,
-            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp)
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, label = "${S.alertDist.intValue} m")
         Spacer(Modifier.height(10.dp))
         var open by remember { mutableStateOf(false) }
         Row(verticalAlignment = Alignment.CenterVertically) {
