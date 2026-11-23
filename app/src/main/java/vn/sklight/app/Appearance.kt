@@ -55,7 +55,7 @@ fun AppearanceTheme() {
     Card {
         GroupTitle(Icons.Filled.Style, "Phong cách", 16)
         Spacer(Modifier.height(12.dp))
-        Grid(Theme.STYLES.indices.toList(), 3) { i, m ->
+        Grid(listOf(3, 0, 1, 2, 4), 3) { i, m ->
             val on = Theme.style.intValue == i
             val p = Theme.palOf(i, Theme.dark)
             Column(
@@ -156,7 +156,7 @@ fun AppearanceIdle() {
         // hình xem trước của kiểu đang chọn, đổi ngay khi chạm một kiểu
         FloatPreview(S.floatStyle.intValue)
         Spacer(Modifier.height(12.dp))
-        Grid(FloatButton.STYLES.indices.toList(), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
+        Grid(listOf(5, 1, 2, 3, 4), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
         Spacer(Modifier.height(8.dp))
         Hint("Nút nổi hiện trên các ứng dụng khác (ví dụ app bản đồ). Bật nó ở thẻ Khi lái xe trong trang Cài đặt, rồi về màn hình chính của máy để xem kiểu vừa chọn.", 11)
     }

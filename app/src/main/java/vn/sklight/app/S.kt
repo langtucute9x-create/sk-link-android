@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.1"
+    const val VER = "1.4.2"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -119,7 +119,7 @@ object S {
     val idleStyle = mutableIntStateOf(0)                  // 0 đồng hồ + tốc độ, 1 chỉ đồng hồ, 2 tốc độ lớn, 3 ảnh của tôi
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
-    val floatStyle = mutableIntStateOf(0)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
+    val floatStyle = mutableIntStateOf(5)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
     val pickNow = mutableStateOf(false)                  // yêu cầu mở hộp chọn hộp đèn (từ thẻ mất kết nối)
     val menuTop = mutableStateOf(true)                    // màn ngang: menu nằm trên (true) hay cột bên trái (false)
     var pendingMic = false                                // bấm mic ở màn hình nổi: mở app rồi nghe ngay
@@ -178,7 +178,7 @@ object S {
         idleOn.value = sp.getBoolean("idleOn", false)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
-        floatStyle.intValue = sp.getInt("floatStyle", 0).coerceIn(0, 5)
+        floatStyle.intValue = sp.getInt("floatStyle2", 5).coerceIn(1, 5)     // bỏ Kiểu gốc (24/11), mặc định Cột neon
         menuTop.value = sp.getBoolean("menuTop2", true)
         voiceReply.value = sp.getBoolean("voiceReply", true)
         voiceQuiet.value = sp.getBoolean("voiceQuiet", true)
@@ -186,10 +186,10 @@ object S {
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
         Scenes.load(if (sp.contains("scenes2")) sp.getString("scenes2", "") ?: "" else null)
         L.init(app); L.set(sp.getInt("lang", 0))
-        Theme.mode.intValue = sp.getInt("themeMode", 0).coerceIn(0, 2)
+        Theme.mode.intValue = sp.getInt("themeMode2", 2).coerceIn(0, 2)
         Theme.accent.intValue = sp.getInt("themeAccent", 0).coerceIn(0, Theme.ACCENTS.size - 1)
         Theme.font.intValue = sp.getInt("themeFont2", 3).coerceIn(0, Theme.FONTS.size - 1)
-        Theme.style.intValue = sp.getInt("themeStyle", 0).coerceIn(0, Theme.STYLES.size - 1)
+        Theme.style.intValue = sp.getInt("themeStyle2", 3).coerceIn(0, Theme.STYLES.size - 1)
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
         Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.59, bỏ giá trị cũ do app tự đặt cho máy yếu)
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
@@ -212,11 +212,11 @@ object S {
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
-            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
+            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
-            .putInt("lang", L.cur.intValue).putInt("themeMode", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
-            .putInt("themeFont2", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)
+            .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
+            .putInt("themeFont2", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle2", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)
             .putString("customs", customs.joinToString(",")).putString("pins", pins.joinToString(","))
             .putString("boxPos", boxPos.joinToString(",")).putInt("autoZ2", Auto.z2.intValue).putString("seqs", Seqs.dump()).apply()
     }

@@ -55,8 +55,8 @@ private val DARKS = listOf(
 
 /** Cài đặt giao diện: chế độ sáng / tối / tự động, phong cách nền, màu nhấn, bo góc, kiểu chữ, cỡ chữ. Mặc định = giao diện gốc (sáng, hồng SK, Inter). */
 object Theme {
-    val mode = mutableIntStateOf(0)        // 0 sáng, 1 tối, 2 tự động theo giờ
-    val style = mutableIntStateOf(0)       // phong cách nền
+    val mode = mutableIntStateOf(2)        // 0 sáng, 1 tối, 2 tự động theo giờ (mặc định Tự động, chủ dự án chọn 24/11)
+    val style = mutableIntStateOf(3)       // phong cách nền (mặc định Xanh băng / Xanh đêm, chủ dự án chọn 24/11)
     val accent = mutableIntStateOf(0)
     val corner = mutableIntStateOf(1)      // 0 vuông, 1 vừa (gốc), 2 tròn
     val font = mutableIntStateOf(3)                      // mặc định Be Vietnam Pro (chủ dự án chọn 24/11)
@@ -65,7 +65,7 @@ object Theme {
     val nightNow = mutableStateOf(false)   // đang là ban đêm (cho chế độ tự động)
     val MODES = listOf("Sáng", "Tối", "Tự động")
     /** Tên phong cách: (khi sáng, khi tối). */
-    val STYLES = listOf("Mặc định" to "Mặc định", "Tinh khôi" to "Đen tuyền", "Kem ấm" to "Nâu ấm", "Xanh băng" to "Xanh đêm", "Lá non" to "Rừng đêm")
+    val STYLES = listOf("Cổ điển" to "Cổ điển", "Tinh khôi" to "Đen tuyền", "Kem ấm" to "Nâu ấm", "Xanh băng" to "Xanh đêm", "Lá non" to "Rừng đêm")
     // 6 màu đầu giữ nguyên thứ tự cũ (số thứ tự đã lưu trong máy người dùng)
     val ACCENTS = listOf(
         "Hồng SK" to 0xFE2CAA, "Cam" to 0xE8590C, "Đỏ" to 0xE5334B, "Tím" to 0x7C4DFF, "Xanh dương" to 0x2F6BFF, "Xanh ngọc" to 0x0E9488,
@@ -81,7 +81,7 @@ object Theme {
     val scaleF: Float get() = SCALES[scale.intValue.coerceIn(0, SCALES.size - 1)].second
     /** Bán kính bo góc theo kiểu đang chọn; [base] là bán kính của giao diện gốc. */
     fun r(base: Int): Dp = when (corner.intValue) { 0 -> minOf(base, 3).dp; 2 -> (base * 1.8f).dp; else -> base.dp }
-    fun reset() { mode.intValue = 0; style.intValue = 0; accent.intValue = 0; corner.intValue = 1; font.intValue = 3; scale.intValue = 1 }
+    fun reset() { mode.intValue = 2; style.intValue = 3; accent.intValue = 0; corner.intValue = 1; font.intValue = 3; scale.intValue = 1 }
 }
 
 /** Màu nhấn (tên biến giữ là Pink vì mặc định là hồng SK). */

@@ -140,7 +140,7 @@ object FloatButton {
     @SuppressLint("ClickableViewAccessibility")
     private fun show(c: Context) {
         if (root != null) return
-        val st = S.floatStyle.intValue.coerceIn(0, STYLES.size - 1)
+        val st = S.floatStyle.intValue.coerceIn(1, STYLES.size - 1)
         val wm = c.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val vertical = st == 5
         val all = LinearLayout(c).apply {

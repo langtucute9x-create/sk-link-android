@@ -82,7 +82,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Cài đặt, mục Cài đặt giao diện: chọn Sáng, Tối hoặc Tự động; phong cách nền; bo góc; màu nhấn; kiểu chữ và cỡ chữ.",
         "Giảm hiệu ứng: bật nếu máy chạy chậm, giao diện sẽ bỏ khối nổi, bóng đổ và chuyển động.",
         "Màn hình chờ: chọn kiểu và xem trước ngay trong trang này; bấm Chọn ảnh của tôi để dùng ảnh riêng.",
-        "Nút nổi và màn hình nổi: chọn một trong sáu kiểu, có hình xem trước.",
+        "Nút nổi và màn hình nổi: chọn một trong năm kiểu (mặc định Cột neon), có hình xem trước.",
         "Vị trí menu khi màn hình ngang: mặc định ở trên; muốn thành cột bên trái thì chọn ở đây.",
         "Ở màn hình ngang, các dòng giải thích được ẩn cho gọn. Chạm biểu tượng chữ i ở góc thẻ để hiện.",
         "Cài đặt, mục Cài đặt ngôn ngữ: Việt, Anh, Nhật, Hàn, Thái, Khmer, Lào."
