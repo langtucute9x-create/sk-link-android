@@ -355,7 +355,6 @@ fun SliderRow(left: String, right: String, slider: @Composable (Modifier) -> Uni
     }
 }
 
-@Composable
 /** Một ô chế độ. Chạm = chạy; chạm giữ = ghim lên đầu trang / bỏ ghim. */
 @Composable
 fun EffectTile(e: Effect, m: Modifier) {
