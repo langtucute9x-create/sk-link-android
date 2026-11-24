@@ -146,8 +146,9 @@ fun Root() {
     // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
     val lock = S.connected.value && !Act.ok.value
     // chưa nối hộp đèn: chỉ còn Cài đặt cơ bản, để người ngoài không xem được tính năng của app
-    val gated = !S.connected.value
-    LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12)) S.subPage.intValue = 0 }
+    val gated = !S.connected.value || !Act.ok.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
+    val unplugged = !S.connected.value
+    LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13)) S.subPage.intValue = 0 }
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
@@ -169,7 +170,7 @@ fun Root() {
             if (!gated) VoicePanel()
             key(tab, S.subPage.intValue, lock) {
               androidx.compose.runtime.CompositionLocalProvider(LocalScrollKey provides (if (S.subPage.intValue == 0) "t$tab" else null)) {
-                if (gated && tab < 3) TwoCol(leftW.dp, { PlugCard() }, { }) else if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
+                if (unplugged && tab < 3) TwoCol(leftW.dp, { PlugCard() }, { }) else if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
@@ -181,7 +182,7 @@ fun Root() {
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                     else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                    else TwoCol(leftW.dp, { SettingsDevice(pick); if (!gated) { WarrantyCard(); DriveCard() } }, { SettingsFeatures() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); if (S.connected.value) WarrantyCard(); if (!gated) DriveCard() }, { SettingsFeatures() })
                 }
               }
             }
@@ -229,7 +230,7 @@ fun Root() {
                 Modifier.weight(1f).verticalScroll(if (S.subPage.intValue == 0) ScrollMem.get("p$tab") else remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                if (gated && tab < 3) PlugCard() else if (lock && tab < 3) ActivationPage(true) else when (tab) {
+                if (unplugged && tab < 3) PlugCard() else if (lock && tab < 3) ActivationPage(true) else when (tab) {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
@@ -1001,7 +1002,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); if (S.connected.value) { WarrantyCard(); DriveCard() }; SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); if (S.connected.value) WarrantyCard(); if (S.connected.value && Act.ok.value) DriveCard(); SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {
@@ -1035,7 +1036,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "") { S.subPage.intValue = 12 }
         RunModeRow()
     }
-    if (S.connected.value) Card {
+    if (S.connected.value && Act.ok.value) Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
         // Chức năng gốc xe chưa kiểm chứng xong trên xe thật nhưng chủ dự án yêu cầu luôn hiện (sẽ hoàn thiện sau)
         if (!S.commonBox()) Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "") { S.subPage.intValue = 9 }
@@ -1043,7 +1044,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }
     }
-    if (S.connected.value && S.dev.value) Card {
+    if (S.connected.value && Act.ok.value && S.dev.value) Card {
         SetTitle(Icons.Filled.Science, "Kiểm tra")
         Feature(Icons.Filled.PhotoCamera, "Chụp trạng thái hộp", "") { S.subPage.intValue = 15 }
         Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
@@ -1058,7 +1059,7 @@ fun SettingsFeatures() {
     T(if (S.dev.value) "SK Light ${S.VER} · chế độ nghiên cứu" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
     ) {
-        if (!S.connected.value) return@clickable
+        if (!S.connected.value || !Act.ok.value) return@clickable
         taps++
         if (taps >= 7) { taps = 0; S.dev.value = !S.dev.value; S.saveSettings(); Notice.show(ctx, L.tr(if (S.dev.value) "Đã bật chế độ nghiên cứu." else "Đã tắt chế độ nghiên cứu.")) }
     }.padding(vertical = 8.dp))
