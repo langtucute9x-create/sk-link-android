@@ -571,7 +571,7 @@ class BleLed(private val ctx: Context) {
     /** key >= 0: lệnh cùng key chưa gửi sẽ bị thay bằng lệnh mới (kéo thanh trượt không dồn hàng đợi). */
     fun send(data: ByteArray, key: Int = -1, isSet: Boolean = false) {
         // Máy chưa kích hoạt: không gửi lệnh ghi xuống hộp (khóa điều khiển); lệnh hỏi trạng thái vẫn đi.
-        if (!Act.ok.value && data.size > 1 && (data[1].toInt() and 0xFF) == Protocol.T_WRITE) return
+        if (!Act.ok.value && !S.dev.value && data.size > 1 && (data[1].toInt() and 0xFF) == Protocol.T_WRITE) return
         put(data, key, isSet)
     }
 
