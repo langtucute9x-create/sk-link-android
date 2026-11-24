@@ -37,6 +37,12 @@ class BleLed(private val ctx: Context) {
     private val cccd = u("2902")
 
     val ready get() = adapter?.isEnabled == true
+    /** 0 = dùng được, 1 = máy không có Bluetooth (hoặc không có Bluetooth năng lượng thấp), 2 = Bluetooth đang tắt. */
+    val btState: Int get() = when {
+        adapter == null || !ctx.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_BLUETOOTH_LE) -> 1
+        !adapter.isEnabled -> 2
+        else -> 0
+    }
     /** Đang có kết nối hoặc đang kết nối dở: không mở thêm kết nối thứ hai. */
     val busy get() = gatt != null
 
@@ -53,7 +59,7 @@ class BleLed(private val ctx: Context) {
     }
 
     fun scan() {
-        val sc = adapter?.bluetoothLeScanner ?: run { S.conn.value = "Bluetooth đang tắt"; return }
+        val sc = adapter?.bluetoothLeScanner ?: run { S.conn.value = if (btState == 1) "Máy này không có Bluetooth" else "Bluetooth đang tắt"; return }
         if (scanning) return
         scanning = true; S.devices.clear(); S.scanning.value = true
         try { sc.startScan(scanCb) } catch (e: Exception) { scanning = false; S.scanning.value = false; return }

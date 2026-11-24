@@ -100,9 +100,14 @@ fun DevDialog(onClose: () -> Unit) {
             Spacer(Modifier.height(10.dp))
             if (list.isEmpty()) {
                 Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(12))).background(ChipBg).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    T(if (S.scanning.value) "Đang tìm hộp đèn…" else "Chưa thấy hộp nào", 14, FontWeight.Bold, align = TextAlign.Center)
+                    val bt = S.ble.btState
+                    T(when { bt == 1 -> "Máy này không có Bluetooth"; bt == 2 -> "Bluetooth đang tắt"; S.scanning.value -> "Đang tìm hộp đèn…"; else -> "Chưa thấy hộp nào" }, 14, FontWeight.Bold, align = TextAlign.Center)
                     Spacer(Modifier.height(4.dp))
-                    T("Kiểm tra hộp đã có điện, Bluetooth và vị trí của máy đang bật, và không có máy khác đang nối với hộp.", 12, color = Grey, align = TextAlign.Center)
+                    T(when (bt) {
+                        1 -> "Máy này không có Bluetooth nên không nối được hộp đèn. Hãy dùng máy có Bluetooth, hoặc cắm USB Bluetooth nếu máy hỗ trợ."
+                        2 -> "Bật Bluetooth trong Cài đặt của máy, rồi bấm tìm lại."
+                        else -> "Kiểm tra hộp đã có điện, Bluetooth và vị trí của máy đang bật, và không có máy khác đang nối với hộp."
+                    }, 12, color = Grey, align = TextAlign.Center)
                 }
             }
             for (d in list) {
