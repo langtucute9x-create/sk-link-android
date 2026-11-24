@@ -148,6 +148,7 @@ fun Root() {
     // chưa nối hộp đèn: chỉ còn Cài đặt cơ bản, để người ngoài không xem được tính năng của app
     val gated = !S.connected.value || !Act.ok.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
     val unplugged = !S.connected.value
+    LaunchedEffect(S.subPage.intValue) { if (S.subPage.intValue == 13 && tab < 3) tab = 3 }
     LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13)) S.subPage.intValue = 0 }
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
@@ -170,14 +171,15 @@ fun Root() {
             if (!gated) VoicePanel()
             key(tab, S.subPage.intValue, lock) {
               androidx.compose.runtime.CompositionLocalProvider(LocalScrollKey provides (if (S.subPage.intValue == 0) "t$tab" else null)) {
-                if (unplugged && tab < 3) TwoCol(leftW.dp, { PlugCard() }, { }) else if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
+                if (unplugged && tab < 3) TwoCol(leftW.dp, { PlugCard() }, { }) else if (lock && tab < 3) WideOne { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
                         val (granted, open) = navAccess()
                         TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
                     }
-                    else -> if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
+                    else -> if (S.subPage.intValue == 13) WideOne { ExtraPage(13) }
+                    else if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
                     else if (S.subPage.intValue == 4) WideSub { VoicePage() }
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
@@ -265,6 +267,14 @@ val TAB_ITEMS: List<Pair<String, ImageVector>> =
     listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
 
 /** Trang cài đặt con ở màn ngang: dùng hết chiều ngang, các thẻ tự xếp thành hai cột. */
+/** Một trang đơn (nhập mã, thông tin bảo hành): một cột, căn giữa, không chia hai nửa như WideSub. */
+@Composable
+fun ColumnScope.WideOne(content: @Composable () -> Unit) {
+    Box(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 640.dp).fillMaxWidth()) { content() }
+    }
+}
+
 @Composable
 fun ColumnScope.WideSub(content: @Composable () -> Unit) {
     Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp)) { Masonry(12.dp, content) }

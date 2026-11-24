@@ -217,16 +217,17 @@ private fun Field(value: String, onChange: (String) -> Unit, label: String, icon
 @Composable
 private fun PickField(value: String, label: String, icon: ImageVector, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val sh = RoundedCornerShape(Theme.r(12))
-    Box(modifier.alpha(if (enabled) 1f else 0.5f)) {
-        OutlinedTextField(
-            value, {}, readOnly = true, singleLine = true, modifier = Modifier.fillMaxWidth(),
-            label = { T(label, 12, color = Grey) },
-            leadingIcon = { Icon(icon, null, tint = Pink, modifier = Modifier.size(20.dp)) },
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null, tint = Grey) },
-            shape = sh,
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Pink, unfocusedBorderColor = Bd, focusedContainerColor = CardBg, unfocusedContainerColor = ChipBg, cursorColor = Pink)
-        )
-        Box(Modifier.matchParentSize().clip(sh).clickable(enabled, onClick = onClick))
+    Row(
+        modifier.alpha(if (enabled) 1f else 0.5f).heightIn(min = 56.dp).clip(sh).background(ChipBg).border(1.dp, Bd, sh)
+            .clickable(enabled, onClick = onClick).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(icon, null, tint = Pink, modifier = Modifier.size(20.dp))
+        Column(Modifier.weight(1f)) {
+            if (value.isNotEmpty()) T(label, 10, color = Grey)
+            T(if (value.isEmpty()) label else value, 14, color = if (value.isEmpty()) Grey else Color.Unspecified)
+        }
+        Icon(Icons.Filled.ArrowDropDown, null, tint = Grey)
     }
 }
 
