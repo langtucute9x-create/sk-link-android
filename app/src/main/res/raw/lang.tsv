@@ -786,3 +786,13 @@ Mơ màng	Dreamy
 Đen (tắt) để tạo điểm ngắt	Black (off) to make a pause
 Các chế độ do app điều khiển (từ Cầu vồng mượt đến Thư giãn): chạy khi app còn mở và đang kết nối.	App-driven modes (Smooth rainbow to Relax): they run while the app is open and connected.
 Chế độ của tôi do app điều khiển: chạy khi app còn mở và đang kết nối.	My modes are driven by the app: they run while the app is open and connected.
+Thử chạy đuổi (app điều khiển)	Chase test (app-driven)					
+Chỉ có 2 khu vực nên app làm đuổi giữa khu 1 và khu 2, bằng màu đang chọn và các màu tự đặt. Chạy khi app còn mở và đang kết nối.	Only 2 zones exist, so the app chases between zone 1 and zone 2 using the selected and custom colours. Runs while the app is open and connected.					
+Lệch pha	Phase shift					
+Qua lại	Back and forth					
+Nháy từng màu	Flash each colour					
+Chạy nhanh hiệu ứng đuổi của hộp	Quick run box chase effects					
+Hộp tự chạy, màu cố định theo hộp, chỉ chọn được chế độ con và tốc độ.	The box runs it itself with fixed colours; only the sub-mode and speed can be chosen.					
+Thử màu chào mừng	Welcome colour test					
+Hộp chỉ có 2 màu chào mừng: chiều thuận và chiều ngược, chưa có màu riêng cho từng cửa. Bấm nút dưới: app đặt chiều thuận đỏ, chiều ngược xanh dương, chọn Tùy chỉnh. Rồi mở từng cửa xe và ghi lại cửa nào ra màu nào, hộp phụ có đổi màu theo từng cửa không.	The box only has 2 welcome colours: forward and reverse, no per-door colours. Press below: the app sets forward red, reverse blue, and selects Custom. Then open each door and note which colour each door shows.					
+Đặt đỏ - xanh và chọn Tùy chỉnh	Set red-blue and select Custom					

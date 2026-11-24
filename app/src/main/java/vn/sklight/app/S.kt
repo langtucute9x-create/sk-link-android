@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.34"
+    const val VER = "1.4.35"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed

@@ -12,8 +12,8 @@ android {
         applicationId = "vn.sklight.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 123
-        versionName = "1.4.34"
+        versionCode = 124
+        versionName = "1.4.35"
     }
 
     // Co khoa rieng (GitHub Secrets) thi ky bang khoa do, khong thi dung khoa debug.

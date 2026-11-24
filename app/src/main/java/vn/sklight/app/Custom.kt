@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.MeetingRoom
+import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -101,6 +103,12 @@ object SeqTest {
     private fun scaleRgb(x: Int, f: Float): Int = mixRgb(0, x, f)
 }
 
+/** Dừng chế độ đuổi: bỏ chế độ, trả đèn về màu đang đặt. */
+fun stopChase() {
+    Auto.leave(); S.mode.intValue = 0
+    try { if (S.connected.value) { S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3, true); S.ble.send(S.colorFrame(), 2, true) } } catch (e: Exception) {}
+}
+
 // ===================== THỬ CHẾ ĐỘ TỰ TẠO (bản thử) =====================
 @Composable
 fun CustomTestPage() {
@@ -148,5 +156,47 @@ fun CustomTestPage() {
         Spacer(Modifier.height(8.dp))
         if (SeqTest.kind.intValue >= 4) { T("Đang chạy: còn ${SeqTest.left.intValue} giây, đã gửi ${SeqTest.sent.intValue} lệnh", 12, FontWeight.SemiBold, SubTxt); Spacer(Modifier.height(8.dp)) }
         Chip("Dừng", false, Modifier.fillMaxWidth(), 44.dp, 13) { SeqTest.stop() }
+    }
+    Card {
+        GroupTitle(Icons.Filled.DirectionsRun, "Thử chạy đuổi (app điều khiển)", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Chỉ có 2 khu vực nên app làm đuổi giữa khu 1 và khu 2, bằng màu đang chọn và các màu tự đặt. Chạy khi app còn mở và đang kết nối.", 12)
+        Spacer(Modifier.height(10.dp))
+        val chase = listOf(115 to "Lệch pha", 116 to "Qua lại", 117 to "Nháy từng màu")
+        Grid(chase, 3) { (id, label), m -> Chip(label, S.mode.intValue == id, m, 48.dp, 12) { S.pickAuto(id) } }
+        Spacer(Modifier.height(10.dp))
+        T("Tốc độ", 13, FontWeight.Bold, SubTxt)
+        Spacer(Modifier.height(8.dp))
+        Grid((1..10).toList(), 5) { v, m -> Chip("$v", S.speed.intValue == v, m, 40.dp, 13) { S.setSpeed(v) } }
+        Spacer(Modifier.height(10.dp))
+        Chip("Dừng", false, Modifier.fillMaxWidth(), 44.dp, 13) { stopChase() }
+    }
+    Card {
+        GroupTitle(Icons.Filled.DirectionsRun, "Chạy nhanh hiệu ứng đuổi của hộp", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Hộp tự chạy, màu cố định theo hộp, chỉ chọn được chế độ con và tốc độ.", 12)
+        for (id in listOf(12, 10, 6, 13)) {
+            val e = Effects.byId(id) ?: continue
+            Spacer(Modifier.height(12.dp))
+            T(e.name, 13, FontWeight.Bold, SubTxt)
+            Spacer(Modifier.height(8.dp))
+            Grid(e.subs.indices.toList(), 4) { i, m ->
+                Chip(e.subs[i], S.mode.intValue == id && S.sub[id] == i, m, 44.dp, 12) { S.sub[id] = i; S.pickEffect(e) }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        T("Tốc độ", 13, FontWeight.Bold, SubTxt)
+        Spacer(Modifier.height(8.dp))
+        Grid((1..10).toList(), 5) { v, m -> Chip("$v", S.speed.intValue == v, m, 40.dp, 13) { S.setSpeed(v) } }
+    }
+    Card {
+        GroupTitle(Icons.Filled.MeetingRoom, "Thử màu chào mừng", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Hộp chỉ có 2 màu chào mừng: chiều thuận và chiều ngược, chưa có màu riêng cho từng cửa. Bấm nút dưới: app đặt chiều thuận đỏ, chiều ngược xanh dương, chọn Tùy chỉnh. Rồi mở từng cửa xe và ghi lại cửa nào ra màu nào, hộp phụ có đổi màu theo từng cửa không.", 12)
+        Spacer(Modifier.height(10.dp))
+        Chip("Đặt đỏ - xanh và chọn Tùy chỉnh", false, Modifier.fillMaxWidth(), 48.dp, 13) {
+            val ok = X.pickWelcome(false, 0, 0xFF0000) && X.pickWelcome(true, 4, 0x0000FF) && S.setBlk(3, 0x07, 7)
+            if (!ok) { S.refreshBlocks(); Notice.show(S.app, L.tr("Chưa đọc được cài đặt từ hộp. Kiểm tra kết nối rồi thử lại.")) }
+        }
     }
 }

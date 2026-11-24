@@ -142,6 +142,28 @@ object Auto {
                     a = if (p == 0L) 0xFF1A1A else 0x00C040; b = if (p == 0L) 0x00C040 else 0xFF1A1A
                     if (t % 5400 < 150) { a = 0xFFFFFF; b = 0xFFFFFF }
                 }
+                115, 116, 117 -> {      // Thử chạy đuổi 2 khu bằng màu của người dùng (màu đang chọn + màu tự đặt)
+                    val pal = (listOf(base1(), base2()) + S.customs.toList()).distinct().take(8).let { if (it.size >= 2) it else listOf(0xFF0000, 0x0000FF, 0x00FF00) }
+                    val n = pal.size
+                    val pos = el * (0.15 + S.speed.intValue * 0.12) / 1800.0
+                    fun at(x: Double): Int { val k = Math.floor(x).toInt(); val i0 = ((k % n) + n) % n; return mix(pal[i0], pal[(i0 + 1) % n], (x - k).toFloat()) }
+                    when (m) {
+                        115 -> { a = at(pos); b = at(pos + n / 2.0) }
+                        116 -> {      // qua lại: khu 1 đi xuôi bảng màu, khu 2 đi ngược, tới cuối thì quay đầu
+                            val span = (n - 1).toDouble()
+                            val tri = { x: Double -> val y = x % (2 * span); if (y <= span) y else 2 * span - y }
+                            val x1 = tri(pos); val x2 = span - x1
+                            fun lerp(x: Double): Int { val i0 = Math.floor(x).toInt().coerceIn(0, n - 1); val i1 = (i0 + 1).coerceAtMost(n - 1); return mix(pal[i0], pal[i1], (x - i0).toFloat()) }
+                            a = lerp(x1); b = lerp(x2)
+                        }
+                        else -> {      // nháy từng màu: màu 1 sáng khu 1, rồi khu 2, rồi sang màu kế
+                            val step = Math.floor(pos * 2).toLong()
+                            val col = pal[((step / 2) % n).toInt()]
+                            if (step % 2 == 0L) { a = col; b = 0 } else { a = 0; b = col }
+                            next = 80L
+                        }
+                    }
+                }
                 114 -> {      // Thư giãn: sáng dần 4 giây, tối dần 6 giây theo màu đang chọn (không theo thanh tốc độ)
                     val p = (el % 10000).toInt()
                     val f = if (p < 4000) (0.5 - 0.5 * cos(Math.PI * p / 4000.0)).toFloat() else (0.5 + 0.5 * cos(Math.PI * (p - 4000) / 6000.0)).toFloat()
