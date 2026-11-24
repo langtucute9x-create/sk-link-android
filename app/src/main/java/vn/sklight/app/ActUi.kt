@@ -143,18 +143,10 @@ private fun Steps(step: Int) {
 
 /** Công tắc Luôn chạy nền. Tắt (mặc định, điện thoại): chạy nền nhưng mất kết nối hộp quá 1 phút thì dừng. Bật (màn hình xe / Android box): chạy nền liên tục. */
 @Composable
-fun RunModeCard() {
+fun RunModeRow() {
     val ctx = LocalContext.current
-    Card {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Key, null, tint = Pink, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(12.dp))
-            T("Chạy nền", 16, FontWeight.Bold)
-        }
-        Spacer(Modifier.height(4.dp))
-        SwitchRow("Luôn chạy nền", "", S.alwaysBg.value) {
-            S.alwaysBg.value = it; S.saveSettings(); S.syncService(ctx); if (it) S.autoConnect()
-        }
+    SwitchRow("Luôn chạy nền", "", S.alwaysBg.value) {
+        S.alwaysBg.value = it; S.saveSettings(); S.syncService(ctx); if (it) S.autoConnect()
     }
 }
 

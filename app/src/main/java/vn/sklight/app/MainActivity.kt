@@ -164,6 +164,7 @@ fun Root() {
             Strip()
             VoicePanel()
             key(tab, S.subPage.intValue, lock) {
+              androidx.compose.runtime.CompositionLocalProvider(LocalScrollKey provides (if (S.subPage.intValue == 0) "t$tab" else null)) {
                 if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
@@ -176,8 +177,9 @@ fun Root() {
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                     else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                    else TwoCol(leftW.dp, { SettingsDevice(pick); WarrantyCard(); RunModeCard(); DriveCard() }, { SettingsFeatures() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); WarrantyCard(); DriveCard() }, { SettingsFeatures() })
                 }
+              }
             }
         }
         if (topMenu) Column(frame.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -220,7 +222,7 @@ fun Root() {
             Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             Column(
-                Modifier.weight(1f).verticalScroll(remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
+                Modifier.weight(1f).verticalScroll(if (S.subPage.intValue == 0) ScrollMem.get("p$tab") else remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 if (lock && tab < 3) ActivationPage(true) else when (tab) {
@@ -263,13 +265,23 @@ fun ColumnScope.WideSub(content: @Composable () -> Unit) {
     Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp)) { Masonry(12.dp, content) }
 }
 
+/** Nhớ vị trí cuộn của các trang chính để quay lại từ trang con không bị về đầu trang. */
+object ScrollMem {
+    private val m = HashMap<String, ScrollState>()
+    fun get(k: String): ScrollState = m.getOrPut(k) { ScrollState(0) }
+}
+val LocalScrollKey = androidx.compose.runtime.compositionLocalOf<String?> { null }
+
 /** Hai cột cuộn riêng cho màn ngang. */
 @Composable
 fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composable () -> Unit) {
     // lề 4dp quanh mỗi cột để bóng đổ của thẻ không bị cắt ở mép vùng cuộn; khoảng cách giữa hai cột vẫn là 12dp
+    val sk = LocalScrollKey.current
+    val sl = if (sk == null) rememberScrollState() else ScrollMem.get("$sk-l")
+    val sr = if (sk == null) rememberScrollState() else ScrollMem.get("$sk-r")
     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Column(Modifier.width(leftW + 8.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
-        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
+        Column(Modifier.width(leftW + 8.dp).fillMaxHeight().verticalScroll(sl).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
+        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(sr).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
     }
 }
 
@@ -981,7 +993,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); WarrantyCard(); RunModeCard(); DriveCard(); SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); WarrantyCard(); DriveCard(); SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {
@@ -1013,6 +1025,7 @@ fun SettingsFeatures() {
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "") { S.subPage.intValue = 12 }
+        RunModeRow()
     }
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
