@@ -60,6 +60,8 @@ fun SerialPage() {
     var qBusy by remember { mutableStateOf(false) }
     var qStep by remember { mutableIntStateOf(0) }
     var qLines by remember { mutableStateOf<List<String>>(emptyList()) }
+    var aBusy by remember { mutableStateOf(false) }
+    var aLines by remember { mutableStateOf<List<String>>(emptyList()) }
     BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.Fingerprint, "Tìm số seri hộp", 16)
@@ -187,6 +189,36 @@ fun SerialPage() {
             }
             Spacer(Modifier.height(8.dp))
             Hint("Bấm Sao chép rồi gửi kết quả cho kỹ thuật. Dòng nào khác nhau giữa hai hộp là mã riêng.", 12)
+        }
+    }
+    // ----- Thử khối A9: hộp có giữ được 6 byte do mình ghi vào không (để làm mã riêng cho hộp) -----
+    Card {
+        GroupTitle(Icons.Filled.Memory, "Thử ghi mã vào hộp (khối A9)", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Chỉ dành cho hộp CZH2. Thử ghi 6 byte vào ô A9 của hộp, đọc lại, rồi tắt bật hộp để xem hộp có giữ không. Làm xong bấm Trả về 00 để hộp như cũ. Không đụng gì khác của hộp.", 12)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val run = { m: Int ->
+                if (!aBusy) {
+                    if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn."))
+                    else { aBusy = true; S.ble.blockA9(m) { l -> aLines = listOf("SK Light ${S.VER} · ${S.devName.value} · ID ${S.savedMac}") + l; aBusy = false } }
+                }
+            }
+            FillBtn("Đọc A9", Icons.Filled.Search, Pink, Modifier.weight(1f)) { run(0) }
+            FillBtn("Ghi thử", Icons.Filled.Memory, Color(0xFFFE9700), Modifier.weight(1f)) { run(1) }
+            FillBtn("Trả về 00", Icons.Filled.Memory, Color(0xFF607D8B), Modifier.weight(1f)) { run(2) }
+        }
+        if (aLines.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(ChipBg).padding(10.dp)) {
+                for (x in aLines) T(x, 11, color = Txt)
+            }
+            Spacer(Modifier.height(8.dp))
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.fillMaxWidth()) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("a9", aLines.joinToString("\n")))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
         }
     }
 }

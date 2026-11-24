@@ -447,6 +447,64 @@ class BleLed(private val ctx: Context) {
         }.start()
     }
 
+    // ---------------- thử khối A9 (6 byte, chỉ có ở CZH2): đọc / ghi thử / trả về 00 ----------------
+    /** mode 0: đọc A9; 1: ghi 6 byte thử rồi đọc lại; 2: ghi lại 6 byte 00 rồi đọc lại. Chỉ đụng khối A9. */
+    fun blockA9(mode: Int, done: (List<String>) -> Unit) {
+        val g = gatt; val c = wch
+        if (g == null || c == null) { done(listOf("Chưa kết nối hộp đèn.")); return }
+        paused = true
+        Thread {
+            val out = ArrayList<String>()
+            try {
+                val inbox = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+                tap = { _, v -> inbox.offer(v) }
+                fun hx(b: ByteArray) = b.joinToString(" ") { "%02X".format(it) }
+                fun put(fr: ByteArray): Boolean {
+                    repeat(5) {
+                        val ok = try {
+                            if (Build.VERSION.SDK_INT >= 33) g.writeCharacteristic(c, fr, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) == 0
+                            else { c.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE; c.value = fr; g.writeCharacteristic(c) }
+                        } catch (_: Exception) { false }
+                        if (ok) return true
+                        Thread.sleep(60)
+                    }
+                    return false
+                }
+                fun readA9(): ByteArray? {
+                    inbox.clear()
+                    put(Protocol.frame(0x90, 0x7C, 0xA9))
+                    val end = System.currentTimeMillis() + 700
+                    while (System.currentTimeMillis() < end) {
+                        val v = inbox.poll(50, java.util.concurrent.TimeUnit.MILLISECONDS) ?: continue
+                        val i = v.indexOfFirst { (it.toInt() and 0xFF) == 0x2E }
+                        if (i >= 0 && v.size - i >= 5 && (v[i + 1].toInt() and 0xFF) == 0x7C && (v[i + 3].toInt() and 0xFF) == 0xA9) {
+                            val n = v[i + 2].toInt() and 0xFF
+                            return v.copyOfRange(i + 4, minOf(v.size - 1, i + 3 + n))
+                        }
+                    }
+                    return null
+                }
+                val before = readA9()
+                out.add("A9 trước: " + (before?.let { hx(it) } ?: "hộp không trả lời"))
+                if (mode != 0 && before != null) {
+                    val data = if (mode == 1) intArrayOf(0x53, 0x4B, 0x01, 0x02, 0x03, 0x04) else IntArray(6)
+                    val fr = Protocol.frame(0x8D, 0xA9, *data)
+                    out.add("→ ghi: " + hx(fr))
+                    if (!put(fr)) out.add("Máy không gửi được lệnh ghi.")
+                    Thread.sleep(500)
+                    val after = readA9()
+                    out.add("A9 sau: " + (after?.let { hx(it) } ?: "hộp không trả lời"))
+                    if (after != null) out.add(if (after.size == 6 && after.indices.all { (after[it].toInt() and 0xFF) == data[it] }) "GHI ĐƯỢC: hộp giữ đúng 6 byte vừa ghi." else "KHÔNG GHI ĐƯỢC: hộp không đổi theo lệnh ghi.")
+                } else if (mode != 0) out.add("Hộp không có khối A9, không ghi.")
+            } catch (e: Exception) {
+                out.add("Lỗi: ${e.message}")
+            } finally {
+                tap = null; paused = false
+            }
+            main.post { done(out) }
+        }.start()
+    }
+
     // ---------------- gửi ----------------
     /** key >= 0: lệnh cùng key chưa gửi sẽ bị thay bằng lệnh mới (kéo thanh trượt không dồn hàng đợi). */
     fun send(data: ByteArray, key: Int = -1, isSet: Boolean = false) {
