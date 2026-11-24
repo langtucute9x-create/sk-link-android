@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -186,8 +187,8 @@ fun MyModesCard(cols: Int) {
                 fun pick(x: Float) { if (sel in cs.indices) cs[sel] = barColor((x / wPx).coerceIn(0f, 1f)) }
                 Box(
                     Modifier.fillMaxSize().clip(RoundedCornerShape(Theme.r(8))).background(BAR).border(1.dp, Bd, RoundedCornerShape(Theme.r(8)))
-                        .pointerInput(sel) { androidx.compose.foundation.gestures.detectTapGestures { pick(it.x) } }
-                        .pointerInput(sel) { androidx.compose.foundation.gestures.detectDragGestures(onDragStart = { pick(it.x) }) { ch, _ -> ch.consume(); pick(ch.position.x) } }
+                        .pointerInput(sel) { detectTapGestures { pick(it.x) } }
+                        .pointerInput(sel) { detectDragGestures(onDragStart = { pick(it.x) }) { ch, _ -> ch.consume(); pick(ch.position.x) } }
                 )
                 val bp = barPos(cur)
                 if (bp >= 0f) Box(
