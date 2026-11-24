@@ -125,14 +125,14 @@ val LocalHintBox = compositionLocalOf<HintBox?> { null }
 
 /** true khi các dòng giải thích của thẻ đang chứa nó bị ẩn. */
 @Composable
-fun hintsHidden(): Boolean { val b = LocalHintBox.current; return LocalCompact.current && b != null && !b.show }
+fun hintsHidden(): Boolean { val b = LocalHintBox.current; return LocalCompact.current && InfoBtn.on && b != null && !b.show }
 
 /** Một dòng giải thích (chữ xám). Ở màn ngang chỉ hiện sau khi chạm nút "i" của thẻ. */
 @Composable
 fun Hint(text: String, size: Int = 11, modifier: Modifier = Modifier) {
     val b = LocalHintBox.current
     if (b != null) DisposableEffect(b) { b.count++; onDispose { b.count-- } }
-    if (!(LocalCompact.current && b != null && !b.show)) T(text, size, color = Grey, modifier = modifier)
+    if (!(LocalCompact.current && InfoBtn.on && b != null && !b.show)) T(text, size, color = Grey, modifier = modifier)
 }
 
 @Composable
