@@ -572,9 +572,14 @@ fun WelcomeTop() {
         Spacer(Modifier.height(12.dp))
         Grid(listOf(0, 1, 2, 3), 4) { v, m -> Chip("Tốc độ ${v + 1}", S.wSpeed.intValue == v, m, 48.dp, 12) { S.setWSpeed(v) } }
     }
+    Card {
+        GroupTitle(Icons.Filled.MeetingRoom, "Vị trí bắt đầu chào mừng", 16)
+        Spacer(Modifier.height(12.dp))
+        Grid(STARTS, 2) { (label, code), m -> Chip(label, S.wStart.intValue == code, m, 44.dp, 12) { S.setWStart(code) } }
+    }
 }
 
-/** Sơ đồ xe: ghép hộp phụ, số LED, hướng chạy, vị trí bắt đầu. */
+/** Sơ đồ xe: ghép hộp phụ, số LED, hướng chạy. */
 @Composable
 fun WelcomeDiagram() {
     Card {
@@ -598,10 +603,6 @@ fun WelcomeDiagram() {
         StepDiagram()
         Spacer(Modifier.height(8.dp))
         Hint("Số LED: chạm − / + để chỉnh từng bóng, giữ nút để chạy nhanh, chạm vào số để gõ thẳng. Chạm hình xe hoặc ‹ › để đổi đoạn.", 11)
-        Spacer(Modifier.height(16.dp))
-        T("Vị trí bắt đầu chào mừng", 13, FontWeight.Bold, SubTxt)
-        Spacer(Modifier.height(10.dp))
-        Grid(STARTS, 2) { (label, code), m -> Chip(label, S.wStart.intValue == code, m, 44.dp, 12) { S.setWStart(code) } }
         Spacer(Modifier.height(16.dp))
         var ask by remember { mutableStateOf(false) }
         Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(CardBg).border(1.dp, Pink, RoundedCornerShape(Theme.r(6))).clickable { ask = true }, contentAlignment = Alignment.Center) {
