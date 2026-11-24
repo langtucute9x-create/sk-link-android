@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.16"
+    const val VER = "1.4.17"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -109,7 +109,7 @@ object S {
     // bối cảnh + các tính năng khi lái xe
     val sceneSel = mutableIntStateOf(-1)                  // bối cảnh đang dùng (vị trí trong Scenes.all()), -1 = không
     /** Máy đang dùng: 0 chưa chọn (giữ cách cũ: chạy nền), 1 điện thoại (chỉ nối khi mở app), 2 màn hình xe / Android box (chạy nền). */
-    val runMode = mutableIntStateOf(0)
+    val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
     val nightOn = mutableStateOf(false)                   // tự dịu đèn ban đêm
     val nightMode = mutableIntStateOf(0)                  // 0 theo giờ mặt trời, 1 theo giờ tự đặt
@@ -172,7 +172,8 @@ object S {
         on.value = sp.getBoolean("on", true)
         dayBri = (sp.getString("dayBri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { if (it.size == 3) it.toIntArray() else null }
         autoBoot.value = sp.getBoolean("autoBoot", true)
-        runMode.intValue = sp.getInt("runMode", 0)
+        // bản cũ: đã chọn Màn hình xe (2) hoặc chưa chọn (0) thì giữ chạy nền liên tục; chọn Điện thoại (1) hoặc cài mới thì tắt
+        alwaysBg.value = if (sp.contains("alwaysBg")) sp.getBoolean("alwaysBg", false) else (sp.contains("runMode") && sp.getInt("runMode", 0) != 1)
         nightOn.value = sp.getBoolean("nightOn", false)
         nightMode.intValue = sp.getInt("nightMode", 0)
         nightFrom.intValue = sp.getInt("nightFrom", 18 * 60)
@@ -213,7 +214,7 @@ object S {
         sp.edit().putBoolean("invert2", invert.value)
             .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto2", screenAuto.value).putBoolean("dev", dev.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
-            .putInt("runMode", runMode.intValue).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
+            .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
@@ -391,14 +392,14 @@ object S {
         sp.edit().putString("lat", la.toString()).putString("lon", lo.toString()).apply()
     }
 
-    /** Có tính năng cần app chạy nền dù đang dùng điện thoại (nút nổi, cảnh báo rẽ, cảnh báo tốc độ). */
-    fun bgNeeded() = floatOn.value || warnOn.value || speedWarn.value
-
-    /** Bật dịch vụ nền khi cần giữ kết nối (tự kết nối, nút nổi, cảnh báo rẽ), tắt khi không cần. */
-    fun syncService(ctx: Context = app) {
+    /**
+     * Bật dịch vụ nền khi cần giữ kết nối: luôn chạy nền, vừa khởi động máy ([boot]), đang nối hoặc đang thử nối lại hộp.
+     * Không bật khi người dùng đã bấm Ngắt kết nối hoặc app đã bỏ cuộc sau 1 phút mất kết nối (xem KeepService).
+     */
+    fun syncService(ctx: Context = app, boot: Boolean = false) {
         val c = ctx.applicationContext
         try {
-            if (!((autoBoot.value && runMode.intValue != 1) || floatOn.value || warnOn.value || speedWarn.value)) { c.stopService(Intent(c, KeepService::class.java)); return }
+            if (!(alwaysBg.value || boot || connected.value || ble.wants)) { c.stopService(Intent(c, KeepService::class.java)); return }
             if (Build.VERSION.SDK_INT >= 31 && c.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return
             c.startForegroundService(Intent(c, KeepService::class.java))
         } catch (_: Exception) {}

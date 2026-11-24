@@ -32,10 +32,18 @@ import kotlin.math.abs
 /** Dịch vụ chạy nền: giữ kết nối với hộp đèn (tự nối lại), và giữ nút nổi trên màn hình. */
 class KeepService : Service() {
     private val h = Handler(Looper.getMainLooper())
+    private var lostSince = 0L
     private val loop = object : Runnable {
         override fun run() {
             try { S.autoConnect() } catch (_: Exception) {}
-            h.postDelayed(this, if (S.connected.value) 10000L else 30000L)
+            val now = System.currentTimeMillis()
+            if (S.connected.value || S.appVisible || S.alwaysBg.value) lostSince = 0L
+            else {
+                if (lostSince == 0L) lostSince = now
+                // Không luôn chạy nền (điện thoại): mất kết nối hộp quá 1 phút thì bỏ cuộc, ngừng nối lại và ngừng chạy nền. Mở app thì nối lại.
+                if (now - lostSince >= 60000L) { S.ble.disconnect(); stopSelf(); return }
+            }
+            h.postDelayed(this, if (S.connected.value) 10000L else 5000L)
         }
     }
 
@@ -55,6 +63,7 @@ class KeepService : Service() {
             if (Build.VERSION.SDK_INT >= 29) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
             else startForeground(1, n)
         } catch (e: Exception) { stopSelf(); return START_NOT_STICKY }
+        lostSince = 0L
         h.removeCallbacks(loop); h.post(loop)
         FloatButton.sync(this)
         return START_STICKY
@@ -70,6 +79,6 @@ class KeepService : Service() {
 /** Máy khởi động xong: tự chạy dịch vụ nền để nối lại hộp đèn đã chọn. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, i: Intent?) {
-        try { S.init(ctx); if (S.autoBoot.value) S.syncService(ctx) } catch (_: Exception) {}
+        try { S.init(ctx); if (S.autoBoot.value) S.syncService(ctx, true) } catch (_: Exception) {}
     }
 }

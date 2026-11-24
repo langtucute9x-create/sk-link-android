@@ -87,6 +87,9 @@ class BleLed(private val ctx: Context) {
         gatt = if (Build.VERSION.SDK_INT >= 23) dev.connectGatt(ctx, false, cb, BluetoothDevice.TRANSPORT_LE) else dev.connectGatt(ctx, false, cb)
     }
 
+    /** Đang nối hoặc đang thử nối lại một hộp. */
+    val wants: Boolean get() = wantMac != null
+
     fun disconnect() { wantMac = null; closeGatt(); S.connected.value = false; S.conn.value = "Chưa kết nối" }
 
     private fun closeGatt() {

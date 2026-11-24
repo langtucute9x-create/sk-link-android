@@ -98,9 +98,8 @@ class MainActivity : ComponentActivity() {
     /** Đang hiện màn hình báo lỗi của lần mở trước: không chạy các phần khác của app. */
     private var crashShown = false
 
-    private val bgOff = Runnable { if (!S.appVisible && !S.bgNeeded()) S.ble.disconnect() }
-    override fun onStart() { super.onStart(); if (crashShown) return; S.main.removeCallbacks(bgOff); Gps.start(this); S.syncService(this); if (S.runMode.intValue == 1) S.autoConnect() }
-    override fun onStop() { if (!crashShown) { Gps.stop(); if (S.runMode.intValue == 1 && !S.bgNeeded()) S.main.postDelayed(bgOff, 60000L) }; super.onStop() }
+    override fun onStart() { super.onStart(); if (crashShown) return; Gps.start(this); S.autoConnect(); S.syncService(this) }
+    override fun onStop() { if (!crashShown) { Gps.stop(); S.syncService(this) }; super.onStop() }
     override fun onResume() { super.onResume(); if (crashShown) return; Split.inSplit.value = isInMultiWindowMode; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this)
         // vừa bấm mic ở màn hình nổi: nghe ngay khi app mở lên
         if (S.pendingMic) { S.pendingMic = false; if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) Voice.start(this) }

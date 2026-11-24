@@ -68,10 +68,10 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Thử nháy 4 giây: bấm Rẽ trái, Rẽ phải hoặc Quá tốc độ để xem trước trên đèn.",
         "Nháy đỏ khi quá tốc độ: bật công tắc và chọn khu nháy đỏ. Chỉ hoạt động khi app bản đồ hiện biển giới hạn tốc độ.",
         "Chia đôi màn hình: bấm nút chia đôi (thẻ Chia đôi màn hình ở trang Dẫn đường, hoặc nút trên thanh menu màn ngang). SK Light sang một nửa, nửa kia hiện các app đang mở để chọn (bản đồ, nhạc…). Bấm lần nữa để thoát. Cần bật Hỗ trợ tiếp cận cho SK Light; màn hình xe phải hỗ trợ chia đôi.",
-        "Để báo được khi SK Light không mở trên màn hình, hãy bật Tự kết nối khi khởi động máy ở thẻ Khi lái xe."
+        "Để báo được khi SK Light không mở trên màn hình, app phải đang chạy nền và nối hộp. Trên màn hình xe hoặc Android box, hãy bật Luôn chạy nền ở thẻ Chạy nền."
     ),
     "6. Khi lái xe" to listOf(
-        "Tự kết nối khi khởi động máy: màn hình xe bật lên là app tự nối hộp đèn, không cần mở app.",
+        "Tự kết nối khi khởi động máy: màn hình xe bật lên là app tự nối hộp đèn, không cần mở app. Trên màn hình xe hoặc Android box nên bật thêm Luôn chạy nền (thẻ Chạy nền).",
         "Tự dịu đèn ban đêm: đèn tự giảm sáng khi trời tối, theo giờ mặt trời lặn và mọc hoặc theo giờ tự đặt. Kéo thanh Độ sáng ban đêm để chọn mức.",
         "Màn hình chờ khi xe chạy: tự mở khi công tắc bật, xe chạy từ 10 km/h và 10 giây không chạm màn hình. Xe đứng yên thì không tự mở.",
         "Mở màn hình chờ bằng tay: bấm nút có hình khung ảnh trên thanh menu ở màn hình ngang. Chạm màn hình chờ để quay lại.",
@@ -135,10 +135,11 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Nếu app báo mã đã hết lượt kích hoạt, hết hạn hoặc mã bị khóa, gọi hotline 0868 055 555."
     ),
     "13. Chạy nền và tiết kiệm pin" to listOf(
-        "Cài đặt, thẻ Bạn đang dùng app trên: chọn Điện thoại hoặc Màn hình xe / Android box. Chưa chọn thì app chạy nền như màn hình xe.",
-        "Điện thoại: chỉ nối hộp khi mở app. Rời khỏi app khoảng 1 phút thì app ngắt kết nối để đỡ tốn pin. Các hiệu ứng do app vẽ (từ Cầu vồng mượt trở đi) dừng khi đóng app; hiệu ứng có sẵn trong hộp vẫn chạy.",
-        "Màn hình xe hoặc Android box: app chạy nền, hiện một thông báo cố định, tự nối hộp khi bật máy và nối lại khi mất kết nối. Hộp tắt hoặc ra xa thì app thử nối lại thưa dần để đỡ tốn pin.",
-        "Nút nổi, báo đèn khi sắp rẽ và cảnh báo quá tốc độ cần app chạy nền; bật các tính năng này thì app giữ chạy nền cả trên điện thoại.",
+        "Cài đặt, thẻ Chạy nền, công tắc Luôn chạy nền. Không còn phải chọn bạn dùng app trên máy nào.",
+        "Tắt (mặc định, dành cho điện thoại): app chạy nền khi đã nối hộp, hiện một thông báo cố định. Nếu mất kết nối với hộp quá 1 phút (tắt xe, đi xa hộp) thì app ngừng nối lại và ngừng chạy nền, thông báo biến mất. Mở app lại thì app tự nối lại hộp.",
+        "Bật (dành cho màn hình xe và Android box): app chạy nền liên tục, tự nối hộp khi bật máy và nối lại khi mất kết nối, kể cả khi đóng app. Hộp tắt hoặc ra xa thì app thử nối lại thưa dần để đỡ tốn pin.",
+        "Nút nổi, báo đèn khi sắp rẽ và cảnh báo quá tốc độ cần app đang chạy nền và đang nối hộp. Khi app đã ngừng chạy nền (điện thoại, mất kết nối hộp quá 1 phút) thì các tính năng này tạm dừng cho tới khi mở app và nối lại.",
+        "Hiệu ứng do app vẽ (từ Cầu vồng mượt trở đi) chỉ chạy khi app còn nối hộp; hiệu ứng có sẵn trong hộp vẫn chạy khi app đã ngừng.",
         "Buộc dừng ứng dụng trong Thông tin ứng dụng sẽ tắt hẳn app và hiệu ứng. Android không cho app tự chạy lại; hãy mở lại app. Vuốt app khỏi danh sách gần đây thì thường không tắt dịch vụ nền, nhưng một số màn hình xe tự tắt."
     )
 )
