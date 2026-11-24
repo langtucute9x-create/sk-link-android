@@ -786,7 +786,6 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         } else if (!S.navOn.value) {
             T("Chưa có chỉ đường", 15, FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            Hint("Mở Google Maps hoặc Vietmap, bắt đầu dẫn đường rồi quay lại đây.", 12)
         } else {
             val dir = S.navDir.value
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -822,9 +821,8 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     Card {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo rẽ", 16)
         Spacer(Modifier.height(8.dp))
-        SwitchRow("Báo đèn khi sắp rẽ", "Đèn vàng chạy theo hướng rẽ khi sắp tới chỗ rẽ", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
-        SwitchRow("Đảo chiều chạy", "Bật nếu khi rẽ trái mà đèn lại chạy sang phải", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
-        Hint("Khi sắp rẽ, đèn chạy theo hướng rẽ bằng hiệu ứng chọn bên dưới. Trong lúc báo, app tạm đổi hướng ánh sáng chạy của hộp rồi trả lại như cũ.", 11)
+        SwitchRow("Báo đèn khi sắp rẽ", "", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Đảo chiều chạy", "", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
         Spacer(Modifier.height(10.dp))
         T("Hiệu ứng khi báo rẽ", 14, FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
@@ -870,7 +868,6 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
                 }
             }
         }
-        T("Hết thời gian thì đèn trở về như cũ dù chưa qua chỗ rẽ; tới chỗ rẽ kế tiếp sẽ báo lại.", 11, color = Grey, modifier = Modifier.padding(top = 6.dp))
     }
 
 }
@@ -887,16 +884,14 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
         Spacer(Modifier.height(8.dp))
-        Hint("Rẽ trái, rẽ phải: đèn vàng chạy theo hướng rẽ. Quá tốc độ: nháy đỏ theo khu chọn bên dưới. Hết 4 giây đèn trở về như cũ.", 11)
     }
 
     // ---- cảnh báo quá tốc độ ----
     Card {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
         Spacer(Modifier.height(8.dp))
-        SwitchRow("Nháy đỏ khi quá tốc độ", "Nháy đỏ liên tục khi chạy quá giới hạn trên biển báo", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Nháy đỏ khi quá tốc độ", "", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
         Spacer(Modifier.height(6.dp))
-        Hint("Khu nháy đỏ khi quá tốc độ (các khu còn lại giữ nguyên màu):", 12)
         Spacer(Modifier.height(4.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
@@ -910,7 +905,6 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
         }
         Spacer(Modifier.height(6.dp))
-        Hint("Biển giới hạn và tốc độ xe hiện ở thẻ dẫn đường phía trên. Giới hạn đọc được khi app dẫn đường hiện biển báo tốc độ (ví dụ Gofa).", 11)
     }
 
     // ---- quyền còn thiếu: chỉ hiện khi chưa cấp đủ; cấp xong thì thẻ tự ẩn ----

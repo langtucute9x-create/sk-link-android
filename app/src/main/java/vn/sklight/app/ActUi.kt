@@ -152,7 +152,7 @@ fun RunModeCard() {
             T("Chạy nền", 16, FontWeight.Bold)
         }
         Spacer(Modifier.height(4.dp))
-        SwitchRow("Luôn chạy nền", "Bật khi dùng trên màn hình xe hoặc Android box: app chạy nền liên tục, tự nối lại hộp khi bật máy. Tắt (điện thoại): app chạy nền nhưng mất kết nối với hộp quá 1 phút thì dừng.", S.alwaysBg.value) {
+        SwitchRow("Luôn chạy nền", "", S.alwaysBg.value) {
             S.alwaysBg.value = it; S.saveSettings(); S.syncService(ctx); if (it) S.autoConnect()
         }
     }

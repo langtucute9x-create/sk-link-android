@@ -108,7 +108,6 @@ fun SplitCard() {
     Card {
         GroupTitle(Icons.Filled.VerticalSplit, "Chia đôi màn hình", 16)
         Spacer(Modifier.height(4.dp))
-        Hint("SK Light một nửa, app đang mở (bản đồ, nhạc…) nửa kia. Bấm nút rồi chọn app ở nửa màn hình còn lại. Cần bật Hỗ trợ tiếp cận cho SK Light.", 12)
         Spacer(Modifier.height(10.dp))
         FillBtn(if (Split.inSplit.value) "Thoát chia đôi" else "Chia đôi với app đang mở", Icons.Filled.VerticalSplit, Pink, Modifier.fillMaxWidth()) { Split.go(ctx) }
     }
