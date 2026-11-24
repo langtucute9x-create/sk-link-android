@@ -169,11 +169,11 @@ fun DriveCard() {
             T("Khi lái xe", 16, FontWeight.Bold)
         }
         Spacer(Modifier.height(4.dp))
-        SwitchRow("Tự kết nối khi khởi động máy", "Màn hình xe bật lên là tự nối hộp đèn đã chọn, không cần mở app", S.autoBoot.value) {
+        SwitchRow("Tự kết nối khi khởi động máy", "", S.autoBoot.value) {
             S.autoBoot.value = it; S.saveSettings(); S.syncService(ctx)
         }
         Divider()
-        SwitchRow("Tự dịu đèn ban đêm", "Trời tối đèn tự giảm sáng, sáng ra trở lại. Không cần đấu dây", S.nightOn.value) {
+        SwitchRow("Tự dịu đèn ban đêm", "", S.nightOn.value) {
             S.nightOn.value = it; S.saveSettings(); Night.tick()
         }
         if (S.nightOn.value) {
@@ -211,13 +211,13 @@ fun DriveCard() {
             )
         }
         Divider()
-        SwitchRow("Màn hình chờ khi xe chạy", "Xe đang chạy và 10 giây không chạm thì chuyển sang màn hình chờ. Chọn kiểu ở Cài đặt giao diện", S.idleOn.value) { S.idleOn.value = it; S.saveSettings() }
+        SwitchRow("Màn hình chờ khi xe chạy", "", S.idleOn.value) { S.idleOn.value = it; S.saveSettings() }
         if (S.idleOn.value) {
             val v = maxOf(S.speedKmh.floatValue.roundToInt(), S.appSpeed.intValue)
             T("Tốc độ đang đọc được: $v km/h. Màn hình chờ chỉ tự mở khi xe chạy từ 10 km/h; xe đứng yên thì không mở.", 11, color = Grey)
         }
         Divider()
-        SwitchRow("Nút nổi trên màn hình", "Nút SK nổi trên ứng dụng khác: bật tắt, độ sáng, bối cảnh. Cần cấp quyền hiển thị trên ứng dụng khác", S.floatOn.value) {
+        SwitchRow("Nút nổi trên màn hình", "", S.floatOn.value) {
             S.floatOn.value = it; S.saveSettings(); S.syncService(ctx)
             if (it && !Settings.canDrawOverlays(ctx)) {
                 Notice.show(ctx, L.tr("Bật quyền \"Hiển thị trên ứng dụng khác\" cho SK Light rồi quay lại."), true)

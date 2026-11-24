@@ -1021,18 +1021,18 @@ fun SettingsFeatures() {
     val ctx = LocalContext.current
     Card {
         SetTitle(Icons.Filled.PhoneAndroid, "Ứng dụng")
-        Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "${Theme.MODES[Theme.mode.intValue]} · ${Theme.ACCENTS[Theme.accent.intValue].first} · màn hình chờ") { S.subPage.intValue = 1 }
+        Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
-        Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "Hướng dẫn sử dụng và hướng dẫn cài đặt chi tiết") { S.subPage.intValue = 12 }
+        Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "") { S.subPage.intValue = 12 }
     }
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
         // Chức năng gốc xe chưa kiểm chứng xong trên xe thật nhưng chủ dự án yêu cầu luôn hiện (sẽ hoàn thiện sau)
-        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "Đèn báo theo xe: xi nhan, cửa, dây an toàn, quá tốc độ, chào mừng khi mở cửa lái…") { S.subPage.intValue = 9 }
-        Feature(Icons.Filled.Mic, "Trợ lý SK Light (AI)", "Giọng nói của hộp, cách thông báo, nút mic trên app") { S.subPage.intValue = 4 }
-        Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "Hướng ánh sáng chạy của từng khu vực") { S.subPage.intValue = 6 }
-        Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "Ghép nối, số lượng và vị trí hộp phụ") { S.subPage.intValue = 5 }
-        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "Chọn loại xe, phiên bản hộp, chẩn đoán, khôi phục cài đặt gốc") { S.subPage.intValue = 8 }
+        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "") { S.subPage.intValue = 9 }
+        Feature(Icons.Filled.Mic, "Trợ lý SK Light (AI)", "") { S.subPage.intValue = 4 }
+        Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "") { S.subPage.intValue = 6 }
+        Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "") { S.subPage.intValue = 5 }
+        Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }
     }
     Card {
         Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
@@ -1071,7 +1071,7 @@ fun Feature(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) 
     Row(Modifier.fillMaxWidth().heightIn(min = 76.dp).clickable(onClick = onClick).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = SubTxt, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
-        Column(Modifier.weight(1f)) { T(title, 16); T(sub, 13, color = SubTxt) }
+        Column(Modifier.weight(1f)) { T(title, 16); if (sub.isNotEmpty()) T(sub, 13, color = SubTxt) }
         Icon(Icons.Filled.ChevronRight, null, tint = SubTxt, modifier = Modifier.size(20.dp))
     }
 }

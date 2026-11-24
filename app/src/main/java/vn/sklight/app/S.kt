@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.18"
+    const val VER = "1.4.19"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -185,7 +185,7 @@ object S {
         floatStyle.intValue = sp.getInt("floatStyle2", 5).coerceIn(1, 5)     // bỏ Kiểu gốc (24/11), mặc định Cột neon
         menuTop.value = sp.getBoolean("menuTop2", true)
         voiceReply.value = sp.getBoolean("voiceReply", true)
-        voiceQuiet.value = sp.getBoolean("voiceQuiet", true)
+        voiceQuiet.value = true
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
         Scenes.load(if (sp.contains("scenes2")) sp.getString("scenes2", "") ?: "" else null)

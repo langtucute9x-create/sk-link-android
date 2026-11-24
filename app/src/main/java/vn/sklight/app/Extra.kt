@@ -366,7 +366,6 @@ fun FlowPage() {
     Card {
         GroupTitle(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", 16)
         Spacer(Modifier.height(4.dp))
-        Hint("Chọn Thuận hoặc Ngược cho từng khu vực.", 12)
         val names = listOf("Bảng đồng hồ trái", "Bảng đồng hồ phải", "Cửa trước trái", "Cửa trước phải", "Cửa sau trái", "Cửa sau phải")
         for (s in 0 until 6) {
             Spacer(Modifier.height(10.dp))
@@ -430,25 +429,15 @@ fun FactoryPage() {
             Chip("Ánh sáng", known && X.facBits(0, 0x40) != 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0x40)) need(ctx) }
         }
         Spacer(Modifier.height(6.dp))
-        Hint("Chỉ đổi khi biết hộp thuộc bản nào: chọn sai thì một số hiệu ứng chạy không đúng.", 12)
-        Divider(10.dp, 10.dp)
-        T("Màu gửi cho hộp", 15, FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Chip("Bình thường", !S.invert.value, Modifier.weight(1f), 44.dp, 13) { S.setInvert(false) }
-            Chip("Đảo màu", S.invert.value, Modifier.weight(1f), 44.dp, 13) { S.setInvert(true) }
-        }
-        Spacer(Modifier.height(6.dp))
-        Hint("Để Bình thường. Chỉ đổi sang Đảo màu nếu chọn đỏ mà đèn ra xanh băng.", 12)
     }
     Card {
-        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "Chọn đúng xe để hộp nhận tín hiệu từ xe") { S.subPage.intValue = 11 }
-        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "Đọc thông tin chẩn đoán từ hộp") { S.subPage.intValue = 10 }
-        Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "Đọc mọi thông tin Bluetooth của hộp để tìm mã riêng") { S.subPage.intValue = 14 }
+        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
+        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
+        Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
     }
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
-        Feature(Icons.Filled.Refresh, "Khôi phục cài đặt gốc", "Đưa hộp về cài đặt ban đầu của nhà sản xuất") {
+        Feature(Icons.Filled.Refresh, "Khôi phục cài đặt gốc", "") {
             if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else reset = 1
         }
         if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
@@ -456,7 +445,6 @@ fun FactoryPage() {
     Card {
         T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
         Spacer(Modifier.height(4.dp))
-        Hint("Dùng để tìm một cài đặt nằm ở đâu trong hộp: chụp một lần, đổi đúng MỘT thứ (bằng app gốc hoặc nút cơ), kết nối lại rồi chụp tiếp. Làm lần lượt cho từng thứ cần tìm, cuối cùng bấm Sao chép để gửi một lần. App chỉ đọc, không ghi gì vào hộp. Các lần chụp được nhớ kể cả khi thoát app.", 12)
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             FillBtn(if (X.snapBusy) "Đang chụp…" else "Chụp lần ${X.snaps.size + 1}", Icons.Filled.Refresh, Pink, Modifier.weight(1.4f)) {
@@ -533,16 +521,13 @@ fun CarFuncPage() {
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Chức năng gốc xe", 16)
         Spacer(Modifier.height(4.dp))
-        T(if (sup == null) "Hộp tự báo bằng đèn khi nhận tín hiệu từ xe. Chưa đọc được xe hỗ trợ gì nên đang hiện tất cả; mục xe không hỗ trợ thì bật cũng không có tác dụng."
-          else if (rows.isEmpty()) "Hộp báo xe này (theo loại xe đang đặt) không hỗ trợ chức năng gốc nào."
-          else "Chỉ hiện các chức năng mà hộp báo xe này hỗ trợ (theo loại xe đang đặt).", 12, color = SubTxt)
         for ((k, sub) in rows) {
             val (i, mask, title) = k
             Divider()
-            SwitchRow(title, sub, S.blkBit(i, mask)) { if (!S.setBlk(i, mask, if (it) mask else 0)) need(ctx) }
+            SwitchRow(title, "", S.blkBit(i, mask)) { if (!S.setBlk(i, mask, if (it) mask else 0)) need(ctx) }
         }
         Divider()
-        SwitchRow("Chào mừng khi mở cửa lái chính", "Hiệu ứng chào mừng chạy khi mở cửa lái", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
+        SwitchRow("Chào mừng khi mở cửa lái chính", "", S.blkBit(3, 0x08)) { if (!S.setBlk(3, 0x08, if (it) 0x08 else 0)) need(ctx) }
     }
     // Theo app gốc: mỗi cảnh báo có 2 kiểu (ghi 0 / 1 vào nửa byte tương ứng); "đèn theo đèn xe" có 4 kiểu (2 bit cao của b2).
     // (tên, vị trí byte, số bit dịch, mặt nạ, số kiểu) + điều kiện hiện

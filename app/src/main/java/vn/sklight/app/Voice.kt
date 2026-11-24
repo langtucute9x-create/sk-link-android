@@ -625,28 +625,23 @@ fun VoicePage() {
     Card {
         T("Các câu lệnh", 16, FontWeight.ExtraBold)
         Spacer(Modifier.height(4.dp))
-        Hint("Danh sách đầy đủ các câu lệnh nằm trong Cẩm nang sử dụng, mục Trợ lý giọng nói.", 12)
         Spacer(Modifier.height(8.dp))
         OutlineBtn("Xem các câu lệnh", Modifier.fillMaxWidth()) { S.manualOpen.intValue = 6; S.subPage.intValue = 12 }
     }
     Card {
         GroupTitle(Icons.Filled.Mic, "Nút mic trên app", 16)
         Spacer(Modifier.height(4.dp))
-        Hint("Ra lệnh qua điện thoại hoặc màn hình xe, dùng khi không nói trực tiếp với hộp.", 12)
         Spacer(Modifier.height(6.dp))
-        SwitchRow("Trả lời bằng tiếng nói", "Đọc lại việc vừa làm sau mỗi câu lệnh", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
+        SwitchRow("Trả lời bằng tiếng nói", "", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
         val ctx = LocalContext.current
         val st = Speaker.state.intValue
         LaunchedEffect(Unit) { Speaker.probe(ctx) }
-        T(when (st) { 2 -> "Máy có giọng đọc tiếng Việt."; 3 -> "Máy chưa có giọng đọc tiếng Việt, nên app chưa trả lời bằng tiếng được."; else -> "Đang kiểm tra giọng đọc của máy…" }, 12, color = if (st == 3) Pink else Grey)
+        if (st != 2) T(when (st) { 2 -> ""; 3 -> "Máy chưa có giọng đọc tiếng Việt, nên app chưa trả lời bằng tiếng được."; else -> "Đang kiểm tra giọng đọc của máy…" }, 12, color = if (st == 3) Pink else Grey)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (st == 3) OutlineBtn("Cài giọng đọc tiếng Việt", Modifier.weight(1.6f)) { Speaker.install(ctx) }
             OutlineBtn(if (st == 3) "Kiểm tra lại" else "Nghe thử", Modifier.weight(1f)) { Speaker.reset(); Speaker.say(ctx, "Xin chào, em là SK Light", force = true) }
         }
-        Spacer(Modifier.height(6.dp))
-        Divider()
-        SwitchRow("Tắt tiếng báo khi bấm mic", "Tắt tiếng “tinh tinh” của bộ nhận giọng nói. Nhạc đang phát cũng im trong lúc nghe.", S.voiceQuiet.value) { S.voiceQuiet.value = it; S.saveSettings() }
     }
 }
 

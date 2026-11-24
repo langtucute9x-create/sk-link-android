@@ -102,7 +102,6 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Sau khi ghép, sang trang Chào mừng, phần Sơ đồ xe để gán từng hộp phụ vào đúng cửa.",
         "Hướng ánh sáng chạy: chọn Thuận hoặc Ngược cho từng khu vực nếu hiệu ứng chạy ngược chiều mong muốn.",
         "Cài đặt nhà máy: Chọn loại xe, phiên bản hộp ảo ảnh (Thể thao hoặc Ánh sáng).",
-        "Màu gửi cho hộp: để Bình thường. Chỉ đổi sang Đảo màu nếu chọn màu đỏ mà đèn ra xanh.",
         "Khôi phục cài đặt gốc: hộp xóa hết cài đặt (hộp phụ, vị trí cửa, số LED, loại xe, chào mừng) và phải cài lại từ đầu. Không hoàn tác được."
     ),
     "10. Cập nhật ứng dụng" to listOf(
@@ -114,7 +113,6 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
     ),
     "11. Xử lý sự cố thường gặp" to listOf(
         "Không thấy hộp đèn trong danh sách: kiểm tra hộp đã có điện, bật Bluetooth và vị trí của máy, đứng gần xe, tắt app đèn trên máy khác.",
-        "Màu đèn ra sai (chọn đỏ ra xanh): Cài đặt, Cài đặt nhà máy, Màu gửi cho hộp, chọn Đảo màu.",
         "Đèn không báo rẽ: kiểm tra đã cấp đủ quyền ở trang Dẫn đường, app bản đồ đang dẫn đường, và công tắc Báo đèn khi sắp rẽ đang bật.",
         "Màn hình chờ không tự mở: cần bật công tắc ở thẻ Khi lái xe và xe phải chạy từ 10 km/h. Dòng Tốc độ đang đọc được dưới công tắc cho biết máy có đọc được tốc độ không.",
         "Giọng nói không nhận lệnh: kiểm tra mạng, quyền micro của SK Light và của app Google.",
