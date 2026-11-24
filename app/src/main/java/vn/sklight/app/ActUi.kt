@@ -141,6 +141,34 @@ private fun Steps(step: Int) {
     }
 }
 
+/** Chọn máy đang dùng app: điện thoại (chỉ nối khi mở app, đỡ tốn pin) hay màn hình xe / Android box (chạy nền, tự nối). */
+@Composable
+fun RunModeCard() {
+    val ctx = LocalContext.current
+    Card {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Key, null, tint = Pink, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(12.dp))
+            T("Bạn đang dùng app trên", 16, FontWeight.Bold)
+        }
+        Spacer(Modifier.height(6.dp))
+        val opts = listOf(1 to "Điện thoại" to "Chỉ nối hộp khi mở app, đóng app là ngắt để đỡ tốn pin. Hiệu ứng do app vẽ dừng khi đóng app.",
+            2 to "Màn hình xe / Android box" to "Chạy nền, tự nối hộp khi bật máy và nối lại khi mất kết nối, kể cả khi đóng app.")
+        for ((k, d) in opts) {
+            val (v, label) = k
+            val on = S.runMode.intValue == v
+            Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { S.runMode.intValue = v; S.saveSettings(); S.syncService(ctx); if (v == 2) S.autoConnect() }.padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {
+                Box(Modifier.padding(top = 2.dp).size(18.dp).border(2.dp, if (on) Pink else Grey, CircleShape), contentAlignment = Alignment.Center) {
+                    if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
+                }
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) { T(label, 14, if (on) FontWeight.Bold else FontWeight.Medium); T(d, 12, color = SubTxt) }
+            }
+        }
+        if (S.runMode.intValue == 0) T("Chưa chọn: app đang chạy nền như màn hình xe. Chọn một mục để app làm đúng với máy của bạn.", 12, color = Grey)
+    }
+}
+
 /** Lệnh 435: máy đang dùng mã đại lý / VIP. Không có hạn bảo hành, không hồ sơ khách. */
 @Composable
 private fun MasterCard() {

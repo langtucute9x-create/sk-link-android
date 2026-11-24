@@ -35,7 +35,7 @@ class KeepService : Service() {
     private val loop = object : Runnable {
         override fun run() {
             try { S.autoConnect() } catch (_: Exception) {}
-            h.postDelayed(this, 10000)
+            h.postDelayed(this, if (S.connected.value) 10000L else 30000L)
         }
     }
 

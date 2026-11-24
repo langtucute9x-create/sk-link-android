@@ -98,8 +98,9 @@ class MainActivity : ComponentActivity() {
     /** Đang hiện màn hình báo lỗi của lần mở trước: không chạy các phần khác của app. */
     private var crashShown = false
 
-    override fun onStart() { super.onStart(); if (crashShown) return; Gps.start(this); S.syncService(this) }
-    override fun onStop() { if (!crashShown) Gps.stop(); super.onStop() }
+    private val bgOff = Runnable { if (!S.appVisible && !S.bgNeeded()) S.ble.disconnect() }
+    override fun onStart() { super.onStart(); if (crashShown) return; S.main.removeCallbacks(bgOff); Gps.start(this); S.syncService(this); if (S.runMode.intValue == 1) S.autoConnect() }
+    override fun onStop() { if (!crashShown) { Gps.stop(); if (S.runMode.intValue == 1 && !S.bgNeeded()) S.main.postDelayed(bgOff, 60000L) }; super.onStop() }
     override fun onResume() { super.onResume(); if (crashShown) return; Split.inSplit.value = isInMultiWindowMode; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this)
         // vừa bấm mic ở màn hình nổi: nghe ngay khi app mở lên
         if (S.pendingMic) { S.pendingMic = false; if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) Voice.start(this) }
@@ -176,7 +177,7 @@ fun Root() {
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                     else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                    else TwoCol(leftW.dp, { SettingsDevice(pick); WarrantyCard(); DriveCard() }, { SettingsFeatures() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); WarrantyCard(); RunModeCard(); DriveCard() }, { SettingsFeatures() })
                 }
             }
         }
@@ -989,7 +990,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); WarrantyCard(); DriveCard(); SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); WarrantyCard(); RunModeCard(); DriveCard(); SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {

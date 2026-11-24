@@ -24,6 +24,8 @@ class BleLed(private val ctx: Context) {
     private val q = ConcurrentLinkedQueue<Item>()
     private var pumping = false
     private var wantMac: String? = null
+    private var retry = 0                  // số lần nối lại liền nhau chưa được: nối lại thưa dần để đỡ tốn pin
+    private var lostSpoken = false         // đã đọc "mất kết nối" cho lần mất này
     private var scanning = false
     private var disc = false                      // đã gọi dò dịch vụ cho kết nối hiện tại chưa
     @Volatile var lastSetMs = 0L
@@ -97,6 +99,7 @@ class BleLed(private val ctx: Context) {
     private val cb = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                retry = 0; lostSpoken = false
                 // Xin tăng cỡ gói như app gốc của hộp (mặc định chỉ 20 byte mỗi lần ghi, lệnh số LED dài 21 byte sẽ bị cắt).
                 main.post {
                     S.conn.value = "Đang dò dịch vụ…"
@@ -108,12 +111,12 @@ class BleLed(private val ctx: Context) {
                 main.post {
                     S.connected.value = false
                     S.conn.value = "Mất kết nối"
-                    if (wantMac != null) Speaker.err(ctx, "Mất kết nối với hộp đèn.", 60000L)
+                    if (wantMac != null && !lostSpoken && S.appVisible && !S.userOff) { lostSpoken = true; Speaker.err(ctx, "Mất kết nối với hộp đèn.", 60000L) }
                     wch = null
                     try { g.close() } catch (_: Exception) {}
                     if (gatt === g) gatt = null
                     val m = wantMac
-                    if (m != null) main.postDelayed({ if (wantMac == m && gatt == null) connect(m) }, 3000)
+                    if (m != null) { val wait = minOf(3000L shl minOf(retry, 4), 60000L); retry++; main.postDelayed({ if (wantMac == m && gatt == null) connect(m) }, wait) }
                 }
             }
         }
@@ -123,7 +126,7 @@ class BleLed(private val ctx: Context) {
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             val svc = g.getService(svcId)
             val w = svc?.getCharacteristic(wId)
-            if (w == null) { main.post { S.conn.value = "Không thấy dịch vụ AE30"; Speaker.err(ctx, "Không điều khiển được hộp này. Hộp không đúng loại hoặc đang bận.", 30000L) }; return }
+            if (w == null) { main.post { S.conn.value = "Không thấy dịch vụ AE30"; if (S.appVisible) Speaker.err(ctx, "Không điều khiển được hộp này. Hộp không đúng loại hoặc đang bận.", 30000L) }; return }
             wch = w
             val n = svc?.getCharacteristic(nId)
             if (n != null) {
