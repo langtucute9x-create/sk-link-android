@@ -17,7 +17,7 @@ class Scene(
 object Scenes {
     // id chế độ: 0 Đơn sắc, 1 Tự động, 2 Thở (kiểu con 4 = xanh lam), 6 Thể thao
     val presets = listOf(
-        Scene("Thể thao", true, 0xFF2A48, 0xFF2A48, 51, 6, 8, 100, 1),        // Chiếu sáng năng động: Cực quang đa sắc, vùng 2 màu tự động
+        Scene("Ảo diệu", true, 0xFF2A48, 0xFF2A48, 51, 6, 8, 100, 1),        // Chiếu sáng năng động: Cực quang đa sắc, vùng 2 màu tự động
         Scene("Ban đêm", false, 0xFF7A1A, 0xFFFFFF, 51, 3, 5, 20, 0),          // Mặt trời mọc, vùng 2 màu tĩnh trắng
         Scene("Thư giãn", true, 0x17F4EA, 0x17F4EA, 7, 0, 4, 50, 1),           // Ma thuật, vùng 2 màu tự động
         Scene("Đón khách", true, 0xFFFFFF, 0xFFFFFF, 12, 0, 5, 100, 2),        // Cuộn đủ màu chế độ 1, vùng 2 màu nhấp nháy
@@ -28,8 +28,10 @@ object Scenes {
         Scene("Thư giãn", true, 0x17F4EA, 0x17F4EA, 2, 4, 4, 50, 0),
         Scene("Thể thao", true, 0xFF2A48, 0xFF2A48, 6, 0, 8, 100, 0),
         Scene("Ban đêm", true, 0xFF7A1A, 0xFF7A1A, 0, 0, 5, 20, 0),
-        Scene("Đón khách", true, 0xFFFFFF, 0xFFFFFF, 1, 0, 5, 100, 0)
+        Scene("Đón khách", true, 0xFFFFFF, 0xFFFFFF, 1, 0, 5, 100, 0),
+        Scene("Thể thao", true, 0xFF2A48, 0xFF2A48, 51, 6, 8, 100, 1)      // bản 1.4.25, đã đổi tên thành Ảo diệu
     )
+    private fun newer(o: Scene): Scene? = presets.firstOrNull { it.name == o.name } ?: if (o.name == "Thể thao") presets.first() else null
     val list = mutableStateListOf<Scene>()
     const val MAX = 12
 
@@ -48,7 +50,7 @@ object Scenes {
         // chuyển 4 bối cảnh gốc cũ (chưa bị sửa) sang bản mới, thêm Mơ màng một lần
         for (i in list.indices) {
             val o = old.firstOrNull { it.line() == list[i].line() } ?: continue
-            presets.firstOrNull { it.name == o.name }?.let { list[i] = it }
+            newer(o)?.let { list[i] = it }
         }
         if (!S.scenesV2()) { if (list.none { it.name == "Mơ màng" } && list.size < MAX) list.add(presets.last()); S.markScenesV2() }
     }
