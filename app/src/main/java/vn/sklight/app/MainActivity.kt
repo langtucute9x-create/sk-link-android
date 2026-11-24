@@ -110,6 +110,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Root() {
     var tab by remember { mutableIntStateOf(0) }
+    InfoBtn.on = tab == 1
     var pickDev by remember { mutableStateOf(false) }
     val ctx0 = LocalContext.current
     val perms = remember {

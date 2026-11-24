@@ -118,6 +118,8 @@ fun pressScale(src: InteractionSource, to: Float = 0.92f): Modifier {
 
 /** Màn ngang (màn hình xe): các dòng giải thích được ẩn cho đỡ rối, chạm nút "i" ở góc thẻ để hiện. */
 val LocalCompact = compositionLocalOf { false }
+/** Nút "i" ở góc thẻ chỉ còn ở trang Sơ đồ xe. */
+object InfoBtn { var on by mutableStateOf(false) }
 class HintBox { var count by mutableIntStateOf(0); var show by mutableStateOf(false) }
 val LocalHintBox = compositionLocalOf<HintBox?> { null }
 
@@ -147,7 +149,7 @@ fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> U
     val compact = LocalCompact.current
     Box(m) {
         CompositionLocalProvider(LocalHintBox provides box) { Column(Modifier.fillMaxWidth().padding(15.dp), content = content) }
-        if (compact && box.count > 0) Box(
+        if (compact && box.count > 0 && InfoBtn.on) Box(
             Modifier.align(Alignment.TopEnd).padding(1.dp).size(24.dp).clip(CircleShape).clickable { box.show = !box.show },
             contentAlignment = Alignment.Center
         ) { Icon(Icons.Outlined.Info, "Xem giải thích", tint = if (box.show) Pink else Grey, modifier = Modifier.size(16.dp)) }
