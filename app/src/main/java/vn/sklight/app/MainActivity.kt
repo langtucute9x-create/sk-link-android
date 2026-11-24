@@ -1067,13 +1067,40 @@ fun SettingsFeatures() {
     }
     // chạm 7 lần liên tiếp vào dòng phiên bản để bật / tắt chế độ nghiên cứu (hiện thẻ Kiểm tra và công cụ nghiên cứu)
     var taps by remember { mutableIntStateOf(0) }
+    var askPw by remember { mutableStateOf(false) }
+    var pw by remember { mutableStateOf("") }
+    var pwErr by remember { mutableStateOf(false) }
     T(if (S.dev.value) "SK Light ${S.VER} · chế độ nghiên cứu" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
     ) {
         if (!S.connected.value || !Act.ok.value) return@clickable
         taps++
-        if (taps >= 7) { taps = 0; S.dev.value = !S.dev.value; S.saveSettings(); Notice.show(ctx, L.tr(if (S.dev.value) "Đã bật chế độ nghiên cứu." else "Đã tắt chế độ nghiên cứu.")) }
+        if (taps >= 7) {
+            taps = 0
+            if (S.dev.value) { S.dev.value = false; Notice.show(ctx, L.tr("Đã tắt chế độ nghiên cứu.")) } else { pw = ""; pwErr = false; askPw = true }
+        }
     }.padding(vertical = 8.dp))
+    if (askPw) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { askPw = false },
+        title = { T("Chế độ nghiên cứu", 16, FontWeight.ExtraBold) },
+        text = {
+            Column {
+                T("Nhập mật khẩu để bật.", 13, color = Grey)
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.material3.OutlinedTextField(pw, { pw = it.filter { c -> c.isLetterOrDigit() }.take(12); pwErr = false }, singleLine = true, isError = pwErr,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
+                    label = { T("Mật khẩu", 12, color = Grey) })
+                if (pwErr) T("Mật khẩu chưa đúng.", 12, color = androidx.compose.ui.graphics.Color(0xFFE53935))
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                if (pw == "00000" && S.connected.value && Act.ok.value) { S.dev.value = true; askPw = false; Notice.show(ctx, L.tr("Đã bật chế độ nghiên cứu.")) } else pwErr = true
+            }) { T("Mở", 14, FontWeight.Bold, color = Pink) }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = { askPw = false }) { T("Hủy", 14, color = Grey) } }
+    )
 }
 
 @Composable
