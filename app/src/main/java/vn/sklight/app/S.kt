@@ -12,11 +12,13 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.24"
+    const val VER = "1.4.25"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
     private lateinit var sp: SharedPreferences
+    fun scenesV2() = sp.getBoolean("scenesV2", false)
+    fun markScenesV2() { sp.edit().putBoolean("scenesV2", true).apply() }
 
     // kết nối
     val conn = mutableStateOf("Chưa kết nối")

@@ -31,7 +31,7 @@ Tên bối cảnh, ví dụ: Đi làm	Scene name, e.g. Commute	シーン名（�
 Lưu cài đặt đang dùng	Save current settings	現在の設定を保存	현재 설정 저장	บันทึกการตั้งค่าปัจจุบัน	រក្សាទុកការកំណត់បច្ចុប្បន្ន	ບັນທຶກການຕັ້ງຄ່າປັດຈຸບັນ
 Đang có	Saved scenes	保存済み	저장된 장면	ฉากที่มีอยู่	ឈុតដែលមាន	ສາກທີ່ມີຢູ່
 Chưa có bối cảnh nào.	No scenes yet.	シーンはまだありません。	아직 장면이 없습니다.	ยังไม่มีฉาก	មិនទាន់មានឈុតទេ។	ຍັງບໍ່ມີສາກ.
-Khôi phục 4 bối cảnh có sẵn	Restore the 4 built-in scenes	標準の4つのシーンを復元	기본 장면 4개 복원	กู้คืนฉากเริ่มต้น 4 ฉาก	ស្តារឈុតដើមទាំង 4	ກູ້ຄືນ 4 ສາກເລີ່ມຕົ້ນ
+Khôi phục 5 bối cảnh có sẵn	Restore the 5 built-in scenes	標準の5つのシーンを復元	기본 장면 5개 복원	กู้คืนฉากเริ่มต้น 5 ฉาก	ស្តារឈុតដើមទាំង 5	ກູ້ຄືນ 5 ສາກເລີ່ມຕົ້ນ
 Giữ lâu một bối cảnh ở hàng ngoài để đổi tên hoặc cập nhật.	Long-press a scene in the row to rename or update it.	一覧のシーンを長押しすると、名前変更や更新ができます。	목록에서 장면을 길게 누르면 이름 변경이나 업데이트를 할 수 있습니다.	แตะค้างที่ฉากในแถวเพื่อเปลี่ยนชื่อหรืออัปเดต	ចុចឱ្យជាប់លើឈុតណាមួយក្នុងជួរ ដើម្បីប្តូរឈ្មោះ ឬធ្វើបច្ចុប្បន្នភាព។	ແຕະຄ້າງໃສ່ສາກໃນແຖວ ເພື່ອປ່ຽນຊື່ ຫຼື ອັບເດດ.
 Lưu tên	Save name	名前を保存	이름 저장	บันทึกชื่อ	រក្សាទុកឈ្មោះ	ບັນທຶກຊື່
 Đóng	Close	閉じる	닫기	ปิด	បិទ	ປິດ
@@ -780,3 +780,4 @@ Chưa chọn: app đang chạy nền như màn hình xe. Chọn một mục đ�
 Chạy nền	Background running
 Luôn chạy nền	Always run in background
 Bật khi dùng trên màn hình xe hoặc Android box: app chạy nền liên tục, tự nối lại hộp khi bật máy. Tắt (điện thoại): app chạy nền nhưng mất kết nối với hộp quá 1 phút thì dừng.	Turn on for a car screen or Android box: the app keeps running in the background and reconnects to the box when the unit starts. Off (phone): the app runs in the background but stops if the connection to the box is lost for more than 1 minute.
+Mơ màng	Dreamy

@@ -128,7 +128,7 @@ fun SceneRow() {
                             }
                         }
                     }
-                    OutlineBtn("Khôi phục 4 bối cảnh có sẵn", Modifier.fillMaxWidth()) { Scenes.restore() }
+                    OutlineBtn("Khôi phục 5 bối cảnh có sẵn", Modifier.fillMaxWidth()) { Scenes.restore() }
                 }
             }
         )

@@ -17,6 +17,14 @@ class Scene(
 object Scenes {
     // id chế độ: 0 Đơn sắc, 1 Tự động, 2 Thở (kiểu con 4 = xanh lam), 6 Thể thao
     val presets = listOf(
+        Scene("Thể thao", true, 0xFF2A48, 0xFF2A48, 51, 6, 8, 100, 1),        // Chiếu sáng năng động: Cực quang đa sắc, vùng 2 màu tự động
+        Scene("Ban đêm", false, 0xFF7A1A, 0xFFFFFF, 51, 3, 5, 20, 0),          // Mặt trời mọc, vùng 2 màu tĩnh trắng
+        Scene("Thư giãn", true, 0x17F4EA, 0x17F4EA, 7, 0, 4, 50, 1),           // Ma thuật, vùng 2 màu tự động
+        Scene("Đón khách", true, 0xFFFFFF, 0xFFFFFF, 12, 0, 5, 100, 2),        // Cuộn đủ màu chế độ 1, vùng 2 màu nhấp nháy
+        Scene("Mơ màng", true, 0xFE2CAA, 0xFE2CAA, 51, 2, 5, 60, 1)            // Vườn sen, vùng 2 màu tự động
+    )
+    /** 4 bối cảnh có sẵn của các bản trước: nếu người dùng chưa sửa thì được đổi sang bản mới. */
+    private val old = listOf(
         Scene("Thư giãn", true, 0x17F4EA, 0x17F4EA, 2, 4, 4, 50, 0),
         Scene("Thể thao", true, 0xFF2A48, 0xFF2A48, 6, 0, 8, 100, 0),
         Scene("Ban đêm", true, 0xFF7A1A, 0xFF7A1A, 0, 0, 5, 20, 0),
@@ -30,13 +38,19 @@ object Scenes {
     /** [text] = null: chưa từng lưu, dùng 4 bối cảnh có sẵn. */
     fun load(text: String?) {
         list.clear()
-        if (text == null) { list.addAll(presets); return }
+        if (text == null) { list.addAll(presets); S.markScenesV2(); return }
         for (l in text.split("\n")) {
             val p = l.split("|")
             if (p.size < 9) continue
             val n = p.drop(1).map { it.toIntOrNull() ?: 0 }
             list.add(Scene(p[0], n[0] == 1, n[1], n[2], n[3], n[4], n[5], n[6], n[7]))
         }
+        // chuyển 4 bối cảnh gốc cũ (chưa bị sửa) sang bản mới, thêm Mơ màng một lần
+        for (i in list.indices) {
+            val o = old.firstOrNull { it.line() == list[i].line() } ?: continue
+            presets.firstOrNull { it.name == o.name }?.let { list[i] = it }
+        }
+        if (!S.scenesV2()) { if (list.none { it.name == "Mơ màng" } && list.size < MAX) list.add(presets.last()); S.markScenesV2() }
     }
 
     fun dump() = list.joinToString("\n") { it.line() }
