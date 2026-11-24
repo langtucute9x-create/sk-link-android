@@ -48,7 +48,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
     "3. Bối cảnh và Chế độ của tôi" to listOf(
         "Bối cảnh là một bộ cài đặt lưu sẵn (màu, độ sáng, chế độ, tốc độ). Hàng bối cảnh nằm ở đầu trang Đèn, chạm là dùng.",
         "Bấm Thêm để lưu cài đặt đang dùng thành bối cảnh mới. Giữ lâu một bối cảnh để đổi tên, cập nhật hoặc xóa. Lưu được tối đa 12 bối cảnh.",
-        "Chế độ của tôi: bấm ô có dấu cộng, chọn 2 đến 5 màu, chọn kiểu chuyển Mượt hoặc Nhảy, hai khu Cùng màu hoặc So le, đặt tên rồi bấm Lưu và chạy.",
+        "Chế độ của tôi: bấm ô có dấu cộng, chọn 2 đến 10 màu, chọn kiểu chuyển Mượt hoặc Nhảy, hai khu Cùng màu hoặc So le, đặt tên rồi bấm Lưu và chạy.",
         "Chạm biểu tượng bút trên một chế độ của tôi để sửa hoặc xóa. Lưu được tối đa 12 chế độ."
     ),
     "4. Chào mừng và sơ đồ xe" to listOf(

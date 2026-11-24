@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,7 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** Một chế độ do người dùng tự đặt: 2 đến 5 màu, chuyển mượt hoặc nhảy, hai khu cùng màu hoặc so le. App tự chạy bằng lệnh màu (xem Auto). */
+/** Một chế độ do người dùng tự đặt: 2 đến 10 màu, chuyển mượt hoặc nhảy, hai khu cùng màu hoặc so le. App tự chạy bằng lệnh màu (xem Auto). */
 class Seq(val name: String, val colors: List<Int>, val smooth: Boolean, val split: Boolean) {
     fun line() = listOf(name.replace("|", " ").replace("\n", " "), if (smooth) 1 else 0, if (split) 1 else 0, colors.joinToString(",")).joinToString("|")
 }
@@ -33,6 +35,7 @@ class Seq(val name: String, val colors: List<Int>, val smooth: Boolean, val spli
 object Seqs {
     val list = mutableStateListOf<Seq>()
     const val MAX = 12
+    var preview: Seq? = null                          // chế độ đang soạn, đèn chạy thử theo nó
 
     fun load(text: String) {
         list.clear()
@@ -40,7 +43,7 @@ object Seqs {
             val p = l.split("|")
             if (p.size < 4) continue
             val cs = p[3].split(",").mapNotNull { it.toIntOrNull() }.map { it and 0xFFFFFF }
-            if (cs.size >= 2) list.add(Seq(p[0], cs.take(5), p[1] == "1", p[2] == "1"))
+            if (cs.size >= 2) list.add(Seq(p[0], cs.take(10), p[1] == "1", p[2] == "1"))
         }
     }
     fun dump() = list.joinToString("\n") { it.line() }
@@ -61,8 +64,19 @@ object Seqs {
     }
 }
 
-// màu để ghép chuỗi; ô cuối (đen) = tắt, dùng làm nhịp nghỉ
-private val PICK = listOf(0xFF0000, 0xFF6A00, 0xFFD400, 0xA8FF00, 0x00E040, 0x00FFC8, 0x00C8FF, 0x0050FF, 0x8A2BFF, 0xFF2CAA, 0xFF8AC8, 0xFFFFFF, 0x000000)
+/** Thanh chọn màu: trắng ở đầu, sau đó đủ các màu cầu vồng. */
+private const val WHITE_PART = 0.08f
+private fun barColor(f: Float): Int =
+    if (f < WHITE_PART) 0xFFFFFF else android.graphics.Color.HSVToColor(floatArrayOf(((f - WHITE_PART) / (1f - WHITE_PART) * 359f).coerceIn(0f, 359f), 1f, 1f)) and 0xFFFFFF
+private fun barPos(c: Int): Float {
+    if (c == 0) return -1f
+    val h = FloatArray(3); android.graphics.Color.colorToHSV(0xFF000000.toInt() or c, h)
+    return if (h[1] < 0.15f) WHITE_PART / 2 else WHITE_PART + (1f - WHITE_PART) * h[0] / 359f
+}
+private val BAR = Brush.horizontalGradient(
+    0f to Color.White, (WHITE_PART - 0.005f) to Color.White,
+    *(0..6).map { k -> (WHITE_PART + (1f - WHITE_PART) * k / 6f) to rgbColor(android.graphics.Color.HSVToColor(floatArrayOf((k * 60f).coerceAtMost(359f), 1f, 1f)) and 0xFFFFFF) }.toTypedArray()
+)
 
 /** Thẻ "Chế độ của tôi" ở trang Đèn: chạy, tạo, sửa, xóa chuỗi màu tự đặt. */
 @Composable
@@ -74,6 +88,22 @@ fun MyModesCard(cols: Int) {
     var sel by remember { mutableIntStateOf(0) }
     var smooth by remember { mutableStateOf(true) }
     var split by remember { mutableStateOf(false) }
+    var prevMode by remember { mutableIntStateOf(0) }
+    fun endPreview() {
+        Seqs.preview = null
+        if (S.mode.intValue == Auto.SEQ_BASE + 99) {
+            S.mode.intValue = prevMode
+            try { if (S.connected.value) S.ble.send(S.colorFrame(), 2, true) } catch (e: Exception) {}
+            S.sendEffect()
+        }
+    }
+    DisposableEffect(Unit) { onDispose { endPreview() } }
+    if (edit >= -1) LaunchedEffect(cs.toList(), smooth, split) {
+        if (cs.size >= 2) {
+            Seqs.preview = Seq("", cs.toList(), smooth, split)
+            if (S.mode.intValue != Auto.SEQ_BASE + 99) { prevMode = S.mode.intValue; S.pickAuto(Auto.SEQ_BASE + 99) }
+        }
+    }
     fun open(i: Int) {
         val q = Seqs.list.getOrNull(i)
         name = q?.name ?: ""
@@ -84,7 +114,7 @@ fun MyModesCard(cols: Int) {
     Card {
         GroupTitle(Icons.Filled.ColorLens, "CHẾ ĐỘ CỦA TÔI")
         Spacer(Modifier.height(6.dp))
-        Hint("Tự ghép 2 đến 5 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12)
+        Hint("Tự ghép 2 đến 10 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12)
         Spacer(Modifier.height(12.dp))
         if (Seqs.list.isEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
@@ -128,35 +158,48 @@ fun MyModesCard(cols: Int) {
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(name, { name = it.take(16) }, singleLine = true, modifier = Modifier.fillMaxWidth(), placeholder = { T("Tên chế độ, ví dụ: Hoàng hôn tím", 14, color = Grey) })
             Spacer(Modifier.height(12.dp))
-            T("Các màu theo thứ tự (chạm một ô để đổi màu ô đó)", 13, FontWeight.Bold, SubTxt)
+            T("Các màu theo thứ tự (chạm một ô để đổi màu ô đó, tối đa 10)", 13, FontWeight.Bold, SubTxt)
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                cs.forEachIndexed { k, c ->
+            Grid(cs.indices.toList() + listOf(-1, -2), 6, 8.dp) { k, m ->
+                if (k >= 0) {
+                    val c = cs[k]
                     Box(
-                        Modifier.size(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(rgbColor(c)).border(if (sel == k) 3.dp else 1.dp, if (sel == k) Txt else Bd, RoundedCornerShape(Theme.r(8))).clickable { sel = k },
+                        m.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(rgbColor(c)).border(if (sel == k) 3.dp else 1.dp, if (sel == k) Txt else Bd, RoundedCornerShape(Theme.r(8))).clickable { sel = k },
                         contentAlignment = Alignment.Center
-                    ) { T("${k + 1}", 12, FontWeight.Bold, if (c == 0xFFFFFF || c == 0xFFD400 || c == 0xA8FF00) Color(0xFF14161C) else Color.White) }
-                }
-                if (cs.size < 5) Box(Modifier.size(44.dp).clip(RoundedCornerShape(Theme.r(8))).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable { cs.add(0xFFFFFF); sel = cs.size - 1 }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Add, "Thêm màu", tint = Txt, modifier = Modifier.size(20.dp))
-                }
-                if (cs.size > 2) Box(Modifier.size(44.dp).clickable { cs.removeAt(sel.coerceIn(0, cs.size - 1)); sel = sel.coerceIn(0, cs.size - 1) }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Close, "Bỏ màu đang chọn", tint = Grey, modifier = Modifier.size(20.dp))
+                    ) { T("${k + 1}", 12, FontWeight.Bold, if (c == 0 || c == 0xFF0000 || c == 0x0050FF || c == 0x8A2BFF) Color.White else Color(0xFF14161C)) }
+                } else if (k == -1) {
+                    if (cs.size < 10) Box(m.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable { cs.add(0xFFFFFF); sel = cs.size - 1 }, contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Add, "Thêm màu", tint = Txt, modifier = Modifier.size(20.dp))
+                    } else Spacer(m)
+                } else {
+                    if (cs.size > 2) Box(m.height(44.dp).clickable { cs.removeAt(sel.coerceIn(0, cs.size - 1)); sel = sel.coerceIn(0, cs.size - 1) }, contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Close, "Bỏ màu đang chọn", tint = Grey, modifier = Modifier.size(20.dp))
+                    } else Spacer(m)
                 }
             }
             Spacer(Modifier.height(10.dp))
             T("Màu cho ô ${sel + 1}", 13, FontWeight.Bold, SubTxt)
             Spacer(Modifier.height(8.dp))
-            Grid(PICK, 7, 7.dp) { c, m ->
-                val on = cs.getOrNull(sel) == c
+            val cur = cs.getOrNull(sel) ?: 0
+            BoxWithConstraints(Modifier.fillMaxWidth().height(44.dp)) {
+                val wPx = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
+                fun pick(x: Float) { if (sel in cs.indices) cs[sel] = barColor((x / wPx).coerceIn(0f, 1f)) }
                 Box(
-                    m.height(36.dp).clip(RoundedCornerShape(Theme.r(6))).background(rgbColor(c)).border(if (on) 3.dp else 1.dp, if (on) Txt else Bd, RoundedCornerShape(Theme.r(6)))
-                        .clickable { if (sel in cs.indices) cs[sel] = c },
-                    contentAlignment = Alignment.Center
-                ) { if (c == 0) T("Tắt", 10, FontWeight.Bold, Color.White) }
+                    Modifier.fillMaxSize().clip(RoundedCornerShape(Theme.r(8))).background(BAR).border(1.dp, Bd, RoundedCornerShape(Theme.r(8)))
+                        .pointerInput(sel) { androidx.compose.foundation.gestures.detectTapGestures { pick(it.x) } }
+                        .pointerInput(sel) { androidx.compose.foundation.gestures.detectDragGestures(onDragStart = { pick(it.x) }) { ch, _ -> ch.consume(); pick(ch.position.x) } }
+                )
+                val bp = barPos(cur)
+                if (bp >= 0f) Box(
+                    Modifier.offset(x = maxWidth * bp - 4.dp).width(8.dp).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(Color.White).border(2.dp, Color(0xFF14161C), RoundedCornerShape(4.dp))
+                )
             }
             Spacer(Modifier.height(8.dp))
-            OutlineBtn("Lấy màu đang chọn ở bánh xe màu", Modifier.fillMaxWidth()) { if (sel in cs.indices) cs[sel] = S.col[S.czone.intValue] and 0xFFFFFF }
+            Box(
+                Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(Theme.r(8))).background(Color.Black).border(if (cur == 0) 3.dp else 1.dp, if (cur == 0) Pink else Bd, RoundedCornerShape(Theme.r(8)))
+                    .clickable { if (sel in cs.indices) cs[sel] = 0 },
+                contentAlignment = Alignment.Center
+            ) { T("Đen (tắt) để tạo điểm ngắt", 12, FontWeight.Bold, Color.White) }
             Spacer(Modifier.height(12.dp))
             T("Kiểu chuyển màu", 13, FontWeight.Bold, SubTxt)
             Spacer(Modifier.height(8.dp))
@@ -177,11 +220,11 @@ fun MyModesCard(cols: Int) {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 FillBtn("Lưu và chạy", Icons.Filled.Check, Pink, Modifier.weight(1.4f)) {
                     val i = edit
-                    Seqs.save(i, Seq(name.trim().ifEmpty { "Chế độ ${if (i < 0) Seqs.list.size + 1 else i + 1}" }, cs.toList(), smooth, split))
+                    Seqs.preview = null; Seqs.save(i, Seq(name.trim().ifEmpty { "Chế độ ${if (i < 0) Seqs.list.size + 1 else i + 1}" }, cs.toList(), smooth, split))
                     edit = -2
                 }
-                if (edit >= 0) OutlineBtn("Xóa", Modifier.weight(1f)) { Seqs.delete(edit); edit = -2 }
-                OutlineBtn("Hủy", Modifier.weight(1f)) { edit = -2 }
+                if (edit >= 0) OutlineBtn("Xóa", Modifier.weight(1f)) { Seqs.preview = null; Seqs.delete(edit); edit = -2 }
+                OutlineBtn("Hủy", Modifier.weight(1f)) { edit = -2; endPreview() }
             }
         }
     }

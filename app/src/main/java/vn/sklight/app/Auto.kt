@@ -88,7 +88,7 @@ object Auto {
         val m = main.intValue
         if (m >= SEQ_BASE) {
             // chuỗi màu người dùng tự đặt
-            val q = Seqs.list.getOrNull(m - SEQ_BASE)
+            val q = if (m == SEQ_BASE + 99) Seqs.preview else Seqs.list.getOrNull(m - SEQ_BASE)
             if (q == null || q.colors.size < 2) { main.intValue = 0; S.mode.intValue = 0; if (z2.intValue != 0) h.postDelayed(tick, 200); return }
             val n = q.colors.size
             val d = if (q.smooth) 1800.0 else 700.0        // thời gian mỗi màu ở tốc độ giữa
