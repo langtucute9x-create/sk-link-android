@@ -395,6 +395,58 @@ class BleLed(private val ctx: Context) {
         }
     }
 
+    // ---------------- quét lệnh hỏi 7C xx: tìm mã riêng của hộp (chỉ hỏi, không ghi) ----------------
+    /** Gửi lần lượt `2E 90 02 7C xx ck` với xx = 00..FF (lệnh HỎI), ghi lại những xx hộp trả lời kèm dữ liệu. */
+    fun qryScan(onStep: (Int) -> Unit, done: (List<String>) -> Unit) {
+        val g = gatt; val c = wch
+        if (g == null || c == null) { done(listOf("Chưa kết nối hộp đèn.")); return }
+        paused = true
+        Thread {
+            val out = ArrayList<String>()
+            try {
+                val inbox = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+                tap = { _, v -> inbox.offer(v) }
+                var replied = 0
+                for (xx in 0..255) {
+                    inbox.clear()
+                    val fr = Protocol.frame(0x90, 0x7C, xx)
+                    var sent = false
+                    repeat(5) {
+                        if (!sent) {
+                            sent = try {
+                                if (Build.VERSION.SDK_INT >= 33) g.writeCharacteristic(c, fr, BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE) == 0
+                                else { c.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE; c.value = fr; g.writeCharacteristic(c) }
+                            } catch (_: Exception) { false }
+                            if (!sent) Thread.sleep(60)
+                        }
+                    }
+                    var got: ByteArray? = null
+                    val end = System.currentTimeMillis() + 260
+                    while (System.currentTimeMillis() < end) {
+                        val v = inbox.poll(40, java.util.concurrent.TimeUnit.MILLISECONDS) ?: continue
+                        val i = v.indexOfFirst { (it.toInt() and 0xFF) == 0x2E }
+                        if (i >= 0 && v.size - i >= 5 && (v[i + 1].toInt() and 0xFF) == 0x7C) { got = v.copyOfRange(i, v.size); break }
+                    }
+                    if (got != null) {
+                        replied++
+                        val n = got[2].toInt() and 0xFF
+                        val data = got.copyOfRange(4, minOf(got.size - 1, 3 + n))   // bỏ 2E 7C len xx và ck
+                        val hx = data.joinToString(" ") { "%02X".format(it) }
+                        val asc = data.map { b -> val ch = b.toInt() and 0xFF; if (ch in 32..126) ch.toChar() else '.' }.joinToString("")
+                        out.add("7C %02X (%d byte): %s  [%s]".format(xx, data.size, hx.ifEmpty { "(trống)" }, asc))
+                    }
+                    main.post { onStep(xx) }
+                }
+                out.add(0, "Hộp trả lời $replied / 256 lệnh hỏi.")
+            } catch (e: Exception) {
+                out.add("Lỗi: ${e.message}")
+            } finally {
+                tap = null; paused = false
+            }
+            main.post { done(out) }
+        }.start()
+    }
+
     // ---------------- gửi ----------------
     /** key >= 0: lệnh cùng key chưa gửi sẽ bị thay bằng lệnh mới (kéo thanh trượt không dồn hàng đợi). */
     fun send(data: ByteArray, key: Int = -1, isSet: Boolean = false) {

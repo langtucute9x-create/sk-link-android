@@ -57,6 +57,9 @@ fun SerialPage() {
     var busy by remember { mutableStateOf(false) }
     var jl by remember { mutableStateOf<BleLed.JlResult?>(null) }
     var jlBusy by remember { mutableStateOf(false) }
+    var qBusy by remember { mutableStateOf(false) }
+    var qStep by remember { mutableIntStateOf(0) }
+    var qLines by remember { mutableStateOf<List<String>>(emptyList()) }
     BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.Fingerprint, "Tìm số seri hộp", 16)
@@ -152,6 +155,38 @@ fun SerialPage() {
             }
             Spacer(Modifier.height(8.dp))
             Hint("Bấm Sao chép rồi gửi kết quả cho kỹ thuật.", 12)
+        }
+    }
+    // ----- Quét các lệnh hỏi của hộp (tìm mã riêng cho iPhone) -----
+    Card {
+        GroupTitle(Icons.Filled.Search, "Quét lệnh hỏi của hộp", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Hỏi hộp lần lượt 256 câu hỏi chuẩn (chỉ hỏi, không ghi) để tìm xem hộp có lưu mã riêng nào không. Mất khoảng 1 phút, trong lúc đó đèn tạm không nhận lệnh. Nên làm trên 2 hộp để so sánh.", 12)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FillBtn(if (qBusy) "Đang quét ${qStep}/255" else "Bắt đầu quét", Icons.Filled.Search, Pink, Modifier.weight(1f)) {
+                if (qBusy) return@FillBtn
+                if (!S.connected.value) { Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")); return@FillBtn }
+                qBusy = true; qStep = 0
+                S.ble.qryScan({ qStep = it }) { l -> qLines = listOf("SK Light ${S.VER} · ${S.devName.value} · ID ${S.savedMac}") + l; qBusy = false }
+            }
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
+                if (qLines.isEmpty()) return@FillBtn
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("qry", qLines.joinToString("\n")))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
+        }
+    }
+    if (qLines.isNotEmpty()) {
+        Card {
+            T("Kết quả quét", 15, FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(ChipBg).padding(10.dp)) {
+                for (x in qLines) T(x, 11, color = Txt)
+            }
+            Spacer(Modifier.height(8.dp))
+            Hint("Bấm Sao chép rồi gửi kết quả cho kỹ thuật. Dòng nào khác nhau giữa hai hộp là mã riêng.", 12)
         }
     }
 }
