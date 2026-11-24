@@ -151,6 +151,7 @@ private fun MasterCard() {
             T("Đang dùng mã đại lý", 20, FontWeight.ExtraBold, align = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
             T(Act.master.value, 15, FontWeight.Bold, AccentText, align = TextAlign.Center)
+            if (Act.masterUntil.value.isNotEmpty()) { Spacer(Modifier.height(4.dp)); T(L.tr("Dùng đến") + ": " + Act.vn(Act.masterUntil.value), 13, color = SubTxt, align = TextAlign.Center) }
             Spacer(Modifier.height(8.dp))
             T("Dùng được app với mọi hộp đèn, không cần điền thông tin khách.", 13, color = SubTxt, align = TextAlign.Center)
             Spacer(Modifier.height(16.dp))
@@ -429,6 +430,7 @@ fun ActivationPage(locked: Boolean) {
                 r == "phone_used" -> { err = L.tr("Số điện thoại này đã kích hoạt bảo hành cho một bộ sản phẩm khác."); hot = true }
                 r == "limit_reached" -> { err = L.tr("Mã đã hết lượt kích hoạt."); hot = true }
                 r == "locked" -> { err = L.tr("Mã này đang bị khóa."); hot = true }
+                r == "expired" -> { err = L.tr("Mã đại lý đã hết hạn."); hot = true }
                 r == "too_many" -> err = L.tr("Nhập sai quá nhiều lần. Hãy thử lại sau 15 phút.")
                 r == "invalid_input:phone" -> err = L.tr("Số điện thoại chưa đúng.")
                 r == "invalid_input:name" -> err = L.tr("Chưa nhập tên khách hàng.")

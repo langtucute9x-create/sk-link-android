@@ -49,6 +49,7 @@ object Act {
     val busy = mutableStateOf(false)
     /** Lệnh 435: tên người dùng mã đại lý / VIP đã nhập trên máy này; rỗng nếu không dùng mã đại lý. Có mã thì dùng app ngay, không cần kích hoạt theo hộp, không hồ sơ bảo hành. */
     val master = mutableStateOf("")
+    val masterUntil = mutableStateOf("")      // ngày hết hạn của mã đại lý (yyyy-MM-dd), rỗng = không hết hạn
     private var masterCode = ""
     /** 0 chưa hỏi, 1 đang hỏi SK Core, 2 không có mạng (lần đầu nối hộp này), 3 đã có câu trả lời */
     val checking = mutableIntStateOf(0)
@@ -77,14 +78,14 @@ object Act {
             try {
                 val r = post(JSONObject().put("action", "check_master").put("device_id", devId).put("device_name", devName()).put("code", mc))
                 val st = r.optString("status")
-                if (st == "ok") main.post { master.value = r.optString("label").ifEmpty { master.value }; sp(app).edit().putString("master", mc + "|" + master.value).apply() }
-                else if (st == "locked" || st == "invalid_code") main.post { clearMaster() }
+                if (st == "ok") main.post { master.value = r.optString("label").ifEmpty { master.value }; masterUntil.value = r.optString("expires_at", ""); sp(app).edit().putString("master", mc + "|" + master.value).apply() }
+                else if (st == "locked" || st == "invalid_code" || st == "expired") main.post { clearMaster() }
             } catch (_: Exception) {}
         }.start()
     }
 
     fun clearMaster() {
-        masterCode = ""; master.value = ""
+        masterCode = ""; master.value = ""; masterUntil.value = ""
         sp(app).edit().remove("master").apply()
         ok.value = false; at.value = ""; until.value = ""; needCust.value = false
         if (box.isNotEmpty()) onConnected(box)
@@ -162,12 +163,12 @@ object Act {
                 res = r.optString("status", "server")
                 if (res == "invalid_input") res = "invalid_input:" + r.optString("field")
                 a = r.optString("activated_at"); w = r.optString("warranty_until"); need = r.optBoolean("need_customer", false)
-                if (res == "ok" && r.optBoolean("master", false)) mLabel = r.optString("label").ifEmpty { "Đại lý" }
+                if (res == "ok" && r.optBoolean("master", false)) { mLabel = r.optString("label").ifEmpty { "Đại lý" }; a = r.optString("expires_at", "") }
             } catch (_: Exception) {}
             main.post {
                 busy.value = false
                 if (res == "ok" && mLabel != null) {
-                    masterCode = code.uppercase().filter { it.isLetterOrDigit() }; master.value = mLabel
+                    masterCode = code.uppercase().filter { it.isLetterOrDigit() }; master.value = mLabel; masterUntil.value = a
                     sp(app).edit().putString("master", masterCode + "|" + mLabel).apply()
                     ok.value = true; needCust.value = false; checking.intValue = 3
                     S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Đã mở bằng mã đại lý", force = true)
