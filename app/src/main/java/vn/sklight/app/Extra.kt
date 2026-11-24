@@ -343,8 +343,8 @@ fun UpgradePage() {
         T("Loại nâng cấp", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Chip("Nâng cấp CAN", kind == 0, Modifier.weight(1f), 44.dp, 13) { kind = 0 }
-            Chip("Nâng cấp RF", kind == 1, Modifier.weight(1f), 44.dp, 13) { kind = 1 }
+            if (!S.commonBox()) Chip("Nâng cấp CAN", kind == 0, Modifier.weight(1f), 44.dp, 13) { kind = 0 }
+            Chip("Nâng cấp RF", kind == 1 || S.commonBox(), Modifier.weight(1f), 44.dp, 13) { kind = 1 }
         }
     }
     Card {
@@ -352,6 +352,8 @@ fun UpgradePage() {
         Spacer(Modifier.height(6.dp))
         Kv("Tên thiết bị", S.devName.value.ifEmpty { "—" })
         Kv("Trạng thái kết nối", if (S.connected.value) "Đã kết nối" else "Chưa kết nối")
+        if (X.rfModel.isNotEmpty()) Kv("Mã RF", X.rfModel)
+        if (!S.commonBox() && X.canModel.isNotEmpty()) Kv("Mã CAN", X.canModel)
     }
     Card {
         GroupTitle(Icons.Filled.Folder, "Tệp nâng cấp", 16)
@@ -363,6 +365,8 @@ fun UpgradePage() {
         Chip("Bắt đầu nâng cấp", false, Modifier.fillMaxWidth(), 48.dp, 14) { Notice.show(ctx, L.tr("Chưa có lệnh nạp phần mềm vào hộp, nên chưa nâng cấp được.")) }
         Spacer(Modifier.height(6.dp))
         Hint("Chưa có lệnh nạp phần mềm vào hộp: nạp lỗi có thể làm hỏng hộp. Trang này dựng sẵn để chờ tài liệu của nhà sản xuất.", 11)
+        Spacer(Modifier.height(6.dp))
+        Hint("Theo hướng dẫn của app cũ: khi chạy tới 98–99% thì chờ vài giây rồi thoát ra, sau đó nối lại Bluetooth.", 11)
     }
     Card {
         Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).clickable { logOpen = !logOpen }, verticalAlignment = Alignment.CenterVertically) {
