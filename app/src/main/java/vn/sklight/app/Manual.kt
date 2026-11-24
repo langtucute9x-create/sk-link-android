@@ -1,6 +1,10 @@
 package vn.sklight.app
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
@@ -10,6 +14,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -136,6 +143,42 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
     )
 )
 
+// Ảnh minh họa theo mục (chỉ số mục bắt đầu từ 0). Ảnh chụp ở màn hình ngang; số đỏ trong ảnh khớp với chú thích.
+private class Pic(val res: Int, val cap: String)
+
+private val PICS: Map<Int, List<Pic>> = mapOf(
+    0 to listOf(Pic(R.drawable.man_chon_lai, "Cài đặt, thẻ Thông tin thiết bị: (1) Chọn lại để chọn hộp đèn khác.")),
+    2 to listOf(Pic(R.drawable.man_che_do_cua_toi, "Trang Đèn, mục Chế độ của tôi: (1) Tạo mới.")),
+    3 to listOf(Pic(R.drawable.man_so_do_xe, "Trang Chào mừng, Sơ đồ xe: (1) chạm Hộp phụ, (2) chạm hình xe có cửa đang nháy.")),
+    5 to listOf(
+        Pic(R.drawable.man_hud_1, "Màn hình chờ kiểu đồng hồ và tốc độ."),
+        Pic(R.drawable.man_hud_2, "Màn hình chờ kiểu dẫn đường. Bấm nút đổi kiểu ở góc trên để chuyển.")
+    ),
+    6 to listOf(
+        Pic(R.drawable.man_mic, "(1) Nút micro. Khi thanh Mời nói hiện ra, hãy nói câu lệnh."),
+        Pic(R.drawable.man_tro_ly, "Cài đặt, Trợ lý SK Light: (1) chọn giọng, (2) Xem các câu lệnh.")
+    ),
+    7 to listOf(Pic(R.drawable.man_ung_dung, "Cài đặt, mục Ứng dụng: (1) Cài đặt giao diện, (2) Cài đặt ngôn ngữ, (3) Cẩm nang sử dụng.")),
+    8 to listOf(
+        Pic(R.drawable.man_lap_dat, "Cài đặt, mục Lắp đặt: (1) Trợ lý SK Light, (2) Hướng ánh sáng chạy, (3) Ghép nối hộp phụ, (4) Kiểm tra cập nhật."),
+        Pic(R.drawable.man_ghep_hop_phu, "Ghép nối hộp phụ: (1) Bắt đầu ghép nối.")
+    ),
+    11 to listOf(Pic(R.drawable.man_bao_hanh, "Cài đặt, thẻ Bảo hành: (1) Điền thông tin bảo hành."))
+)
+
+@Composable
+private fun PicBlock(p: Pic) {
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 10.dp)) {
+        Image(
+            painterResource(p.res), p.cap,
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).border(BorderStroke(1.dp, Grey.copy(alpha = 0.35f)), RoundedCornerShape(10.dp)),
+            contentScale = ContentScale.FillWidth
+        )
+        Spacer(Modifier.height(4.dp))
+        T(p.cap, 12, color = Grey)
+    }
+}
+
 @Composable
 fun ManualPage() {
     var open by S.manualOpen
@@ -157,6 +200,7 @@ fun ManualPage() {
                     T("•", 13, FontWeight.Bold, Pink, Modifier.width(14.dp))
                     T(l, 13, color = SubTxt, modifier = Modifier.weight(1f))
                 }
+                PICS[i]?.forEach { PicBlock(it) }
                 if (i == 6) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Divider(4.dp, 6.dp); CmdList(); Divider(4.dp, 6.dp); CmdListApp() }
             }
         }
