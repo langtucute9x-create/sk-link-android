@@ -28,7 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/** Một chế độ do người dùng tự đặt: 2 đến 10 màu, chuyển mượt hoặc nhảy, hai khu cùng màu hoặc so le. App tự chạy bằng lệnh màu (xem Auto). */
+/** Một chế độ do người dùng tự đặt: 2 đến 12 màu, chuyển mượt hoặc nhảy, hai khu cùng màu hoặc so le. App tự chạy bằng lệnh màu (xem Auto). */
 class Seq(val name: String, val colors: List<Int>, val smooth: Boolean, val split: Boolean) {
     fun line() = listOf(name.replace("|", " ").replace("\n", " "), if (smooth) 1 else 0, if (split) 1 else 0, colors.joinToString(",")).joinToString("|")
 }
@@ -44,7 +44,7 @@ object Seqs {
             val p = l.split("|")
             if (p.size < 4) continue
             val cs = p[3].split(",").mapNotNull { it.toIntOrNull() }.map { it and 0xFFFFFF }
-            if (cs.size >= 2) list.add(Seq(p[0], cs.take(10), p[1] == "1", p[2] == "1"))
+            if (cs.size >= 2) list.add(Seq(p[0], cs.take(12), p[1] == "1", p[2] == "1"))
         }
     }
     fun dump() = list.joinToString("\n") { it.line() }
@@ -121,7 +121,7 @@ fun MyModesCard(cols: Int) {
     Card {
         GroupTitle(Icons.Filled.ColorLens, "CHẾ ĐỘ CỦA TÔI")
         Spacer(Modifier.height(6.dp))
-        Hint("Tự ghép 2 đến 10 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12)
+        Hint("Tự ghép 2 đến 12 màu thành một chế độ riêng. Chạm để chạy, chạm bút để sửa.", 12)
         Spacer(Modifier.height(12.dp))
         if (Seqs.list.isEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
@@ -165,7 +165,7 @@ fun MyModesCard(cols: Int) {
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(name, { name = it.take(16) }, singleLine = true, modifier = Modifier.fillMaxWidth(), placeholder = { T("Tên chế độ, ví dụ: Hoàng hôn tím", 14, color = Grey) })
             Spacer(Modifier.height(12.dp))
-            T("Các màu theo thứ tự (chạm một ô để đổi màu ô đó, tối đa 10)", 13, FontWeight.Bold, SubTxt)
+            T("Các màu theo thứ tự (chạm một ô để đổi màu ô đó, tối đa 12)", 13, FontWeight.Bold, SubTxt)
             Spacer(Modifier.height(8.dp))
             Grid(cs.indices.toList() + listOf(-1, -2), 6, 8.dp) { k, m ->
                 if (k >= 0) {
@@ -175,7 +175,7 @@ fun MyModesCard(cols: Int) {
                         contentAlignment = Alignment.Center
                     ) { T("${k + 1}", 12, FontWeight.Bold, if (c == 0 || c == 0xFF0000 || c == 0x0050FF || c == 0x8A2BFF) Color.White else Color(0xFF14161C)) }
                 } else if (k == -1) {
-                    if (cs.size < 10) Box(m.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable { cs.add(0xFFFFFF); sel = cs.size - 1 }, contentAlignment = Alignment.Center) {
+                    if (cs.size < 12) Box(m.height(44.dp).clip(RoundedCornerShape(Theme.r(8))).border(1.dp, Bd, RoundedCornerShape(Theme.r(8))).clickable { cs.add(0xFFFFFF); sel = cs.size - 1 }, contentAlignment = Alignment.Center) {
                         Icon(Icons.Filled.Add, "Thêm màu", tint = Txt, modifier = Modifier.size(20.dp))
                     } else Spacer(m)
                 } else {
