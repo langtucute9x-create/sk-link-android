@@ -176,6 +176,37 @@ object X {
         return sb.toString()
     }
 
+    private fun hx(v: IntArray?) = if (v == null) "Chưa đọc" else v.joinToString(" ") { "%02X".format(it) }
+    /** Tổng quan hộp, lấy từ các khối app đã đọc (không gửi lệnh mới). */
+    fun overview(): List<Pair<String, String>> {
+        val l = ArrayList<Pair<String, String>>()
+        l.add("Kết nối" to (if (S.connected.value) S.devName.value.ifEmpty { "Đã kết nối" } else "Chưa kết nối"))
+        l.add("Loại xe" to (if (carCur >= 0 && cars.isNotEmpty()) carName(carCur) else "Chưa đọc"))
+        if (rfModel.isNotEmpty()) l.add("Mã điều khiển" to rfModel)
+        if (canModel.isNotEmpty()) l.add("Mã CAN" to canModel)
+        for (i in 0 until 4) {
+            val p = S.boxPos[i]
+            l.add("Hộp phụ ${i + 1}" to when { p == 0 -> "Khác"; p in 2..5 -> listOf("Trước trái", "Trước phải", "Sau trái", "Sau phải")[p - 2]; else -> "Chưa gán" })
+        }
+        l.add("Khối 05 (chức năng)" to hx(S.blk))
+        l.add("Khối 0D (nhà máy)" to hx(S.fac))
+        l.add("Khối 07 (hướng chạy)" to hx(S.p07))
+        l.add("Khối 09 (màu chào mừng)" to hx(p09))
+        l.add("Chức năng gốc xe hỗ trợ" to hx(sup))
+        return l
+    }
+    /** Báo cáo kỹ thuật: gộp tổng quan, chẩn đoán, ảnh chụp trạng thái và số seri để gửi một lần. */
+    fun report(): String {
+        val sb = StringBuilder("SK Light ${S.VER} · báo cáo kỹ thuật · ${S.devName.value} · ID ${S.savedMac}\n")
+        sb.append("\n== Tổng quan ==\n"); for ((k, v) in overview()) sb.append(k).append(": ").append(v).append("\n")
+        sb.append("\n== Chẩn đoán ==\n")
+        if (diag.isEmpty() && diagRaw.isEmpty()) sb.append("(chưa đọc)\n") else { for (d in diag) sb.append(d).append("\n"); for (d in diagRaw) sb.append(d).append("\n") }
+        sb.append("\n== Chụp trạng thái ==\n")
+        if (snaps.isEmpty()) sb.append("(chưa chụp)\n") else sb.append(snapText())
+        if (S.navLog.isNotEmpty()) { sb.append("\n== Thông báo app dẫn đường (mới nhất) ==\n"); for (n in S.navLog.take(5)) sb.append(n).append("\n") }
+        return sb.toString()
+    }
+
     /** Hộp báo xe hỗ trợ chức năng gốc nào (trả lời 9C 01): b1 cùng thứ tự bit với b1 khối 05; b2: bit4 đèn khẩn cấp, bit3 điều hòa, bit2 chào mừng, bit1 điểm mù, bit0 áp suất lốp. */
     var sup: IntArray? = null
     fun onSup(b1: Int, b2: Int) { sup = intArrayOf(b1, b2); ver.intValue++ }
@@ -267,6 +298,28 @@ private fun need(ctx: Context) {
 }
 
 @Composable
+fun BoxTestPage() {
+    X.ver.intValue
+    BackRow(0, "Cài đặt")
+    Card {
+        GroupTitle(Icons.Filled.BluetoothSearching, "Thử hộp phụ", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Chạm một hộp phụ: đèn của hộp đó nháy, thợ nhìn xem hộp gắn ở cửa nào. Chạm lần nữa để bỏ chọn.", 12)
+        Spacer(Modifier.height(10.dp))
+        Grid(listOf(1, 2, 3, 4), 2, 8.dp) { n, m ->
+            val on = S.pickBox.intValue == n
+            val p = S.boxPos[n - 1]
+            val where = when { p == 0 -> "Khác"; p in 2..5 -> listOf("Trước trái", "Trước phải", "Sau trái", "Sau phải")[p - 2]; else -> "Chưa gán" }
+            Chip("Hộp phụ $n · $where", on, m, 52.dp, 12) {
+                if (!S.connected.value) Notice.show(S.app, L.tr("Chưa kết nối hộp đèn.")) else S.flashBox(n)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        T(if (S.pickBox.intValue in 1..4) "Hộp phụ ${S.pickBox.intValue} đang được chọn để nháy." else "Chưa chọn hộp nào.", 12, FontWeight.SemiBold, SubTxt)
+    }
+}
+
+@Composable
 fun SnapPage() {
     val ctx = LocalContext.current
     X.ver.intValue
@@ -324,6 +377,7 @@ fun ExtraPage(sp: Int) {
         13 -> ActivationPage(false)
         14 -> SerialPage()
         15 -> SnapPage()
+        16 -> BoxTestPage()
         else -> DiagPage()
     }
 }
@@ -601,6 +655,31 @@ fun DiagPage() {
         else if (busy) T("Đang chờ hộp trả lời…", 13, color = SubTxt)
         else if (asked > 0) T("Hộp không trả lời sau 3 giây. Có thể hộp này không hỗ trợ lệnh chẩn đoán, hoặc kết nối đang yếu. Thử đọc lại.", 13, color = SubTxt)
         else T("Chưa có dữ liệu.", 13, color = SubTxt)
+    }
+    X.ver.intValue; S.blkVer.intValue
+    Card {
+        GroupTitle(Icons.Filled.Tune, "Tổng quan hộp", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Lấy từ những gì app đã đọc được, không gửi lệnh mới.", 12)
+        Spacer(Modifier.height(6.dp))
+        for ((k, v) in X.overview()) Kv(k, v)
+    }
+    Card {
+        GroupTitle(Icons.Filled.Send, "Báo cáo kỹ thuật", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Gộp tổng quan, chẩn đoán và các lần chụp trạng thái thành một bản để gửi.", 12)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FillBtn("Gửi", Icons.Filled.Send, Pink, Modifier.weight(1f)) {
+                val i = android.content.Intent(android.content.Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, X.report()) }
+                ctx.startActivity(android.content.Intent.createChooser(i, "SK Light").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("report", X.report()))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
+        }
     }
 }
 

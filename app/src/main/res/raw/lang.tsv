@@ -803,3 +803,11 @@ Mã điều khiển	Control code
 Mã CAN	CAN code					
 Phiên bản app	App version					
 Hộp không trả lời sau 3 giây. Có thể hộp này không hỗ trợ lệnh chẩn đoán, hoặc kết nối đang yếu. Thử đọc lại.	The box did not reply within 3 seconds. It may not support the diagnostic command, or the connection is weak. Try again.					
+Tổng quan hộp	Box overview					
+Lấy từ những gì app đã đọc được, không gửi lệnh mới.	Taken from what the app has already read; no new commands are sent.					
+Báo cáo kỹ thuật	Technical report					
+Gộp tổng quan, chẩn đoán và các lần chụp trạng thái thành một bản để gửi.	Combines the overview, diagnostics and state captures into one report to send.					
+Gửi	Send					
+Thử hộp phụ	Test auxiliary boxes					
+Chạm một hộp phụ: đèn của hộp đó nháy, thợ nhìn xem hộp gắn ở cửa nào. Chạm lần nữa để bỏ chọn.	Tap an auxiliary box: its light blinks so you can see which door it is on. Tap again to deselect.					
+Chưa chọn hộp nào.	No box selected.					

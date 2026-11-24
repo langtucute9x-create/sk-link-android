@@ -1045,6 +1045,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
         Feature(Icons.Filled.PhotoCamera, "Chụp trạng thái hộp", "") { S.subPage.intValue = 15 }
         Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
+        Feature(Icons.Filled.BluetoothSearching, "Thử hộp phụ", "") { S.subPage.intValue = 16 }
         Feature(Icons.Filled.Science, "Thử chế độ tự tạo", "") { S.subPage.intValue = 3 }
     }
     Card {
