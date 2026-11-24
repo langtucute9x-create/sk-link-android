@@ -145,6 +145,9 @@ fun Root() {
     LaunchedEffect(S.pickNow.value) { if (S.pickNow.value) { S.pickNow.value = false; pick() } }
     // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
     val lock = S.connected.value && !Act.ok.value
+    // chưa nối hộp đèn: chỉ còn Cài đặt cơ bản, để người ngoài không xem được tính năng của app
+    val gated = !S.connected.value
+    LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12)) S.subPage.intValue = 0 }
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
@@ -162,11 +165,11 @@ fun Root() {
         val cols = if (avail - leftW - 12f >= 470f) 4 else 3
         val body: @Composable ColumnScope.() -> Unit = {
             UpdateBanner()
-            Strip()
-            VoicePanel()
+            if (!gated) Strip()
+            if (!gated) VoicePanel()
             key(tab, S.subPage.intValue, lock) {
               androidx.compose.runtime.CompositionLocalProvider(LocalScrollKey provides (if (S.subPage.intValue == 0) "t$tab" else null)) {
-                if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
+                if (gated && tab < 3) TwoCol(leftW.dp, { PlugCard() }, { }) else if (lock && tab < 3) WideSub { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
@@ -178,7 +181,7 @@ fun Root() {
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                     else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                    else TwoCol(leftW.dp, { SettingsDevice(pick); WarrantyCard(); DriveCard() }, { SettingsFeatures() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); if (!gated) { WarrantyCard(); DriveCard() } }, { SettingsFeatures() })
                 }
               }
             }
@@ -190,8 +193,8 @@ fun Root() {
                 PowerBtn(if (low) 42 else 52)
                 Tabs(tab, Modifier.weight(1f), if (low) 38 else 46, true) { tab = it; S.subPage.intValue = 0 }
                 SplitBtn(if (low) 42 else 52)
-                IdleBtn(if (low) 42 else 52)
-                if (L.cur.intValue == 0) MicBtn(if (low) 46 else 60)
+                if (!gated) IdleBtn(if (low) 42 else 52)
+                if (L.cur.intValue == 0 && !gated) MicBtn(if (low) 46 else 60)
             }
             body()
         } else Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -199,9 +202,9 @@ fun Root() {
             Column(Modifier.width(sideW.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn(if (roomy) 56 else 46)
                 TabsV(tab, roomy) { tab = it; S.subPage.intValue = 0 }
-                if (roomy || mid) { SplitBtn(if (roomy) 56 else 46); IdleBtn(if (roomy) 56 else 46) }
+                if (roomy || mid) { SplitBtn(if (roomy) 56 else 46); if (!gated) IdleBtn(if (roomy) 56 else 46) }
                 Spacer(Modifier.weight(1f))
-                if (L.cur.intValue == 0) MicBtn(if (roomy) 66 else if (mid) 60 else 46)
+                if (L.cur.intValue == 0 && !gated) MicBtn(if (roomy) 66 else if (mid) 60 else 46)
                 Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (roomy || mid) 40.dp else 48.dp), contentScale = ContentScale.Fit)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) { body() }
@@ -214,19 +217,19 @@ fun Root() {
                 PowerBtn(36)
                 Spacer(Modifier.width(6.dp))
                 Tabs(tab, Modifier.weight(1f), 30) { tab = it; S.subPage.intValue = 0 }
-                if (L.cur.intValue == 0) { Spacer(Modifier.width(6.dp)); MicBtn(36) }
+                if (L.cur.intValue == 0 && !gated) { Spacer(Modifier.width(6.dp)); MicBtn(36) }
             }
             // chấm nhỏ ở góc trên phải: xanh = đã kết nối Bluetooth với hộp đèn, xám = chưa
             Box(Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 4.dp).size(8.dp).clip(CircleShape).background(if (S.connected.value) OkGreen else Color(0xFFB8BCC6)))
             }
             UpdateBanner(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 4.dp))
-            Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
-            VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
+            if (!gated) Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
+            if (!gated) VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
             Column(
                 Modifier.weight(1f).verticalScroll(if (S.subPage.intValue == 0) ScrollMem.get("p$tab") else remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                if (lock && tab < 3) ActivationPage(true) else when (tab) {
+                if (gated && tab < 3) PlugCard() else if (lock && tab < 3) ActivationPage(true) else when (tab) {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
@@ -998,7 +1001,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); WarrantyCard(); DriveCard(); SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); if (S.connected.value) { WarrantyCard(); DriveCard() }; SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {
@@ -1032,7 +1035,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "") { S.subPage.intValue = 12 }
         RunModeRow()
     }
-    Card {
+    if (S.connected.value) Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
         // Chức năng gốc xe chưa kiểm chứng xong trên xe thật nhưng chủ dự án yêu cầu luôn hiện (sẽ hoàn thiện sau)
         if (!S.commonBox()) Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "") { S.subPage.intValue = 9 }
@@ -1040,7 +1043,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }
     }
-    if (S.dev.value) Card {
+    if (S.connected.value && S.dev.value) Card {
         SetTitle(Icons.Filled.Science, "Kiểm tra")
         Feature(Icons.Filled.PhotoCamera, "Chụp trạng thái hộp", "") { S.subPage.intValue = 15 }
         Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
@@ -1055,6 +1058,7 @@ fun SettingsFeatures() {
     T(if (S.dev.value) "SK Light ${S.VER} · chế độ nghiên cứu" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
     ) {
+        if (!S.connected.value) return@clickable
         taps++
         if (taps >= 7) { taps = 0; S.dev.value = !S.dev.value; S.saveSettings(); Notice.show(ctx, L.tr(if (S.dev.value) "Đã bật chế độ nghiên cứu." else "Đã tắt chế độ nghiên cứu.")) }
     }.padding(vertical = 8.dp))
