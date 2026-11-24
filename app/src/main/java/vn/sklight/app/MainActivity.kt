@@ -1035,7 +1035,7 @@ fun SettingsFeatures() {
     Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
         // Chức năng gốc xe chưa kiểm chứng xong trên xe thật nhưng chủ dự án yêu cầu luôn hiện (sẽ hoàn thiện sau)
-        Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "") { S.subPage.intValue = 9 }
+        if (!S.commonBox()) Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "") { S.subPage.intValue = 9 }
         Feature(Icons.Filled.Mic, "Trợ lý SK Light (AI)", "") { S.subPage.intValue = 4 }
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }

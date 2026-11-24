@@ -181,7 +181,7 @@ object X {
     fun overview(): List<Pair<String, String>> {
         val l = ArrayList<Pair<String, String>>()
         l.add("Kết nối" to (if (S.connected.value) S.devName.value.ifEmpty { "Đã kết nối" } else "Chưa kết nối"))
-        l.add("Loại xe" to (if (carCur >= 0 && cars.isNotEmpty()) carName(carCur) else "Chưa đọc"))
+        if (!S.commonBox()) l.add("Loại xe" to (if (carCur >= 0 && cars.isNotEmpty()) carName(carCur) else "Chưa đọc"))
         if (rfModel.isNotEmpty()) l.add("Mã điều khiển" to rfModel)
         if (canModel.isNotEmpty()) l.add("Mã CAN" to canModel)
         for (i in 0 until 4) {
@@ -192,7 +192,7 @@ object X {
         l.add("Khối 0D (nhà máy)" to hx(S.fac))
         l.add("Khối 07 (hướng chạy)" to hx(S.p07))
         l.add("Khối 09 (màu chào mừng)" to hx(p09))
-        l.add("Chức năng gốc xe hỗ trợ" to hx(sup))
+        if (!S.commonBox()) l.add("Chức năng gốc xe hỗ trợ" to hx(sup))
         return l
     }
     /** Báo cáo kỹ thuật: gộp tổng quan, chẩn đoán, ảnh chụp trạng thái và số seri để gửi một lần. */
@@ -516,7 +516,7 @@ fun FactoryPage() {
         }
     }
     Card {
-        Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
+        if (!S.commonBox()) Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "") { S.subPage.intValue = 5 }
         Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
     }

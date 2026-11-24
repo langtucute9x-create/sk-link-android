@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.39"
+    const val VER = "1.4.40"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -90,6 +90,8 @@ object S {
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
     val appSpeed = mutableIntStateOf(-1)                  // tốc độ xe đọc từ app dẫn đường, -1 = chưa biết
+    /** Hộp dùng chung (tên có CTH): không có chọn mẫu xe, chức năng gốc, dữ liệu CAN. Chế độ nghiên cứu bật thì hiện hết. */
+    fun commonBox() = !dev.value && devName.value.contains("CTH", ignoreCase = true)
     val dev = mutableStateOf(false)                       // chế độ kỹ thuật: hiện mục đang thử (Chức năng gốc xe) và công cụ kiểm tra
     val screenAuto = mutableStateOf(true)                 // tự đọc màn hình app bản đồ
     val signThumb = mutableStateOf<android.graphics.Bitmap?>(null)   // ảnh cắt biển tốc độ app đang đọc (để kiểm tra)
