@@ -624,14 +624,12 @@ fun VoicePage() {
     BoxVoiceCard()
     Card {
         T("Các câu lệnh", 16, FontWeight.ExtraBold)
-        Spacer(Modifier.height(4.dp))
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         OutlineBtn("Xem các câu lệnh", Modifier.fillMaxWidth()) { S.manualOpen.intValue = 6; S.subPage.intValue = 12 }
     }
     Card {
         GroupTitle(Icons.Filled.Mic, "Nút mic trên app", 16)
-        Spacer(Modifier.height(4.dp))
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         SwitchRow("Trả lời bằng tiếng nói", "", S.voiceReply.value) { S.voiceReply.value = it; if (!it) Speaker.stop(); S.saveSettings() }
         val ctx = LocalContext.current
         val st = Speaker.state.intValue

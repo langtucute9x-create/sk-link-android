@@ -107,8 +107,7 @@ fun SplitCard() {
     val ctx = LocalContext.current
     Card {
         GroupTitle(Icons.Filled.VerticalSplit, "Chia đôi màn hình", 16)
-        Spacer(Modifier.height(4.dp))
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
         FillBtn(if (Split.inSplit.value) "Thoát chia đôi" else "Chia đôi với app đang mở", Icons.Filled.VerticalSplit, Pink, Modifier.fillMaxWidth()) { Split.go(ctx) }
     }
 }

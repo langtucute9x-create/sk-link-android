@@ -785,7 +785,6 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
             }
         } else if (!S.navOn.value) {
             T("Chưa có chỉ đường", 15, FontWeight.Bold)
-            Spacer(Modifier.height(4.dp))
         } else {
             val dir = S.navDir.value
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -883,7 +882,6 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         GroupTitle(Icons.Filled.AutoAwesome, "Thử nháy 4 giây", 16)
         Spacer(Modifier.height(12.dp))
         Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
-        Spacer(Modifier.height(8.dp))
     }
 
     // ---- cảnh báo quá tốc độ ----
@@ -891,20 +889,17 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
         Spacer(Modifier.height(8.dp))
         SwitchRow("Nháy đỏ khi quá tốc độ", "", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
-        Spacer(Modifier.height(6.dp))
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
                 Chip(label, S.speedZone.intValue == z, Modifier.weight(1f), 44.dp, 12) { S.speedZone.intValue = z; S.saveSettings() }
         }
-        Spacer(Modifier.height(6.dp))
         if (S.dev.value && S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
         if (S.dev.value) S.signThumb.value?.let { bmp ->
             Spacer(Modifier.height(6.dp))
             T("Ảnh biển app đang đọc:", 11, color = Grey)
             androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
         }
-        Spacer(Modifier.height(6.dp))
     }
 
     // ---- quyền còn thiếu: chỉ hiện khi chưa cấp đủ; cấp xong thì thẻ tự ẩn ----
@@ -1062,7 +1057,7 @@ fun Kv(k: String, v: String) {
 
 @Composable
 fun Feature(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 76.dp).clickable(onClick = onClick).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().heightIn(min = if (sub.isEmpty()) 60.dp else 76.dp).clickable(onClick = onClick).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = SubTxt, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) { T(title, 16); if (sub.isNotEmpty()) T(sub, 13, color = SubTxt) }

@@ -147,7 +147,6 @@ fun AppearanceIdle() {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
             OutlineBtn("Chọn ảnh của tôi", Modifier.fillMaxWidth()) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
         }
-        Spacer(Modifier.height(8.dp))
     }
     Card {
         GroupTitle(Icons.Filled.Wallpaper, "Nút nổi và màn hình nổi", 16)
@@ -156,7 +155,6 @@ fun AppearanceIdle() {
         FloatPreview(S.floatStyle.intValue)
         Spacer(Modifier.height(12.dp))
         Grid(listOf(5, 1, 2, 3, 4), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
-        Spacer(Modifier.height(8.dp))
     }
     Card {
         GroupTitle(Icons.Filled.Style, "Vị trí menu khi màn hình ngang", 16)

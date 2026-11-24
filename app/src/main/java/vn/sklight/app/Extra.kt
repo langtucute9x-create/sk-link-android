@@ -428,7 +428,6 @@ fun FactoryPage() {
             Chip("Thể thao", known && X.facBits(0, 0x40) == 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0)) need(ctx) }
             Chip("Ánh sáng", known && X.facBits(0, 0x40) != 0, Modifier.weight(1f), 44.dp, 13) { if (!X.setFac(0, 0x40, 0x40)) need(ctx) }
         }
-        Spacer(Modifier.height(6.dp))
     }
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
@@ -520,7 +519,6 @@ fun CarFuncPage() {
     ).filter { ok(it.first.first, it.first.second) }
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Chức năng gốc xe", 16)
-        Spacer(Modifier.height(4.dp))
         for ((k, sub) in rows) {
             val (i, mask, title) = k
             Divider()

@@ -166,7 +166,7 @@ fun ZoneTabs(sel: Int, onPick: (Int) -> Unit) {
 
 @Composable
 fun SwitchRow(title: String, sub: String, on: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = if (hintsHidden()) 48.dp else 58.dp).alpha(if (enabled) 1f else 0.45f)) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(min = if (hintsHidden() || sub.isEmpty()) 52.dp else 58.dp).alpha(if (enabled) 1f else 0.45f)) {
         Column(Modifier.weight(1f)) { T(title, 15, FontWeight.Bold); if (sub.isNotEmpty()) Hint(sub, 12) }
         SkSwitch(on && enabled) { if (enabled) onChange(it) }
     }

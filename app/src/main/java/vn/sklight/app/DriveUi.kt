@@ -110,8 +110,7 @@ fun SceneRow() {
             confirmButton = { TextButton(onClick = { manage = false }) { T("Xong", 14, FontWeight.Bold, Pink) } },
             title = { T("Bối cảnh yêu thích", 17, FontWeight.Bold) },
             text = {
-                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    T("Chỉnh màu, chế độ, độ sáng như ý rồi lưu lại thành một bối cảnh để lần sau chạm là có.", 13, color = SubTxt)
+                Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     OutlinedTextField(name, { name = it.take(18) }, singleLine = true, placeholder = { T("Tên bối cảnh, ví dụ: Đi làm", 14, color = Grey) })
                     Box(
                         Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (full) Grey else Pink).clickable { if (!full && Scenes.saveCurrent(name)) name = "" },
@@ -124,13 +123,12 @@ fun SceneRow() {
                             Box(Modifier.size(16.dp).clip(CircleShape).background(sceneBrush(sc)).border(1.dp, Color(0x26172032), CircleShape))
                             Spacer(Modifier.width(10.dp))
                             T(sc.name, 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            Box(Modifier.size(44.dp).clip(CircleShape).clickable { Scenes.delete(i) }, contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(40.dp).clip(CircleShape).clickable { Scenes.delete(i) }, contentAlignment = Alignment.Center) {
                                 Icon(Icons.Filled.Close, "Xóa bối cảnh ${sc.name}", tint = Grey, modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                     OutlineBtn("Khôi phục 4 bối cảnh có sẵn", Modifier.fillMaxWidth()) { Scenes.restore() }
-                    Hint("Giữ lâu một bối cảnh ở hàng ngoài để đổi tên hoặc cập nhật.", 11)
                 }
             }
         )
