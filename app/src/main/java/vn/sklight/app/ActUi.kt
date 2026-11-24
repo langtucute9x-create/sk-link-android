@@ -141,13 +141,31 @@ private fun Steps(step: Int) {
     }
 }
 
-/** Ô nhập mã 4 chữ kiểu từng ô riêng. */
+/** Lệnh 435: máy đang dùng mã đại lý / VIP. Không có hạn bảo hành, không hồ sơ khách. */
+@Composable
+private fun MasterCard() {
+    Card {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Hero(Icons.Filled.VerifiedUser)
+            Spacer(Modifier.height(12.dp))
+            T("Đang dùng mã đại lý", 20, FontWeight.ExtraBold, align = TextAlign.Center)
+            Spacer(Modifier.height(4.dp))
+            T(Act.master.value, 15, FontWeight.Bold, AccentText, align = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            T("Dùng được app với mọi hộp đèn, không cần điền thông tin khách.", 13, color = SubTxt, align = TextAlign.Center)
+            Spacer(Modifier.height(16.dp))
+            FillBtn("Gỡ mã đại lý khỏi máy này", Icons.Filled.ArrowBack, Pink, Modifier.fillMaxWidth()) { Act.clearMaster() }
+        }
+    }
+}
+
+/** Ô nhập mã 4 ký tự (chữ và số) kiểu từng ô riêng. */
 @Composable
 private fun CodeBoxes(code: String, enabled: Boolean, onChange: (String) -> Unit) {
     val fr = remember { FocusRequester() }
     val a = Pink
     BasicTextField(
-        value = code, onValueChange = { v -> onChange(v.uppercase().filter { it in 'A'..'Z' }.take(4)) },
+        value = code, onValueChange = { v -> onChange(v.uppercase().filter { it in 'A'..'Z' || it in '0'..'9' }.take(4)) },
         enabled = enabled, singleLine = true, cursorBrush = SolidColor(Color.Transparent), textStyle = TextStyle(color = Color.Transparent, fontSize = 1.sp),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, keyboardType = KeyboardType.Ascii),
         modifier = Modifier.fillMaxWidth().focusRequester(fr),
@@ -352,6 +370,7 @@ fun ActivationPage(locked: Boolean) {
     var hot by remember { mutableStateOf(false) }
     LaunchedEffect(err) { if (err.isNotEmpty()) Speaker.err(ctx, err) }
     if (!locked) BackRow(0, "Cài đặt")
+    if (Act.master.value.isNotEmpty()) { MasterCard(); return }
     if (S.connected.value && Act.ok.value) { if (Act.needCust.value) CustomerForm() else WarrantyCard(); return }
     // chưa nối hộp, hoặc đang hỏi SK Core, hoặc lần đầu nối hộp này mà không có mạng
     val ck = Act.checking.intValue
@@ -378,8 +397,8 @@ fun ActivationPage(locked: Boolean) {
 
     val go: () -> Unit = go@{
         val raw = code.filter { it.isLetterOrDigit() }
-        val short = raw.length == 4 && raw.all { it in 'A'..'Z' }
-        if (!short && raw.length < 8) { err = L.tr(if (long) "Mã kích hoạt chưa đủ ký tự." else "Mã kích hoạt là 4 chữ cái in trên tem."); return@go }
+        val short = raw.length == 4 && raw.all { it in 'A'..'Z' || it in '0'..'9' }
+        if (!short && raw.length < 8) { err = L.tr(if (long) "Mã kích hoạt chưa đủ ký tự." else "Mã kích hoạt là 4 ký tự (chữ và số) in trên tem."); return@go }
         if (need == 1) {
             if (name.isBlank()) { err = L.tr("Chưa nhập tên khách hàng."); return@go }
             if (phone.filter { it.isDigit() }.length < 10) { err = L.tr("Số điện thoại chưa đúng."); return@go }
@@ -444,7 +463,7 @@ fun ActivationPage(locked: Boolean) {
             if (!long) {
                 CodeBoxes(code, !Act.busy.value) { code = it; err = ""; hot = false; if (it.length == 4 && !Act.busy.value) go() }
                 Spacer(Modifier.height(8.dp))
-                T("Mã giới thiệu 4 chữ cái in trên tem dán ở vỏ hộp sản phẩm.", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                T("Mã giới thiệu 4 ký tự (chữ và số) in trên tem dán ở vỏ hộp sản phẩm.", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             } else {
                 Field(code, { v -> code = v.uppercase().filter { it.isLetterOrDigit() || it == '-' }.take(20); err = ""; hot = false }, "Mã kích hoạt", Icons.Filled.Key,
                     kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, keyboardType = KeyboardType.Ascii))
@@ -486,7 +505,7 @@ fun ActivationPage(locked: Boolean) {
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Box(Modifier.clip(RoundedCornerShape(Theme.r(8))).clickable { long = !long; code = ""; err = "" }.padding(8.dp)) {
-                    T(if (long) "Nhập mã 4 chữ trên tem" else "Mã của tôi dài hơn 4 ký tự", 12, FontWeight.SemiBold, AccentText)
+                    T(if (long) "Nhập mã 4 chữ trên tem" else "Mã của tôi dài hơn 4 ký tự (mã đại lý)", 12, FontWeight.SemiBold, AccentText)
                 }
             }
         }

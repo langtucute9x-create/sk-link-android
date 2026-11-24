@@ -47,6 +47,9 @@ object Act {
     val until = mutableStateOf("")            // ngày hết bảo hành, yyyy-MM-dd
     val needCust = mutableStateOf(false)      // hộp đã gắn mã nhưng chưa có thông tin khách (hồ sơ bảo hành)
     val busy = mutableStateOf(false)
+    /** Lệnh 435: tên người dùng mã đại lý / VIP đã nhập trên máy này; rỗng nếu không dùng mã đại lý. Có mã thì dùng app ngay, không cần kích hoạt theo hộp, không hồ sơ bảo hành. */
+    val master = mutableStateOf("")
+    private var masterCode = ""
     /** 0 chưa hỏi, 1 đang hỏi SK Core, 2 không có mạng (lần đầu nối hộp này), 3 đã có câu trả lời */
     val checking = mutableIntStateOf(0)
     private var devId = ""
@@ -60,7 +63,31 @@ object Act {
         val p = sp(app)
         // Mã máy Android: giữ nguyên khi xóa app rồi cài lại (cùng khóa ký). SK Core dùng nó để gắn mã của máy đã kích hoạt theo cách cũ vào hộp.
         val aid = try { Settings.Secure.getString(app.contentResolver, Settings.Secure.ANDROID_ID) ?: "" } catch (_: Exception) { "" }
+        val mv = p.getString("master", null)
+        if (mv != null && mv.contains('|')) { masterCode = mv.substringBefore('|'); master.value = mv.substringAfter('|').ifEmpty { "Đại lý" }; ok.value = true }
         devId = if (aid.length >= 8) "a-$aid" else (p.getString("dev", null) ?: ("r-" + UUID.randomUUID().toString()).also { p.edit().putString("dev", it).apply() })
+        if (masterCode.isNotEmpty()) recheckMaster()
+    }
+
+    /** Hỏi lại SK Core mã đại lý còn hiệu lực không. Bị khoá hoặc xoá thì máy về chưa kích hoạt; mất mạng thì giữ nguyên. */
+    fun recheckMaster() {
+        val mc = masterCode
+        if (mc.isEmpty() || devId.isEmpty()) return
+        Thread {
+            try {
+                val r = post(JSONObject().put("action", "check_master").put("device_id", devId).put("device_name", devName()).put("code", mc))
+                val st = r.optString("status")
+                if (st == "ok") main.post { master.value = r.optString("label").ifEmpty { master.value }; sp(app).edit().putString("master", mc + "|" + master.value).apply() }
+                else if (st == "locked" || st == "invalid_code") main.post { clearMaster() }
+            } catch (_: Exception) {}
+        }.start()
+    }
+
+    fun clearMaster() {
+        masterCode = ""; master.value = ""
+        sp(app).edit().remove("master").apply()
+        ok.value = false; at.value = ""; until.value = ""; needCust.value = false
+        if (box.isNotEmpty()) onConnected(box)
     }
 
     private fun devName() = (Build.MANUFACTURER + " " + Build.MODEL).trim().take(100)
@@ -83,12 +110,13 @@ object Act {
 
     private fun forget(mac: String) {
         sp(app).edit().remove(key(mac)).apply()
-        if (mac.equals(box, true)) { ok.value = false; at.value = ""; until.value = ""; needCust.value = false }
+        if (mac.equals(box, true) && masterCode.isEmpty()) { ok.value = false; at.value = ""; until.value = ""; needCust.value = false }
     }
 
     /** Gọi khi vừa nối được hộp [mac]. */
     fun onConnected(mac: String) {
         box = mac
+        if (masterCode.isNotEmpty()) { ok.value = true; needCust.value = false; checking.intValue = 3; recheckMaster(); return }
         val saved = sp(app).getString(key(mac), null)
         if (saved != null) {
             val p = saved.split('|')
@@ -124,7 +152,7 @@ object Act {
         busy.value = true
         Thread {
             var res = "network"
-            var a = ""; var w = ""; var need = false
+            var a = ""; var w = ""; var need = false; var mLabel: String? = null
             try {
                 val b = JSONObject().put("action", "activate").put("code", code).put("device_id", devId).put("device_name", devName())
                 if (mac.isNotEmpty()) b.put("box_id", mac)
@@ -134,9 +162,16 @@ object Act {
                 res = r.optString("status", "server")
                 if (res == "invalid_input") res = "invalid_input:" + r.optString("field")
                 a = r.optString("activated_at"); w = r.optString("warranty_until"); need = r.optBoolean("need_customer", false)
+                if (res == "ok" && r.optBoolean("master", false)) mLabel = r.optString("label").ifEmpty { "Đại lý" }
             } catch (_: Exception) {}
             main.post {
                 busy.value = false
+                if (res == "ok" && mLabel != null) {
+                    masterCode = code.uppercase().filter { it.isLetterOrDigit() }; master.value = mLabel
+                    sp(app).edit().putString("master", masterCode + "|" + mLabel).apply()
+                    ok.value = true; needCust.value = false; checking.intValue = 3
+                    S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Đã mở bằng mã đại lý", force = true)
+                } else
                 if (res == "ok") { checking.intValue = 3; store(mac, a, w, need); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
                 done(res)
             }
