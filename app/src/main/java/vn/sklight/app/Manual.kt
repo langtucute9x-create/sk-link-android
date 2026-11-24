@@ -14,7 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 // ===================== CẨM NANG SỬ DỤNG =====================
-// Nội dung viết theo đúng những gì app đang có ở bản 1.0.0. Phần "Chức năng theo xe" chưa có vì chưa kiểm chứng xong trên xe thật.
+// Nội dung viết theo đúng những gì app đang có ở bản 1.4.14. Phần "Chức năng theo xe" chưa có vì chưa kiểm chứng xong trên xe thật.
 // Thêm tính năng mới thì bổ sung mục tương ứng ở đây.
 
 private val MANUAL: List<Pair<String, List<String>>> = listOf(
@@ -23,6 +23,8 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Chọn hộp đèn trong danh sách hiện ra. Từ lần sau app tự kết nối với hộp đã chọn.",
         "Ở màn hình dọc, chấm nhỏ ở góc trên bên phải màu xanh là đã kết nối, màu xám là chưa.",
         "Khi mất kết nối, đầu trang Đèn hiện thẻ có hình phích cắm với nút Kết nối (nối lại hộp đã chọn) và Chọn hộp đèn (tìm hộp khác). Kết nối được thì app nói \"Đã kết nối với hộp đèn\".",
+        "Máy không có Bluetooth hoặc Bluetooth đang tắt (một số màn hình xe và Android box): app báo rõ nguyên nhân. Bật Bluetooth rồi nối lại. Máy không có Bluetooth thì không điều khiển được hộp đèn trên máy đó.",
+        "Lỗi nối hộp hoặc kích hoạt được đọc to bằng tiếng Việt khi app đang mở. Mất kết nối chỉ báo một lần cho đến khi nối lại được, và không báo khi bạn tự bấm Ngắt kết nối.",
         "Hộp đèn chỉ nhận một kết nối một lúc. Nếu không nối được, hãy tắt app đèn trên điện thoại hoặc màn hình khác.",
         "Muốn đổi sang hộp khác: Cài đặt, thẻ Thông tin thiết bị, bấm Chọn lại."
     ),
@@ -79,7 +81,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Muốn app trả lời bằng tiếng nói, máy cần có giọng đọc tiếng Việt; trang Trợ lý có nút cài."
     ),
     "8. Giao diện và ngôn ngữ" to listOf(
-        "Cài đặt, mục Cài đặt giao diện: chọn Sáng, Tối hoặc Tự động; phong cách nền; bo góc; màu nhấn; kiểu chữ và cỡ chữ.",
+        "Cài đặt, mục Cài đặt giao diện: chọn Sáng, Tối hoặc Tự động (mặc định là Tự động); phong cách nền (Xanh băng, Xanh đêm, Cổ điển…); bo góc; màu nhấn; kiểu chữ và cỡ chữ.",
         "Giảm hiệu ứng: bật nếu máy chạy chậm, giao diện sẽ bỏ khối nổi, bóng đổ và chuyển động.",
         "Màn hình chờ: chọn kiểu và xem trước ngay trong trang này; bấm Chọn ảnh của tôi để dùng ảnh riêng.",
         "Nút nổi và màn hình nổi: chọn một trong năm kiểu (mặc định Cột neon), có hình xem trước.",
@@ -116,12 +118,21 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
     "12. Kích hoạt app và bảo hành" to listOf(
         "Kích hoạt gắn với hộp đèn, không gắn với máy. Hộp đã kích hoạt thì mọi điện thoại, màn hình xe nối vào đều tự dùng được, không cần nhập mã.",
         "Nối một hộp chưa kích hoạt: các trang điều khiển bị khóa và hiện ô nhập mã. Lần đầu nối một hộp trên một máy cần có mạng để kiểm tra.",
-        "Mã kích hoạt là mã giới thiệu 4 chữ in trên tem dán ở vỏ hộp sản phẩm (cùng mã dùng trên web sklight.vn). Cần có mạng khi kích hoạt; sau đó dùng không cần mạng.",
-        "Lần đầu dùng mã: điền số điện thoại, biển số xe, dòng xe, đời xe và đơn vị lắp đặt để đăng ký bảo hành. Mã đã kích hoạt bảo hành trên web thì không phải điền lại. Bảo hành 24 tháng tính từ ngày kích hoạt đầu tiên.",
-                "Mỗi mã chỉ kích hoạt được một hộp. Thay hộp khi bảo hành: cửa hàng gỡ hộp cũ trên hệ thống rồi khách nhập lại mã trên hộp mới.",
+        "Mã kích hoạt là mã giới thiệu 4 ký tự (chữ và số) in trên tem dán ở vỏ hộp sản phẩm, cùng mã dùng trên web sklight.vn. Cần có mạng khi kích hoạt; sau đó dùng không cần mạng.",
+        "Thợ nhập mã là gắn mã vào hộp xong ngay, ngày bảo hành 24 tháng tính từ lúc gắn. Thông tin khách có thể khai sau; hộp còn thiếu hồ sơ thì thẻ Bảo hành nhắc ở mọi máy nối vào hộp đó.",
+        "Khai thông tin bảo hành: số điện thoại, biển số xe, hãng xe, dòng xe, đời xe và đơn vị lắp đặt. Hãng xe, dòng xe và đời xe chọn trong danh sách các xe đang bán ở Việt Nam. Không có trong danh sách thì chọn tự nhập.",
+        "Mỗi mã chỉ kích hoạt được một hộp. Nếu thợ nối nhầm hộp, nhập lại mã trên hộp đúng được thêm một lần. Thay hộp khi bảo hành: cửa hàng gỡ hộp cũ trên hệ thống rồi khách nhập lại mã trên hộp mới.",
         "Xóa app rồi cài lại, hoặc đổi máy: chỉ cần nối lại hộp khi có mạng, không cần nhập mã.",
-        "Xem bảo hành: Cài đặt, thẻ Bảo hành hiện ngày kích hoạt và số ngày còn bảo hành.",
-        "Nếu app báo mã đã hết lượt kích hoạt hoặc mã bị khóa, gọi hotline 0868 055 555."
+        "Mã đại lý (8 ký tự) dành cho chủ và đại lý cấp cao: nhập ở mục Mã của tôi dài hơn 4 ký tự. Dùng được với mọi hộp đèn, không hỏi thông tin khách, không tính bảo hành. Mã có thể giới hạn số lần dùng và ngày hết hạn; hết hạn hoặc bị khóa thì app tự về chưa kích hoạt khi có mạng.",
+        "Xem bảo hành: Cài đặt, thẻ Bảo hành hiện ngày kích hoạt và số ngày còn bảo hành. Máy dùng mã đại lý thì thẻ hiện tên người dùng mã và ngày dùng đến (nếu có).",
+        "Nếu app báo mã đã hết lượt kích hoạt, hết hạn hoặc mã bị khóa, gọi hotline 0868 055 555."
+    ),
+    "13. Chạy nền và tiết kiệm pin" to listOf(
+        "Cài đặt, thẻ Bạn đang dùng app trên: chọn Điện thoại hoặc Màn hình xe / Android box. Chưa chọn thì app chạy nền như màn hình xe.",
+        "Điện thoại: chỉ nối hộp khi mở app. Rời khỏi app khoảng 1 phút thì app ngắt kết nối để đỡ tốn pin. Các hiệu ứng do app vẽ (từ Cầu vồng mượt trở đi) dừng khi đóng app; hiệu ứng có sẵn trong hộp vẫn chạy.",
+        "Màn hình xe hoặc Android box: app chạy nền, hiện một thông báo cố định, tự nối hộp khi bật máy và nối lại khi mất kết nối. Hộp tắt hoặc ra xa thì app thử nối lại thưa dần để đỡ tốn pin.",
+        "Nút nổi, báo đèn khi sắp rẽ và cảnh báo quá tốc độ cần app chạy nền; bật các tính năng này thì app giữ chạy nền cả trên điện thoại.",
+        "Buộc dừng ứng dụng trong Thông tin ứng dụng sẽ tắt hẳn app và hiệu ứng. Android không cho app tự chạy lại; hãy mở lại app. Vuốt app khỏi danh sách gần đây thì thường không tắt dịch vụ nền, nhưng một số màn hình xe tự tắt."
     )
 )
 
