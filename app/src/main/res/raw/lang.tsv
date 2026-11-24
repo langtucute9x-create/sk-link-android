@@ -798,3 +798,8 @@ Hộp chỉ có 2 màu chào mừng: chiều thuận và chiều ngược, chưa
 Đặt đỏ - xanh và chọn Tùy chỉnh	Set red-blue and select Custom					
 Kiểm tra	Diagnostics					
 Chụp trạng thái hộp	Capture box state					
+Đang chờ hộp trả lời…	Waiting for the box to reply…					
+Mã điều khiển	Control code					
+Mã CAN	CAN code					
+Phiên bản app	App version					
+Hộp không trả lời sau 3 giây. Có thể hộp này không hỗ trợ lệnh chẩn đoán, hoặc kết nối đang yếu. Thử đọc lại.	The box did not reply within 3 seconds. It may not support the diagnostic command, or the connection is weak. Try again.					

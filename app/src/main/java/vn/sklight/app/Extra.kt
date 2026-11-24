@@ -568,23 +568,39 @@ fun CarFuncPage() {
 @Composable
 fun DiagPage() {
     val ctx = LocalContext.current
+    var busy by remember { mutableStateOf(false) }
+    var asked by remember { mutableIntStateOf(0) }
+    fun read() {
+        if (!S.connected.value) { Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")); return }
+        busy = true; asked++; X.readDiag()
+    }
+    LaunchedEffect(Unit) { if (S.connected.value) read() }      // mở trang là tự đọc
+    LaunchedEffect(asked) { if (asked > 0) { delay(3000); busy = false } }
     BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.Info, "Thông tin chẩn đoán", 16)
         Spacer(Modifier.height(6.dp))
         Hint("Chỉ đọc. Thông tin do hộp gửi về, sao chép gửi cho kỹ thuật khi cần.", 12)
         Spacer(Modifier.height(10.dp))
+        Kv("Kết nối", if (S.connected.value) (S.devName.value.ifEmpty { "Đã kết nối" }) else "Chưa kết nối")
+        if (X.rfModel.isNotEmpty()) Kv("Mã điều khiển", X.rfModel)
+        if (X.canModel.isNotEmpty()) Kv("Mã CAN", X.canModel)
+        Kv("Phiên bản app", S.VER)
+        Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            FillBtn("Đọc dữ liệu", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) { X.readDiag() }
+            FillBtn(if (busy) "Đang đọc…" else "Đọc dữ liệu", Icons.Filled.Refresh, Pink, Modifier.weight(1f)) { read() }
             FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.weight(1f)) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("diag", (X.diag + listOf("--- khung thô ---") + X.diagRaw).joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("diag", (listOf("SK Light ${S.VER} · ${S.devName.value}") + X.diag + listOf("--- khung thô ---") + X.diagRaw).joinToString("\n")))
                 Notice.show(ctx, L.tr("Đã sao chép"))
             }
         }
         Spacer(Modifier.height(10.dp))
-        if (X.diag.isEmpty()) T(if (X.diagRaw.isEmpty()) "Chưa có dữ liệu." else "Đã nhận ${X.diagRaw.size} khung nhưng chưa đọc được chữ. Bấm Sao chép để gửi.", 13, color = SubTxt)
-        else for (l in X.diag) T(l, 12, color = Txt)
+        if (X.diag.isNotEmpty()) for (l in X.diag) T(l, 12, color = Txt)
+        else if (X.diagRaw.isNotEmpty()) T("Đã nhận ${X.diagRaw.size} khung nhưng chưa đọc được chữ. Bấm Sao chép để gửi.", 13, color = SubTxt)
+        else if (busy) T("Đang chờ hộp trả lời…", 13, color = SubTxt)
+        else if (asked > 0) T("Hộp không trả lời sau 3 giây. Có thể hộp này không hỗ trợ lệnh chẩn đoán, hoặc kết nối đang yếu. Thử đọc lại.", 13, color = SubTxt)
+        else T("Chưa có dữ liệu.", 13, color = SubTxt)
     }
 }
 
