@@ -149,6 +149,7 @@ fun Root() {
     val gated = !S.connected.value || !Act.ok.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
     val unplugged = !S.connected.value
     LaunchedEffect(S.subPage.intValue) { if (S.subPage.intValue == 13 && tab < 3) tab = 3 }
+    LaunchedEffect(gated) { if (gated && S.dev.value) S.dev.value = false }   // chưa nối hộp / chưa kích hoạt thì tắt chế độ nghiên cứu
     LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13)) S.subPage.intValue = 0 }
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {

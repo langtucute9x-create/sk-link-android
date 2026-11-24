@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.47"
+    const val VER = "1.4.48"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -171,7 +171,7 @@ object S {
         speedWarn.value = sp.getBoolean("speedWarn", false)
         speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
         screenAuto.value = sp.getBoolean("screenAuto2", true)      // mặc định TỰ ĐỌC app dẫn đường không có thông báo (Gofa); khóa mới từ 1.0.0
-        dev.value = sp.getBoolean("dev", false)
+        dev.value = false                                   // chế độ nghiên cứu không lưu qua lần mở sau
         (sp.getString("bri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) bri[i] = v.coerceIn(0, 100) }
         on.value = sp.getBoolean("on", true)
         dayBri = (sp.getString("dayBri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { if (it.size == 3) it.toIntArray() else null }
@@ -216,7 +216,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto2", screenAuto.value).putBoolean("dev", dev.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
