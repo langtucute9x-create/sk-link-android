@@ -65,18 +65,24 @@ object Seqs {
     }
 }
 
-/** Thanh chọn màu: trắng ở đầu, sau đó đủ các màu cầu vồng. */
-private const val WHITE_PART = 0.08f
-private fun barColor(f: Float): Int =
-    if (f < WHITE_PART) 0xFFFFFF else android.graphics.Color.HSVToColor(floatArrayOf(((f - WHITE_PART) / (1f - WHITE_PART) * 359f).coerceIn(0f, 359f), 1f, 1f)) and 0xFFFFFF
+/** Thanh chọn màu: một mẩu trắng ở đầu, đủ các màu cầu vồng ở giữa, một mẩu đen ở cuối (nhịp nghỉ). */
+private const val WHITE_PART = 0.03f
+private const val BLACK_PART = 0.07f
+private const val HUE_END = 1f - BLACK_PART
+private fun barColor(f: Float): Int = when {
+    f < WHITE_PART -> 0xFFFFFF
+    f >= HUE_END -> 0
+    else -> android.graphics.Color.HSVToColor(floatArrayOf(((f - WHITE_PART) / (HUE_END - WHITE_PART) * 359f).coerceIn(0f, 359f), 1f, 1f)) and 0xFFFFFF
+}
 private fun barPos(c: Int): Float {
-    if (c == 0) return -1f
+    if (c == 0) return 1f - BLACK_PART / 2
     val h = FloatArray(3); android.graphics.Color.colorToHSV(0xFF000000.toInt() or c, h)
-    return if (h[1] < 0.15f) WHITE_PART / 2 else WHITE_PART + (1f - WHITE_PART) * h[0] / 359f
+    return if (h[1] < 0.15f) WHITE_PART / 2 else WHITE_PART + (HUE_END - WHITE_PART) * h[0] / 359f
 }
 private val BAR = Brush.horizontalGradient(
-    0f to Color.White, (WHITE_PART - 0.005f) to Color.White,
-    *(0..6).map { k -> (WHITE_PART + (1f - WHITE_PART) * k / 6f) to rgbColor(android.graphics.Color.HSVToColor(floatArrayOf((k * 60f).coerceAtMost(359f), 1f, 1f)) and 0xFFFFFF) }.toTypedArray()
+    0f to Color.White, (WHITE_PART - 0.002f) to Color.White,
+    *(0..6).map { k -> (WHITE_PART + (HUE_END - WHITE_PART) * k / 6f) to rgbColor(android.graphics.Color.HSVToColor(floatArrayOf((k * 60f).coerceAtMost(359f), 1f, 1f)) and 0xFFFFFF) }.toTypedArray(),
+    (HUE_END + 0.002f) to Color.Black, 1f to Color.Black
 )
 
 /** Thẻ "Chế độ của tôi" ở trang Đèn: chạy, tạo, sửa, xóa chuỗi màu tự đặt. */
@@ -195,12 +201,6 @@ fun MyModesCard(cols: Int) {
                     Modifier.offset(x = maxWidth * bp - 4.dp).width(8.dp).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(Color.White).border(2.dp, Color(0xFF14161C), RoundedCornerShape(4.dp))
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            Box(
-                Modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(Theme.r(8))).background(Color.Black).border(if (cur == 0) 3.dp else 1.dp, if (cur == 0) Pink else Bd, RoundedCornerShape(Theme.r(8)))
-                    .clickable { if (sel in cs.indices) cs[sel] = 0 },
-                contentAlignment = Alignment.Center
-            ) { T("Đen (tắt) để tạo điểm ngắt", 12, FontWeight.Bold, Color.White) }
             Spacer(Modifier.height(12.dp))
             T("Kiểu chuyển màu", 13, FontWeight.Bold, SubTxt)
             Spacer(Modifier.height(8.dp))

@@ -97,7 +97,7 @@ object Auto {
                 val i0 = ((k % n) + n) % n
                 return if (q.smooth) mix(q.colors[i0], q.colors[(i0 + 1) % n], (pos - k).toFloat()) else q.colors[i0]
             }
-            val pos = t / d
+            val pos = (el * (0.15 + S.speed.intValue * 0.12)) / d      // tốc độ 1 chạy chậm hẳn, 10 nhanh
             a = at(pos)
             b = if (q.split) at(pos + n / 2.0) else a
             uni = !q.split
