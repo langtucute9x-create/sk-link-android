@@ -796,3 +796,5 @@ Hộp tự chạy, màu cố định theo hộp, chỉ chọn được chế đ�
 Thử màu chào mừng	Welcome colour test					
 Hộp chỉ có 2 màu chào mừng: chiều thuận và chiều ngược, chưa có màu riêng cho từng cửa. Bấm nút dưới: app đặt chiều thuận đỏ, chiều ngược xanh dương, chọn Tùy chỉnh. Rồi mở từng cửa xe và ghi lại cửa nào ra màu nào, hộp phụ có đổi màu theo từng cửa không.	The box only has 2 welcome colours: forward and reverse, no per-door colours. Press below: the app sets forward red, reverse blue, and selects Custom. Then open each door and note which colour each door shows.					
 Đặt đỏ - xanh và chọn Tùy chỉnh	Set red-blue and select Custom					
+Kiểm tra	Diagnostics					
+Chụp trạng thái hộp	Capture box state					

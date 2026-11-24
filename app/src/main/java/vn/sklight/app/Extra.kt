@@ -267,6 +267,37 @@ private fun need(ctx: Context) {
 }
 
 @Composable
+fun SnapPage() {
+    val ctx = LocalContext.current
+    X.ver.intValue
+    BackRow(0, "Cài đặt")
+    Card {
+        T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            FillBtn(if (X.snapBusy) "Đang chụp…" else "Chụp lần ${X.snaps.size + 1}", Icons.Filled.Refresh, Pink, Modifier.weight(1.4f)) {
+                if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else X.snapshot()
+            }
+            OutlineBtn("Xóa hết", Modifier.weight(1f)) { X.clearSnaps() }
+        }
+        Spacer(Modifier.height(8.dp))
+        if (X.snaps.isEmpty()) T("Chưa chụp lần nào.", 12, color = SubTxt)
+        X.snaps.forEachIndexed { i, sn ->
+            val diff = X.snapDiff(i)
+            T("Lần ${i + 1} lúc ${sn.substringBefore("\n")}" + (if (i == 0) "" else if (diff.isEmpty()) ": giống lần ${i}" else ": khác lần ${i} ở ${diff.size} khối"), 13, FontWeight.Bold)
+            for (l in diff) T(l, 11, color = SubTxt)
+        }
+        Spacer(Modifier.height(8.dp))
+        OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
+            val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("snap", X.snapText()))
+            Notice.show(ctx, L.tr("Đã sao chép"))
+        }
+    }
+}
+
+@Composable
 fun BackRow(to: Int, label: String) {
     Row(
         Modifier.height(44.dp).block(false, RoundedCornerShape(Theme.r(8)), CardBg).clickable { S.subPage.intValue = to }.padding(start = 10.dp, end = 14.dp),
@@ -292,6 +323,7 @@ fun ExtraPage(sp: Int) {
         12 -> ManualPage()
         13 -> ActivationPage(false)
         14 -> SerialPage()
+        15 -> SnapPage()
         else -> DiagPage()
     }
 }
@@ -432,8 +464,6 @@ fun FactoryPage() {
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "") { S.subPage.intValue = 5 }
-        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
-        Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
     }
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
@@ -441,30 +471,6 @@ fun FactoryPage() {
             if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else reset = 1
         }
         if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
-    }
-    Card {
-        T("Chụp trạng thái hộp (kiểm tra)", 15, FontWeight.Bold)
-        Spacer(Modifier.height(4.dp))
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            FillBtn(if (X.snapBusy) "Đang chụp…" else "Chụp lần ${X.snaps.size + 1}", Icons.Filled.Refresh, Pink, Modifier.weight(1.4f)) {
-                if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn.")) else X.snapshot()
-            }
-            OutlineBtn("Xóa hết", Modifier.weight(1f)) { X.clearSnaps() }
-        }
-        Spacer(Modifier.height(8.dp))
-        if (X.snaps.isEmpty()) T("Chưa chụp lần nào.", 12, color = SubTxt)
-        X.snaps.forEachIndexed { i, sn ->
-            val diff = X.snapDiff(i)
-            T("Lần ${i + 1} lúc ${sn.substringBefore("\n")}" + (if (i == 0) "" else if (diff.isEmpty()) ": giống lần ${i}" else ": khác lần ${i} ở ${diff.size} khối"), 13, FontWeight.Bold)
-            for (l in diff) T(l, 11, color = SubTxt)
-        }
-        Spacer(Modifier.height(8.dp))
-        OutlineBtn("Sao chép để gửi", Modifier.fillMaxWidth()) {
-            val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("snap", X.snapText()))
-            Notice.show(ctx, L.tr("Đã sao chép"))
-        }
     }
     Card {
         T("Chưa có trong app này", 14, FontWeight.Bold)
@@ -562,7 +568,7 @@ fun CarFuncPage() {
 @Composable
 fun DiagPage() {
     val ctx = LocalContext.current
-    BackRow(8, "Cài đặt nhà máy")
+    BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.Info, "Thông tin chẩn đoán", 16)
         Spacer(Modifier.height(6.dp))

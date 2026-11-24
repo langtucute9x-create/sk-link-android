@@ -64,7 +64,7 @@ fun SerialPage() {
     var cBusy by remember { mutableStateOf(false) }
     var cLines by remember { mutableStateOf<List<String>>(emptyList()) }
     var aLines by remember { mutableStateOf<List<String>>(emptyList()) }
-    BackRow(8, "Cài đặt nhà máy")
+    BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.Fingerprint, "Tìm số seri hộp", 16)
         Spacer(Modifier.height(6.dp))

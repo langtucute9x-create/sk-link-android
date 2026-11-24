@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.35"
+    const val VER = "1.4.36"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -90,7 +90,7 @@ object S {
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
     val appSpeed = mutableIntStateOf(-1)                  // tốc độ xe đọc từ app dẫn đường, -1 = chưa biết
-    val dev = mutableStateOf(false)                       // chế độ kỹ thuật: hiện mục đang thử (Chức năng gốc xe) và công cụ kiểm tra
+    val dev = mutableStateOf(true)                       // chế độ kỹ thuật: hiện mục đang thử (Chức năng gốc xe) và công cụ kiểm tra
     val screenAuto = mutableStateOf(true)                 // tự đọc màn hình app bản đồ
     val signThumb = mutableStateOf<android.graphics.Bitmap?>(null)   // ảnh cắt biển tốc độ app đang đọc (để kiểm tra)
     val ocrNote = mutableStateOf("")                      // kết quả đọc biển tốc độ gần nhất (để kiểm tra)
@@ -169,7 +169,7 @@ object S {
         speedWarn.value = sp.getBoolean("speedWarn", false)
         speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
         screenAuto.value = sp.getBoolean("screenAuto2", true)      // mặc định TỰ ĐỌC app dẫn đường không có thông báo (Gofa); khóa mới từ 1.0.0
-        dev.value = sp.getBoolean("dev", false)
+        dev.value = true
         (sp.getString("bri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) bri[i] = v.coerceIn(0, 100) }
         on.value = sp.getBoolean("on", true)
         dayBri = (sp.getString("dayBri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { if (it.size == 3) it.toIntArray() else null }

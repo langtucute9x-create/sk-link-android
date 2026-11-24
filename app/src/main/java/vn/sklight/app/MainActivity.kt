@@ -1041,16 +1041,16 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }
     }
     Card {
+        SetTitle(Icons.Filled.Science, "Kiểm tra")
+        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
+        Feature(Icons.Filled.PhotoCamera, "Chụp trạng thái hộp", "") { S.subPage.intValue = 15 }
+        Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
+        Feature(Icons.Filled.Science, "Thử chế độ tự tạo", "") { S.subPage.intValue = 3 }
+    }
+    Card {
         Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
     }
-    // chạm 7 lần liên tiếp vào dòng phiên bản để bật / tắt chế độ kỹ thuật (hiện các mục đang thử và công cụ kiểm tra)
-    var taps by remember { mutableIntStateOf(0) }
-    T(if (S.dev.value) "SK Light ${S.VER} · chế độ kỹ thuật" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
-        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
-    ) {
-        taps++
-        if (taps >= 7) { taps = 0; S.dev.value = !S.dev.value; S.saveSettings(); Notice.show(ctx, L.tr(if (S.dev.value) "Đã bật chế độ kỹ thuật." else "Đã tắt chế độ kỹ thuật.")) }
-    }.padding(vertical = 8.dp))
+    T("SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
 }
 
 @Composable
