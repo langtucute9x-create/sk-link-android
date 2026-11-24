@@ -159,6 +159,8 @@ fun MyModesCard(cols: Int) {
                 }
             }
         }
+        Spacer(Modifier.height(8.dp))
+        Hint("Chế độ của tôi do app điều khiển: chạy khi app còn mở và đang kết nối.", 11)
         if (edit >= -1) {
             Divider(14.dp, 12.dp)
             T(if (edit < 0) "Tạo chế độ mới" else "Sửa chế độ", 15, FontWeight.Bold)

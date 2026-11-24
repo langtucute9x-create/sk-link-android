@@ -450,6 +450,8 @@ fun PinnedCard(cols: Int) {
     }
 }
 
+const val APP_RUN_NOTE = "Các chế độ do app điều khiển (từ Cầu vồng mượt đến Thư giãn): chạy khi app còn mở và đang kết nối."
+
 @Composable
 fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
     Card {
@@ -457,6 +459,7 @@ fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
         Spacer(Modifier.height(14.dp))
         Grid(g.items, cols, 9.dp, 11.dp) { e, m -> EffectTile(e, m) }
         if (hint) { Spacer(Modifier.height(8.dp)); Hint("Mẹo: chạm giữ một chế độ để ghim lên đầu trang.", 11) }
+        if (g.items.any { it.id >= 100 }) { Spacer(Modifier.height(8.dp)); Hint(APP_RUN_NOTE, 11) }
         val cur = g.items.firstOrNull { it.id == S.mode.intValue && it.subs.isNotEmpty() }
         if (cur != null) {
             Spacer(Modifier.height(13.dp))
