@@ -813,3 +813,17 @@ Chạm một hộp phụ: đèn của hộp đó nháy, thợ nhìn xem hộp g�
 Chưa chọn hộp nào.	No box selected.					
 Đã bật chế độ nghiên cứu.	Research mode on.					
 Đã tắt chế độ nghiên cứu.	Research mode off.					
+Nâng cấp phần mềm	Firmware upgrade					
+Loại nâng cấp	Upgrade type					
+Nâng cấp CAN	CAN upgrade					
+Nâng cấp RF	RF upgrade					
+Tệp nâng cấp	Upgrade file					
+Chọn tệp	Choose file					
+Đã chọn	Selected					
+Bắt đầu nâng cấp	Start upgrade					
+Nhật ký nâng cấp	Upgrade log					
+Thu gọn	Collapse					
+Mở rộng	Expand					
+Chưa có nhật ký	No log yet					
+Chưa có lệnh nạp phần mềm vào hộp, nên chưa nâng cấp được.	There is no command to load firmware into the box yet, so upgrading is not possible.					
+Chưa có lệnh nạp phần mềm vào hộp: nạp lỗi có thể làm hỏng hộp. Trang này dựng sẵn để chờ tài liệu của nhà sản xuất.	There is no command to load firmware into the box yet: a failed load can damage it. This page is prebuilt to wait for the manufacturer's documentation.					

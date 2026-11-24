@@ -319,6 +319,65 @@ fun BoxTestPage() {
     }
 }
 
+/** Trang Nâng cấp phần mềm dựng sẵn theo app cũ. CHƯA có lệnh ghi vào hộp: nút Bắt đầu luôn tắt. */
+@Composable
+fun UpgradePage() {
+    val ctx = LocalContext.current
+    var kind by remember { mutableIntStateOf(0) }                 // 0 CAN, 1 RF
+    var file by remember { mutableStateOf("") }
+    var logOpen by remember { mutableStateOf(true) }
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri: android.net.Uri? ->
+        if (uri != null) {
+            file = try {
+                ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                    val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (c.moveToFirst() && i >= 0) c.getString(i) else uri.lastPathSegment ?: ""
+                } ?: (uri.lastPathSegment ?: "")
+            } catch (e: Exception) { uri.lastPathSegment ?: "" }
+        }
+    }
+    BackRow(8, "Cài đặt nhà máy")
+    Card {
+        GroupTitle(Icons.Filled.SystemUpdate, "Nâng cấp phần mềm", 16)
+        Spacer(Modifier.height(10.dp))
+        T("Loại nâng cấp", 13, FontWeight.Bold, SubTxt)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Chip("Nâng cấp CAN", kind == 0, Modifier.weight(1f), 44.dp, 13) { kind = 0 }
+            Chip("Nâng cấp RF", kind == 1, Modifier.weight(1f), 44.dp, 13) { kind = 1 }
+        }
+    }
+    Card {
+        GroupTitle(Icons.Filled.Info, "Thông tin thiết bị", 16)
+        Spacer(Modifier.height(6.dp))
+        Kv("Tên thiết bị", S.devName.value.ifEmpty { "—" })
+        Kv("Trạng thái kết nối", if (S.connected.value) "Đã kết nối" else "Chưa kết nối")
+    }
+    Card {
+        GroupTitle(Icons.Filled.Folder, "Tệp nâng cấp", 16)
+        Spacer(Modifier.height(10.dp))
+        FillBtn("Chọn tệp", Icons.Filled.Folder, Pink, Modifier.fillMaxWidth()) { pick.launch(arrayOf("*/*")) }
+        if (file.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Kv("Đã chọn", file) }
+    }
+    Card {
+        Chip("Bắt đầu nâng cấp", false, Modifier.fillMaxWidth(), 48.dp, 14) { Notice.show(ctx, L.tr("Chưa có lệnh nạp phần mềm vào hộp, nên chưa nâng cấp được.")) }
+        Spacer(Modifier.height(6.dp))
+        Hint("Chưa có lệnh nạp phần mềm vào hộp: nạp lỗi có thể làm hỏng hộp. Trang này dựng sẵn để chờ tài liệu của nhà sản xuất.", 11)
+    }
+    Card {
+        Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).clickable { logOpen = !logOpen }, verticalAlignment = Alignment.CenterVertically) {
+            T("Nhật ký nâng cấp", 15, FontWeight.Bold, modifier = Modifier.weight(1f))
+            T(if (logOpen) "Thu gọn" else "Mở rộng", 13, FontWeight.SemiBold, Pink)
+        }
+        if (logOpen) {
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(Theme.r(8))).background(Color(0xFF202020)).padding(12.dp)) {
+                T("Chưa có nhật ký", 13, color = Color(0xFF6CC070))
+            }
+        }
+    }
+}
+
 @Composable
 fun SnapPage() {
     val ctx = LocalContext.current
@@ -378,6 +437,7 @@ fun ExtraPage(sp: Int) {
         14 -> SerialPage()
         15 -> SnapPage()
         16 -> BoxTestPage()
+        17 -> UpgradePage()
         else -> DiagPage()
     }
 }
@@ -528,9 +588,7 @@ fun FactoryPage() {
         if (X.resetState != 0) T(if (X.resetState == 2) "Hộp báo đã khôi phục xong." else "Đã gửi lệnh khôi phục, đang chờ hộp trả lời…", 12, FontWeight.SemiBold, SubTxt)
     }
     Card {
-        T("Chưa có trong app này", 14, FontWeight.Bold)
-        Spacer(Modifier.height(4.dp))
-        Hint("Nâng cấp phần mềm hộp cần tệp phần mềm của nhà sản xuất và dễ làm hỏng hộp nếu nạp lỗi, nên chưa làm. Cần thì dùng app gốc của hãng.", 12)
+        Feature(Icons.Filled.SystemUpdate, "Nâng cấp phần mềm", "") { S.subPage.intValue = 17 }
     }
     if (reset == 1) AlertDialog(
         onDismissRequest = { reset = 0 },

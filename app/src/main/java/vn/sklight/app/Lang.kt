@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 object L {
     val cur = mutableIntStateOf(0)                       // 0 = tiếng Việt
     val NAMES = listOf("Tiếng Việt", "English", "日本語", "한국어", "ไทย", "ខ្មែរ", "ລາວ")
+    val FLAGS = listOf("\uD83C\uDDFB\uD83C\uDDF3", "\uD83C\uDDFA\uD83C\uDDF8", "\uD83C\uDDEF\uD83C\uDDF5", "\uD83C\uDDF0\uD83C\uDDF7", "\uD83C\uDDF9\uD83C\uDDED", "\uD83C\uDDF0\uD83C\uDDED", "\uD83C\uDDF1\uD83C\uDDE6")
     private var maps: List<HashMap<String, String>> = emptyList()
     private var tpl: List<Pair<Regex, String>> = emptyList()
     private val cache = HashMap<String, String>()
@@ -119,6 +120,8 @@ fun LanguagePage() {
                     if (on) Box(Modifier.size(8.dp).clip(CircleShape).background(Pink))
                 }
                 Spacer(Modifier.width(12.dp))
+                T(L.FLAGS[i], 22)
+                Spacer(Modifier.width(10.dp))
                 T(name, 15, if (on) FontWeight.Bold else FontWeight.Medium)
             }
         }
