@@ -518,6 +518,7 @@ fun FactoryPage() {
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
         Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "") { S.subPage.intValue = 5 }
+        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
     }
     Card {
         T("Đặt lại", 15, FontWeight.Bold)
@@ -630,7 +631,7 @@ fun DiagPage() {
     }
     LaunchedEffect(Unit) { if (S.connected.value) read() }      // mở trang là tự đọc
     LaunchedEffect(asked) { if (asked > 0) { delay(3000); busy = false } }
-    BackRow(0, "Cài đặt")
+    BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.Info, "Thông tin chẩn đoán", 16)
         Spacer(Modifier.height(6.dp))

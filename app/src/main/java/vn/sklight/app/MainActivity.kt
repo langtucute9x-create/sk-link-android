@@ -934,7 +934,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         }
     }
 
-    // ---- phần kiểm tra cho kỹ thuật: chỉ có ở chế độ kỹ thuật (chạm 7 lần vào dòng phiên bản ở trang Cài đặt) ----
+    // ---- phần kiểm tra cho kỹ thuật: chỉ có ở chế độ kỹ thuật (chạm 7 lần vào dòng phiên bản ở trang Cài đặt, chế độ nghiên cứu) ----
     if (S.dev.value) Card {
         GroupTitle(Icons.Filled.Navigation, "Đọc app dẫn đường", 16)
         Spacer(Modifier.height(8.dp))
@@ -1040,9 +1040,8 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }
     }
-    Card {
+    if (S.dev.value) Card {
         SetTitle(Icons.Filled.Science, "Kiểm tra")
-        Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
         Feature(Icons.Filled.PhotoCamera, "Chụp trạng thái hộp", "") { S.subPage.intValue = 15 }
         Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
         Feature(Icons.Filled.BluetoothSearching, "Thử hộp phụ", "") { S.subPage.intValue = 16 }
@@ -1051,7 +1050,14 @@ fun SettingsFeatures() {
     Card {
         Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
     }
-    T("SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+    // chạm 7 lần liên tiếp vào dòng phiên bản để bật / tắt chế độ nghiên cứu (hiện thẻ Kiểm tra và công cụ nghiên cứu)
+    var taps by remember { mutableIntStateOf(0) }
+    T(if (S.dev.value) "SK Light ${S.VER} · chế độ nghiên cứu" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
+        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
+    ) {
+        taps++
+        if (taps >= 7) { taps = 0; S.dev.value = !S.dev.value; S.saveSettings(); Notice.show(ctx, L.tr(if (S.dev.value) "Đã bật chế độ nghiên cứu." else "Đã tắt chế độ nghiên cứu.")) }
+    }.padding(vertical = 8.dp))
 }
 
 @Composable
