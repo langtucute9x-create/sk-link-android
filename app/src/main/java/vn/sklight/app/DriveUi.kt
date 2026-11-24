@@ -105,33 +105,52 @@ fun SceneRow() {
     if (manage) {
         var name by remember { mutableStateOf("") }
         val full = all.size >= Scenes.MAX
-        AlertDialog(
-            onDismissRequest = { manage = false },
-            confirmButton = { TextButton(onClick = { manage = false }) { T("Xong", 14, FontWeight.Bold, Pink) } },
-            title = { T("Bối cảnh yêu thích", 17, FontWeight.Bold) },
-            text = {
-                Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedTextField(name, { name = it.take(18) }, singleLine = true, placeholder = { T("Tên bối cảnh, ví dụ: Đi làm", 14, color = Grey) })
-                    Box(
-                        Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(if (full) Grey else Pink).clickable { if (!full && Scenes.saveCurrent(name)) name = "" },
-                        contentAlignment = Alignment.Center
-                    ) { T(if (full) "Đã đủ ${Scenes.MAX} bối cảnh, xóa bớt để thêm" else "Lưu cài đặt đang dùng", 13, FontWeight.Bold, Color.White) }
-                    T("Đang có", 13, FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+        androidx.compose.ui.window.Dialog(onDismissRequest = { manage = false }) {
+            val sh = RoundedCornerShape(26.dp)
+            Column(Modifier.fillMaxWidth().clip(sh).background(CardBg).border(1.dp, Bd, sh).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    T("Bối cảnh yêu thích", 19, FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                    Box(Modifier.size(40.dp).clip(CircleShape).background(ChipBg).clickable { manage = false }, contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Close, "Đóng", tint = SubTxt, modifier = Modifier.size(18.dp))
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                Row(Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(18.dp)).background(ChipBg).border(1.dp, Bd, RoundedCornerShape(18.dp)).padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.foundation.text.BasicTextField(
+                        name, { name = it.take(18) }, singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Txt, fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(Pink),
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { inner -> Box(contentAlignment = Alignment.CenterStart) { if (name.isEmpty()) T("Tên bối cảnh, ví dụ: Đi làm", 14, color = Grey); inner() } }
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(18.dp)).background(if (full) Grey else Pink).clickable { if (!full && Scenes.saveCurrent(name)) name = "" },
+                    contentAlignment = Alignment.Center
+                ) { T(if (full) "Đã đủ ${Scenes.MAX} bối cảnh, xóa bớt để thêm" else "Lưu cài đặt đang dùng", 14, FontWeight.Bold, Color.White) }
+                Spacer(Modifier.height(18.dp))
+                T("Đang có", 12, FontWeight.Bold, SubTxt)
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (all.isEmpty()) T("Chưa có bối cảnh nào.", 13, color = Grey)
                     all.forEachIndexed { i, sc ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(16.dp).clip(CircleShape).background(sceneBrush(sc)).border(1.dp, Color(0x26172032), CircleShape))
-                            Spacer(Modifier.width(10.dp))
-                            T(sc.name, 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ChipBg).padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(22.dp).clip(CircleShape).background(sceneBrush(sc)).border(1.dp, Color(0x26FFFFFF), CircleShape))
+                            Spacer(Modifier.width(12.dp))
+                            T(sc.name, 15, FontWeight.SemiBold, modifier = Modifier.weight(1f))
                             Box(Modifier.size(40.dp).clip(CircleShape).clickable { Scenes.delete(i) }, contentAlignment = Alignment.Center) {
-                                Icon(Icons.Filled.Close, "Xóa bối cảnh ${sc.name}", tint = Grey, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Filled.Close, "Xóa bối cảnh ${sc.name}", tint = Grey, modifier = Modifier.size(18.dp))
                             }
                         }
                     }
-                    OutlineBtn("Khôi phục 5 bối cảnh có sẵn", Modifier.fillMaxWidth()) { Scenes.restore() }
+                }
+                Spacer(Modifier.height(12.dp))
+                Box(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(16.dp)).clickable { Scenes.restore() }, contentAlignment = Alignment.Center) {
+                    T("Khôi phục 5 bối cảnh có sẵn", 13, FontWeight.Bold, Pink)
                 }
             }
-        )
+        }
     }
     val cur = all.getOrNull(edit)
     if (cur != null) {
