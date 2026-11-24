@@ -751,3 +751,12 @@ Lưu thông tin bảo hành	Save warranty details
 Đã lưu thông tin bảo hành.	Warranty details saved.					
 Hộp này chưa gắn mã kích hoạt.	This box has no activation code linked.					
 Đã gắn mã vào hộp. Bảo hành đến 	Code linked to the box. Warranty until 					
+Hãng xe	Car brand	メーカー	제조사	ยี่ห้อรถ	ម៉ាកយានយន្ត	ຍີ່ຫໍ້ລົດ
+Chọn hãng xe	Select car brand	メーカーを選択	제조사 선택	เลือกยี่ห้อรถ	ជ្រើសរើសម៉ាក	ເລືອກຍີ່ຫໍ້ລົດ
+Chọn dòng xe	Select car model	車種を選択	차종 선택	เลือกรุ่นรถ	ជ្រើសរើសម៉ូដែល	ເລືອກລຸ້ນລົດ
+Chọn đời xe	Select model year	年式を選択	연식 선택	เลือกปีรถ	ជ្រើសរើសឆ្នាំផលិត	ເລືອກປີລົດ
+Gõ để tìm, hoặc gõ tên xe khác	Type to search, or type another name	入力して検索、または別の名前を入力	입력해서 검색하거나 다른 이름 입력	พิมพ์เพื่อค้นหา หรือพิมพ์ชื่ออื่น	វាយដើម្បីស្វែងរក ឬវាយឈ្មោះផ្សេង	ພິມເພື່ອຄົ້ນຫາ ຫຼືພິມຊື່ອື່ນ
+Gõ để tìm	Type to search	入力して検索	입력해서 검색	พิมพ์เพื่อค้นหา	វាយដើម្បីស្វែងរក	ພິມເພື່ອຄົ້ນຫາ
+Dùng	Use	使う	사용	ใช้	ប្រើ	ໃຊ້
+Chưa chọn hãng xe và dòng xe.	Select the car brand and model.	メーカーと車種を選択してください。	제조사와 차종을 선택하세요.	ยังไม่ได้เลือกยี่ห้อและรุ่นรถ	សូមជ្រើសរើសម៉ាក និងម៉ូដែលរថយន្ត។	ຍັງບໍ່ໄດ້ເລືອກຍີ່ຫໍ້ ແລະ ລຸ້ນລົດ.
+Chưa chọn đời xe.	Select the model year.	年式を選択してください。	연식을 선택하세요.	ยังไม่ได้เลือกปีรถ	សូមជ្រើសរើសឆ្នាំផលិត។	ຍັງບໍ່ໄດ້ເລືອກປີລົດ.

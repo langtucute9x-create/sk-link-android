@@ -6,6 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -179,6 +185,83 @@ private fun Field(value: String, onChange: (String) -> Unit, label: String, icon
     )
 }
 
+/** Ô bấm để mở danh sách chọn (không gõ trực tiếp). */
+@Composable
+private fun PickField(value: String, label: String, icon: ImageVector, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val sh = RoundedCornerShape(Theme.r(12))
+    Box(modifier.alpha(if (enabled) 1f else 0.5f)) {
+        OutlinedTextField(
+            value, {}, readOnly = true, singleLine = true, modifier = Modifier.fillMaxWidth(),
+            label = { T(label, 12, color = Grey) },
+            leadingIcon = { Icon(icon, null, tint = Pink, modifier = Modifier.size(20.dp)) },
+            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null, tint = Grey) },
+            shape = sh,
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Pink, unfocusedBorderColor = Bd, focusedContainerColor = CardBg, unfocusedContainerColor = ChipBg, cursorColor = Pink)
+        )
+        Box(Modifier.matchParentSize().clip(sh).clickable(enabled, onClick = onClick))
+    }
+}
+
+/** Hộp chọn có ô tìm. [allowCustom]: cho dùng đúng chữ đã gõ khi danh sách không có (xe lạ, đời xe cũ). */
+@Composable
+private fun PickDialog(title: String, options: List<String>, allowCustom: Boolean, validCustom: (String) -> Boolean, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+    var q by remember { mutableStateOf("") }
+    val s = q.trim()
+    val shown = remember(q, options) { if (s.isEmpty()) options else options.filter { it.contains(s, ignoreCase = true) } }
+    Dialog(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().heightIn(max = 480.dp).clip(RoundedCornerShape(Theme.r(16))).background(CardBg).padding(14.dp)) {
+            T(title, 16, FontWeight.ExtraBold)
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                q, { q = it.take(40) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                placeholder = { T(if (allowCustom) "Gõ để tìm, hoặc gõ tên xe khác" else "Gõ để tìm", 13, color = Grey) },
+                leadingIcon = { Icon(Icons.Filled.Search, null, tint = Pink, modifier = Modifier.size(20.dp)) },
+                shape = RoundedCornerShape(Theme.r(12)),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Pink, unfocusedBorderColor = Bd, focusedContainerColor = CardBg, unfocusedContainerColor = ChipBg, cursorColor = Pink)
+            )
+            Spacer(Modifier.height(6.dp))
+            LazyColumn(Modifier.weight(1f, fill = false)) {
+                items(shown) { o ->
+                    Box(Modifier.fillMaxWidth().clickable { onPick(o) }.padding(horizontal = 6.dp, vertical = 12.dp)) { T(o, 15, FontWeight.SemiBold) }
+                }
+                if (allowCustom && s.isNotEmpty() && validCustom(s) && shown.none { it.equals(s, ignoreCase = true) }) {
+                    item {
+                        Box(Modifier.fillMaxWidth().clickable { onPick(s) }.padding(horizontal = 6.dp, vertical = 12.dp)) { T(L.tr("Dùng") + " \"$s\"", 15, FontWeight.ExtraBold, AccentText) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Chọn lần lượt Hãng xe → Dòng xe → Đời xe. [onModel] nhận "Hãng Dòng" (rỗng khi chưa chọn đủ), [onYear] nhận năm 4 số (rỗng khi chưa chọn). */
+@Composable
+private fun CarPicker(onModel: (String) -> Unit, onYear: (String) -> Unit) {
+    var brand by remember { mutableStateOf("") }
+    var series by remember { mutableStateOf("") }
+    var year by remember { mutableStateOf("") }
+    var open by remember { mutableIntStateOf(0) }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PickField(brand, "Hãng xe", Icons.Filled.DirectionsCar, true, Modifier.fillMaxWidth()) { open = 1 }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PickField(series, "Dòng xe", Icons.Filled.DirectionsCar, brand.isNotEmpty(), Modifier.weight(1.5f)) { open = 2 }
+            PickField(year, "Đời xe", Icons.Filled.CalendarMonth, series.isNotEmpty(), Modifier.weight(1f)) { open = 3 }
+        }
+    }
+    when (open) {
+        1 -> PickDialog("Chọn hãng xe", CarData.brands(), true, { it.length >= 2 }, { b ->
+            brand = b; series = ""; year = ""; open = 0; onModel(""); onYear("")
+        }, { open = 0 })
+        2 -> PickDialog("Chọn dòng xe", CarData.series(brand), true, { it.isNotEmpty() }, { sr ->
+            series = sr; year = ""; open = 0
+            onModel(if (sr.startsWith(brand, ignoreCase = true)) sr.take(60) else "$brand $sr".take(60)); onYear("")
+        }, { open = 0 })
+        3 -> PickDialog("Chọn đời xe", CarData.years(brand, series), true, { v -> v.length == 4 && v.all { it.isDigit() } && v.toInt() in 1950..2100 }, { y ->
+            year = y; open = 0; onYear(y)
+        }, { open = 0 })
+    }
+}
+
 /** Khai thông tin khách cho hộp đã gắn mã (Lệnh 434). Bắt buộc để có hồ sơ bảo hành, nhưng không khóa điều khiển: thợ có thể để khách điền sau. */
 @Composable
 private fun CustomerForm() {
@@ -193,8 +276,8 @@ private fun CustomerForm() {
     val save: () -> Unit = save@{
         if (phone.filter { it.isDigit() }.length < 10) { err = L.tr("Số điện thoại chưa đúng."); return@save }
         if (plate.filter { it.isLetterOrDigit() }.length < 4) { err = L.tr("Biển số xe chưa đúng."); return@save }
-        if (model.isBlank()) { err = L.tr("Chưa nhập dòng xe."); return@save }
-        if (year.length != 4) { err = L.tr("Đời xe là năm sản xuất, ví dụ 2024."); return@save }
+        if (model.isBlank()) { err = L.tr("Chưa chọn hãng xe và dòng xe."); return@save }
+        if (year.length != 4) { err = L.tr("Chưa chọn đời xe."); return@save }
         if (inst.isBlank()) { err = L.tr("Chưa nhập đơn vị lắp đặt."); return@save }
         err = ""; hot = false
         val cust = JSONObject().put("phone", phone).put("plate", plate.trim()).put("model", model.trim()).put("year", year).put("installer", inst.trim())
@@ -205,8 +288,8 @@ private fun CustomerForm() {
                 r == "not_activated" -> { err = L.tr("Hộp này chưa gắn mã kích hoạt."); hot = true }
                 r == "invalid_input:phone" -> err = L.tr("Số điện thoại chưa đúng.")
                 r == "invalid_input:plate" -> err = L.tr("Biển số xe chưa đúng.")
-                r == "invalid_input:model" -> err = L.tr("Chưa nhập dòng xe.")
-                r == "invalid_input:year" -> err = L.tr("Đời xe là năm sản xuất, ví dụ 2024.")
+                r == "invalid_input:model" -> err = L.tr("Chưa chọn hãng xe và dòng xe.")
+                r == "invalid_input:year" -> err = L.tr("Chưa chọn đời xe.")
                 r == "invalid_input:installer" -> err = L.tr("Chưa nhập đơn vị lắp đặt.")
                 r == "network" -> err = L.tr("Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.")
                 else -> { err = L.tr("Máy chủ đang bận. Hãy thử lại sau ít phút."); hot = true }
@@ -225,10 +308,7 @@ private fun CustomerForm() {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Field(phone, { v -> phone = v.filter { it.isDigit() || it == '+' }.take(14); err = "" }, "Số điện thoại khách", Icons.Filled.Phone, kb = KeyboardOptions(keyboardType = KeyboardType.Phone))
             Field(plate, { v -> plate = v.uppercase().take(20); err = "" }, "Biển số xe", Icons.Filled.Badge, hint = "30A-123.45", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Field(model, { model = it.take(60); err = "" }, "Dòng xe", Icons.Filled.DirectionsCar, Modifier.weight(1.5f), "VinFast VF7", KeyboardOptions(capitalization = KeyboardCapitalization.Words))
-                Field(year, { v -> year = v.filter { it.isDigit() }.take(4); err = "" }, "Đời xe", Icons.Filled.CalendarMonth, Modifier.weight(1f), "2024", KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
+            CarPicker({ model = it; err = "" }, { year = it; err = "" })
             Field(inst, { inst = it.take(100); err = "" }, "Đơn vị lắp đặt", Icons.Filled.Storefront, hint = "ABC Auto", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
         }
         AnimatedVisibility(err.isNotEmpty()) {
@@ -306,8 +386,8 @@ fun ActivationPage(locked: Boolean) {
         if (need == 2) {
             if (phone.filter { it.isDigit() }.length < 10) { err = L.tr("Số điện thoại chưa đúng."); return@go }
             if (plate.filter { it.isLetterOrDigit() }.length < 4) { err = L.tr("Biển số xe chưa đúng."); return@go }
-            if (model.isBlank()) { err = L.tr("Chưa nhập dòng xe."); return@go }
-            if (year.length != 4) { err = L.tr("Đời xe là năm sản xuất, ví dụ 2024."); return@go }
+            if (model.isBlank()) { err = L.tr("Chưa chọn hãng xe và dòng xe."); return@go }
+            if (year.length != 4) { err = L.tr("Chưa chọn đời xe."); return@go }
             if (inst.isBlank()) { err = L.tr("Chưa nhập đơn vị lắp đặt."); return@go }
         }
         err = ""; hot = false
@@ -333,8 +413,8 @@ fun ActivationPage(locked: Boolean) {
                 r == "invalid_input:name" -> err = L.tr("Chưa nhập tên khách hàng.")
                 r == "invalid_input:place" -> err = L.tr("Chưa nhập nơi lắp đặt.")
                 r == "invalid_input:plate" -> err = L.tr("Biển số xe chưa đúng.")
-                r == "invalid_input:model" -> err = L.tr("Chưa nhập dòng xe.")
-                r == "invalid_input:year" -> err = L.tr("Đời xe là năm sản xuất, ví dụ 2024.")
+                r == "invalid_input:model" -> err = L.tr("Chưa chọn hãng xe và dòng xe.")
+                r == "invalid_input:year" -> err = L.tr("Chưa chọn đời xe.")
                 r == "invalid_input:installer" -> err = L.tr("Chưa nhập đơn vị lắp đặt.")
                 r == "network" -> err = L.tr("Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.")
                 else -> { err = L.tr("Máy chủ đang bận. Hãy thử lại sau ít phút."); hot = true }
@@ -371,7 +451,7 @@ fun ActivationPage(locked: Boolean) {
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(ChipBg).padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Key, null, tint = Pink, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
                 T(code, 15, FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-                Row(Modifier.clip(RoundedCornerShape(Theme.r(8))).clickable(!Act.busy.value) { need = 0; err = ""; code = "" }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.clip(RoundedCornerShape(Theme.r(8))).clickable(!Act.busy.value) { need = 0; err = ""; code = ""; model = ""; year = "" }.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.ArrowBack, null, tint = SubTxt, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); T("Đổi mã", 12, FontWeight.SemiBold, SubTxt)
                 }
             }
@@ -381,10 +461,7 @@ fun ActivationPage(locked: Boolean) {
                 Field(phone, { v -> phone = v.filter { it.isDigit() || it == '+' }.take(14); err = "" }, "Số điện thoại", Icons.Filled.Phone, kb = KeyboardOptions(keyboardType = KeyboardType.Phone))
                 if (need == 2) {
                     Field(plate, { v -> plate = v.uppercase().take(20); err = "" }, "Biển số xe", Icons.Filled.Badge, hint = "30A-123.45", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Field(model, { model = it.take(60); err = "" }, "Dòng xe", Icons.Filled.DirectionsCar, Modifier.weight(1.5f), "VinFast VF7", KeyboardOptions(capitalization = KeyboardCapitalization.Words))
-                        Field(year, { v -> year = v.filter { it.isDigit() }.take(4); err = "" }, "Đời xe", Icons.Filled.CalendarMonth, Modifier.weight(1f), "2024", KeyboardOptions(keyboardType = KeyboardType.Number))
-                    }
+                    CarPicker({ model = it; err = "" }, { year = it; err = "" })
                     Field(inst, { inst = it.take(100); err = "" }, "Đơn vị lắp đặt", Icons.Filled.Storefront, hint = "ABC Auto", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
                 }
                 if (need == 1) Field(place, { place = it.take(200); err = "" }, "Nơi lắp đặt", Icons.Filled.Storefront, hint = "Tên cửa hàng hoặc địa chỉ lắp đèn")
