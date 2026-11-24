@@ -97,7 +97,7 @@ private val MANUAL: List<Pair<String, List<String>>> = listOf(
         "Cài đặt, mục Cài đặt ngôn ngữ: Việt, Anh, Nhật, Hàn, Thái, Khmer, Lào."
     ),
     "9. Lắp đặt (dành cho thợ)" to listOf(
-        "Ghép nối hộp phụ: cấp nguồn cho hộp phụ cần ghép, bấm Bắt đầu ghép nối và đợi tối đa 60 giây. Đặt Số lượng hộp phụ đúng với xe.",
+        "Cài đặt nhà máy, Ghép nối hộp phụ: cấp nguồn cho hộp phụ cần ghép, bấm Bắt đầu ghép nối và đợi tối đa 60 giây. Đặt Số lượng hộp phụ đúng với xe.",
         "Xóa hộp phụ: xóa mọi hộp phụ đã ghép khỏi hộp chính, sau đó phải ghép lại từ đầu.",
         "Sau khi ghép, sang trang Chào mừng, phần Sơ đồ xe để gán từng hộp phụ vào đúng cửa.",
         "Hướng ánh sáng chạy: chọn Thuận hoặc Ngược cho từng khu vực nếu hiệu ứng chạy ngược chiều mong muốn.",

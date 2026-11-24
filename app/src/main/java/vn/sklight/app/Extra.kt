@@ -308,7 +308,7 @@ fun PairPage() {
         }
         X.pairing = false
     }
-    BackRow(0, "Cài đặt")
+    BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", 16)
         Spacer(Modifier.height(8.dp))
@@ -431,6 +431,7 @@ fun FactoryPage() {
     }
     Card {
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", if (X.carCur >= 0 && X.cars.isNotEmpty()) X.carName(X.carCur) else "") { S.subPage.intValue = 11 }
+        Feature(Icons.Filled.BluetoothSearching, "Ghép nối hộp phụ", "") { S.subPage.intValue = 5 }
         Feature(Icons.Filled.Info, "Thông tin chẩn đoán", "") { S.subPage.intValue = 10 }
         Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
     }
