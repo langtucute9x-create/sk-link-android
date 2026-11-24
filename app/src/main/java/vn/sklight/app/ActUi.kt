@@ -269,7 +269,14 @@ private fun CarPicker(onModel: (String) -> Unit, onYear: (String) -> Unit) {
     var series by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
     var open by remember { mutableIntStateOf(0) }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    if (LocalCompact.current) {
+        // màn ngang: hãng, dòng, đời nằm trên một hàng cho đỡ dài
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PickField(brand, "Hãng xe", Icons.Filled.DirectionsCar, true, Modifier.weight(1f)) { open = 1 }
+            PickField(series, "Dòng xe", Icons.Filled.DirectionsCar, brand.isNotEmpty(), Modifier.weight(1f)) { open = 2 }
+            PickField(year, "Đời xe", Icons.Filled.CalendarMonth, series.isNotEmpty(), Modifier.weight(0.8f)) { open = 3 }
+        }
+    } else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PickField(brand, "Hãng xe", Icons.Filled.DirectionsCar, true, Modifier.fillMaxWidth()) { open = 1 }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PickField(series, "Dòng xe", Icons.Filled.DirectionsCar, brand.isNotEmpty(), Modifier.weight(1.5f)) { open = 2 }
@@ -325,6 +332,8 @@ private fun CustomerForm() {
             }
         }
     }
+    val wide = LocalCompact.current
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) { Column(Modifier.widthIn(max = 640.dp)) {
     Card {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Hero(Icons.Filled.VerifiedUser)
@@ -335,8 +344,13 @@ private fun CustomerForm() {
             Spacer(Modifier.height(16.dp))
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Field(phone, { v -> phone = v.filter { it.isDigit() || it == '+' }.take(14); err = "" }, "Số điện thoại khách", Icons.Filled.Phone, kb = KeyboardOptions(keyboardType = KeyboardType.Phone))
-            Field(plate, { v -> plate = v.uppercase().take(20); err = "" }, "Biển số xe", Icons.Filled.Badge, hint = "30A-123.45", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
+            if (wide) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Field(phone, { v -> phone = v.filter { it.isDigit() || it == '+' }.take(14); err = "" }, "Số điện thoại khách", Icons.Filled.Phone, Modifier.weight(1f), kb = KeyboardOptions(keyboardType = KeyboardType.Phone))
+                Field(plate, { v -> plate = v.uppercase().take(20); err = "" }, "Biển số xe", Icons.Filled.Badge, Modifier.weight(1f), hint = "30A-123.45", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
+            } else {
+                Field(phone, { v -> phone = v.filter { it.isDigit() || it == '+' }.take(14); err = "" }, "Số điện thoại khách", Icons.Filled.Phone, kb = KeyboardOptions(keyboardType = KeyboardType.Phone))
+                Field(plate, { v -> plate = v.uppercase().take(20); err = "" }, "Biển số xe", Icons.Filled.Badge, hint = "30A-123.45", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
+            }
             CarPicker({ model = it; err = "" }, { year = it; err = "" })
             Field(inst, { inst = it.take(100); err = "" }, "Đơn vị lắp đặt", Icons.Filled.Storefront, hint = "ABC Auto", kb = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
         }
@@ -353,12 +367,11 @@ private fun CustomerForm() {
             FillBtn("Gọi hotline 0868 055 555", Icons.Filled.Call, OkGreen, Modifier.fillMaxWidth()) { Act.call(ctx) }
         }
         Spacer(Modifier.height(10.dp))
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Box(Modifier.clip(RoundedCornerShape(Theme.r(8))).clickable { S.subPage.intValue = 0 }.padding(8.dp)) {
-                T("Để khách điền sau", 12, FontWeight.SemiBold, AccentText)
-            }
-        }
+        OutlineBtn("Điền thông tin sau", Modifier.fillMaxWidth()) { S.subPage.intValue = 0 }
+        Spacer(Modifier.height(4.dp))
+        Hint("Chưa điền thì app vẫn dùng bình thường. Thông tin điền sau ở Cài đặt → Bảo hành.", 11)
     }
+    } }
 }
 
 /** Trang nhập mã. [locked] = đang hiện thay cho trang điều khiển vì đã nối hộp đèn mà máy chưa kích hoạt. */

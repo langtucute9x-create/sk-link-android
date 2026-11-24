@@ -829,3 +829,5 @@ Chưa có lệnh nạp phần mềm vào hộp, nên chưa nâng cấp được.
 Chưa có lệnh nạp phần mềm vào hộp: nạp lỗi có thể làm hỏng hộp. Trang này dựng sẵn để chờ tài liệu của nhà sản xuất.	There is no command to load firmware into the box yet: a failed load can damage it. This page is prebuilt to wait for the manufacturer's documentation.					
 Mã RF	RF code					
 Theo hướng dẫn của app cũ: khi chạy tới 98–99% thì chờ vài giây rồi thoát ra, sau đó nối lại Bluetooth.	Per the old app's guide: when it reaches 98–99%, wait a few seconds, exit, then reconnect Bluetooth.					
+Điền thông tin sau	Fill in later					
+Chưa điền thì app vẫn dùng bình thường. Thông tin điền sau ở Cài đặt → Bảo hành.	The app works normally without it. You can fill it in later under Settings → Warranty.					
