@@ -799,6 +799,15 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
                     val dt = L.tr(when (dir) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "Chưa rõ hướng" })
                     T(if (S.navStreet.value.isEmpty()) dt else "$dt · ${S.navStreet.value}", 15, FontWeight.SemiBold)
                 }
+                val cur = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
+                val lim = S.speedLimit.intValue
+                val over = lim > 0 && cur > lim
+                Spacer(Modifier.width(8.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (lim > 0) SpeedSign(lim, 52.dp, over) else T("Chưa có biển", 11, color = Grey)
+                    Spacer(Modifier.height(4.dp))
+                    T("$cur km/h", 15, FontWeight.ExtraBold, if (over) Color(0xFFE53935) else Txt)
+                }
             }
         }
         if (k != 0) {
@@ -894,12 +903,6 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
                 Chip(label, S.speedZone.intValue == z, Modifier.weight(1f), 44.dp, 12) { S.speedZone.intValue = z; S.saveSettings() }
         }
         Spacer(Modifier.height(6.dp))
-        Kv("Tốc độ xe", if (S.appSpeed.intValue >= 0) "${S.appSpeed.intValue} km/h (từ app dẫn đường)" else "${Math.round(S.speedKmh.floatValue)} km/h (GPS)")
-        Row(Modifier.heightIn(min = 28.dp), verticalAlignment = Alignment.CenterVertically) {
-            T("Giới hạn đọc được", 13, modifier = Modifier.weight(1f))
-            if (S.speedLimit.intValue > 0) SpeedSign(S.speedLimit.intValue, 40.dp, (if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)) > S.speedLimit.intValue)
-            else T("Chưa có", 13, FontWeight.SemiBold)
-        }
         if (S.dev.value && S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
         if (S.dev.value) S.signThumb.value?.let { bmp ->
             Spacer(Modifier.height(6.dp))
@@ -907,7 +910,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
             androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
         }
         Spacer(Modifier.height(6.dp))
-        Hint("Giới hạn tốc độ có khi app dẫn đường hiện biển báo tốc độ trên màn hình (ví dụ Gofa).", 11)
+        Hint("Biển giới hạn và tốc độ xe hiện ở thẻ dẫn đường phía trên. Giới hạn đọc được khi app dẫn đường hiện biển báo tốc độ (ví dụ Gofa).", 11)
     }
 
     // ---- quyền còn thiếu: chỉ hiện khi chưa cấp đủ; cấp xong thì thẻ tự ẩn ----
