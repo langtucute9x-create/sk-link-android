@@ -273,6 +273,7 @@ private fun CustomerForm() {
     var inst by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
     var hot by remember { mutableStateOf(false) }
+    LaunchedEffect(err) { if (err.isNotEmpty()) Speaker.err(ctx, err) }
     val save: () -> Unit = save@{
         if (phone.filter { it.isDigit() }.length < 10) { err = L.tr("Số điện thoại chưa đúng."); return@save }
         if (plate.filter { it.isLetterOrDigit() }.length < 4) { err = L.tr("Biển số xe chưa đúng."); return@save }
@@ -349,6 +350,7 @@ fun ActivationPage(locked: Boolean) {
     var inst by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
     var hot by remember { mutableStateOf(false) }
+    LaunchedEffect(err) { if (err.isNotEmpty()) Speaker.err(ctx, err) }
     if (!locked) BackRow(0, "Cài đặt")
     if (S.connected.value && Act.ok.value) { if (Act.needCust.value) CustomerForm() else WarrantyCard(); return }
     // chưa nối hộp, hoặc đang hỏi SK Core, hoặc lần đầu nối hộp này mà không có mạng

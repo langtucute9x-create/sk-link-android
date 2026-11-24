@@ -513,6 +513,21 @@ object Speaker {
         }
     }
 
+    private var lastErr = ""
+    private var lastErrAt = 0L
+
+    /**
+     * Đọc to một câu báo lỗi (luôn bật, không có công tắc). Chỉ đọc khi app đang để tiếng Việt, vì giọng đọc là tiếng Việt.
+     * Cùng một câu không đọc lại trong [gapMs] để lỗi lặp (tự nối lại hộp, gõ sai nhiều lần) không làm phiền.
+     */
+    fun err(ctx: Context, text: String, gapMs: Long = 8000L) {
+        if (L.cur.intValue != 0 || text.isBlank()) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (text == lastErr && now - lastErrAt < gapMs) return
+        lastErr = text; lastErrAt = now
+        use(ctx) { e -> if (e != null) speak(e, text, null) else noVoice(ctx); Unit }
+    }
+
     /** Chuyển sang giọng tiếng Việt kế tiếp của máy rồi đọc [text] bằng giọng mới. */
     fun changeVoice(ctx: Context, text: String) {
         use(ctx) { e ->

@@ -59,7 +59,7 @@ class BleLed(private val ctx: Context) {
     }
 
     fun scan() {
-        val sc = adapter?.bluetoothLeScanner ?: run { S.conn.value = if (btState == 1) "Máy này không có Bluetooth" else "Bluetooth đang tắt"; return }
+        val sc = adapter?.bluetoothLeScanner ?: run { val no = btState == 1; S.conn.value = if (no) "Máy này không có Bluetooth" else "Bluetooth đang tắt"; Speaker.err(ctx, if (no) "Máy này không có Bluetooth, không nối được hộp đèn." else "Bluetooth đang tắt. Hãy bật Bluetooth rồi thử lại."); return }
         if (scanning) return
         scanning = true; S.devices.clear(); S.scanning.value = true
         try { sc.startScan(scanCb) } catch (e: Exception) { scanning = false; S.scanning.value = false; return }
@@ -108,6 +108,7 @@ class BleLed(private val ctx: Context) {
                 main.post {
                     S.connected.value = false
                     S.conn.value = "Mất kết nối"
+                    if (wantMac != null) Speaker.err(ctx, "Mất kết nối với hộp đèn.", 60000L)
                     wch = null
                     try { g.close() } catch (_: Exception) {}
                     if (gatt === g) gatt = null
@@ -122,7 +123,7 @@ class BleLed(private val ctx: Context) {
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             val svc = g.getService(svcId)
             val w = svc?.getCharacteristic(wId)
-            if (w == null) { main.post { S.conn.value = "Không thấy dịch vụ AE30" }; return }
+            if (w == null) { main.post { S.conn.value = "Không thấy dịch vụ AE30"; Speaker.err(ctx, "Không điều khiển được hộp này. Hộp không đúng loại hoặc đang bận.", 30000L) }; return }
             wch = w
             val n = svc?.getCharacteristic(nId)
             if (n != null) {
