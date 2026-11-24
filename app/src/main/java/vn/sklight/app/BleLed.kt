@@ -505,6 +505,55 @@ class BleLed(private val ctx: Context) {
         }.start()
     }
 
+    // ---------------- thử ô ae30/ae10 (4 byte, đọc + ghi): có giữ được mã mình ghi không ----------------
+    /** mode 0: đọc; 1: ghi 4 byte thử; 2: ghi 8 byte thử (kiểm giới hạn độ dài); 3: ghi 16 byte thử; 4: trả về toàn số 0 (đúng độ dài đang đọc). Chỉ đụng ô ae10. */
+    fun cfg10(mode: Int, done: (List<String>) -> Unit) {
+        val g = gatt ?: run { done(listOf("Chưa kết nối hộp đèn.")); return }
+        val ch = g.getService(svcId)?.getCharacteristic(u("ae10")) ?: run { done(listOf("Hộp không có ô ae10.")); return }
+        paused = true
+        Thread {
+            val out = ArrayList<String>()
+            try {
+                fun hx(b: ByteArray?) = b?.joinToString(" ") { "%02X".format(it) } ?: "không đọc được"
+                fun rd(): ByteArray? {
+                    val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>()
+                    readDone = { v -> q.offer(v ?: ByteArray(0)) }
+                    val ok = try { g.readCharacteristic(ch) } catch (_: Exception) { false }
+                    val v = if (ok) q.poll(2, java.util.concurrent.TimeUnit.SECONDS) else null
+                    readDone = null
+                    return if (v == null || v.isEmpty()) null else v
+                }
+                Thread.sleep(300)
+                val before = rd()
+                out.add("ae10 trước: ${hx(before)} (${before?.size ?: 0} byte)")
+                if (mode != 0) {
+                    val data = when (mode) {
+                        1 -> byteArrayOf(0x53, 0x4B, 0x01, 0x02)
+                        2 -> byteArrayOf(0x53, 0x4B, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
+                        3 -> ByteArray(16) { (0x53 + it).toByte() }
+                        else -> ByteArray(before?.size ?: 4)
+                    }
+                    val type = if (ch.properties and BluetoothGattCharacteristic.PROPERTY_WRITE != 0) BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT else BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+                    out.add("→ ghi ${data.size} byte: ${hx(data)}")
+                    val ok = try {
+                        if (Build.VERSION.SDK_INT >= 33) g.writeCharacteristic(ch, data, type) == 0
+                        else { ch.writeType = type; ch.value = data; g.writeCharacteristic(ch) }
+                    } catch (_: Exception) { false }
+                    if (!ok) out.add("Máy không gửi được lệnh ghi.")
+                    Thread.sleep(700)
+                    val after = rd()
+                    out.add("ae10 sau: ${hx(after)} (${after?.size ?: 0} byte)")
+                    if (after != null) out.add(if (after.contentEquals(data)) "GHI ĐƯỢC ${data.size} byte: hộp giữ đúng giá trị vừa ghi." else if (before != null && after.contentEquals(before)) "KHÔNG ĐỔI: hộp không nhận giá trị vừa ghi." else "Hộp nhận nhưng giá trị khác với giá trị đã ghi (có thể chỉ nhận một phần).")
+                }
+            } catch (e: Exception) {
+                out.add("Lỗi: ${e.message}")
+            } finally {
+                readDone = null; paused = false
+            }
+            main.post { done(out) }
+        }.start()
+    }
+
     // ---------------- gửi ----------------
     /** key >= 0: lệnh cùng key chưa gửi sẽ bị thay bằng lệnh mới (kéo thanh trượt không dồn hàng đợi). */
     fun send(data: ByteArray, key: Int = -1, isSet: Boolean = false) {

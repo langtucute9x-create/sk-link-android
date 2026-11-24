@@ -61,6 +61,8 @@ fun SerialPage() {
     var qStep by remember { mutableIntStateOf(0) }
     var qLines by remember { mutableStateOf<List<String>>(emptyList()) }
     var aBusy by remember { mutableStateOf(false) }
+    var cBusy by remember { mutableStateOf(false) }
+    var cLines by remember { mutableStateOf<List<String>>(emptyList()) }
     var aLines by remember { mutableStateOf<List<String>>(emptyList()) }
     BackRow(8, "Cài đặt nhà máy")
     Card {
@@ -217,6 +219,41 @@ fun SerialPage() {
             FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.fillMaxWidth()) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("a9", aLines.joinToString("\n")))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
+        }
+    }
+    // ----- Thử ô ae10 (4 byte đọc/ghi được, cả iPhone đọc ghi được): hộp có giữ mã mình ghi không -----
+    Card {
+        GroupTitle(Icons.Filled.Memory, "Thử ghi ô ae10 (mọi loại hộp)", 16)
+        Spacer(Modifier.height(6.dp))
+        Hint("Ô nhớ 4 byte của hộp, hiện toàn số 0. Thử ghi giá trị thử, đọc lại, rồi tắt bật hộp để xem hộp có giữ không. Ghi 8 và 16 byte để biết ô dài tối đa bao nhiêu. Làm xong bấm Trả về 00.", 12)
+        Spacer(Modifier.height(10.dp))
+        val runC = { m: Int ->
+            if (!cBusy) {
+                if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn."))
+                else { cBusy = true; S.ble.cfg10(m) { l -> cLines = listOf("SK Light ${S.VER} · ${S.devName.value} · ID ${S.savedMac}") + l; cBusy = false } }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FillBtn("Đọc", Icons.Filled.Search, Pink, Modifier.weight(1f)) { runC(0) }
+            FillBtn("Ghi 4 byte", Icons.Filled.Memory, Color(0xFFFE9700), Modifier.weight(1f)) { runC(1) }
+            FillBtn("Trả về 00", Icons.Filled.Memory, Color(0xFF607D8B), Modifier.weight(1f)) { runC(4) }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FillBtn("Ghi 8 byte", Icons.Filled.Memory, Color(0xFFFE9700), Modifier.weight(1f)) { runC(2) }
+            FillBtn("Ghi 16 byte", Icons.Filled.Memory, Color(0xFFFE9700), Modifier.weight(1f)) { runC(3) }
+        }
+        if (cLines.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(ChipBg).padding(10.dp)) {
+                for (x in cLines) T(x, 11, color = Txt)
+            }
+            Spacer(Modifier.height(8.dp))
+            FillBtn("Sao chép", Icons.Filled.ContentCopy, Color(0xFFFE9700), Modifier.fillMaxWidth()) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("ae10", cLines.joinToString("\n")))
                 Notice.show(ctx, L.tr("Đã sao chép"))
             }
         }
