@@ -1078,7 +1078,7 @@ fun SettingsFeatures() {
     T(if (S.dev.value) "SK Light ${S.VER} · chế độ nghiên cứu" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
     ) {
-        if (!S.connected.value) return@clickable
+        if (!S.connected.value) { Notice.show(ctx, L.tr("Hãy kết nối hộp trước.")); return@clickable }
         taps++
         if (taps >= 7) {
             taps = 0
@@ -1092,10 +1092,17 @@ fun SettingsFeatures() {
             Column {
                 T("Nhập mật khẩu để bật.", 13, color = Grey)
                 Spacer(Modifier.height(8.dp))
-                androidx.compose.material3.OutlinedTextField(pw, { pw = it.filter { c -> c.isLetterOrDigit() }.take(12); pwErr = false }, singleLine = true, isError = pwErr,
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
-                    label = { T("Mật khẩu", 12, color = Grey) })
+                T(if (pw.isEmpty()) "–" else "●".repeat(pw.length), 22, FontWeight.ExtraBold, color = if (pwErr) androidx.compose.ui.graphics.Color(0xFFE53935) else Pink, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
+                for (row in listOf("123", "456", "789", "C0<")) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (ch in row) {
+                            Box(Modifier.weight(1f).padding(vertical = 3.dp).height(40.dp).clip(RoundedCornerShape(10.dp)).background(ChipBg).clickable {
+                                pwErr = false
+                                when (ch) { 'C' -> pw = ""; '<' -> pw = pw.dropLast(1); else -> if (pw.length < 12) pw += ch }
+                            }, contentAlignment = Alignment.Center) { T(if (ch == '<') "⌫" else ch.toString(), 16, FontWeight.Bold) }
+                        }
+                    }
+                }
                 if (pwErr) T("Mật khẩu chưa đúng.", 12, color = androidx.compose.ui.graphics.Color(0xFFE53935))
             }
         },
