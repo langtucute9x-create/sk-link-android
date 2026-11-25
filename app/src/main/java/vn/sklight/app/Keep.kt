@@ -37,7 +37,7 @@ class KeepService : Service() {
         override fun run() {
             try { S.autoConnect() } catch (_: Exception) {}
             val now = System.currentTimeMillis()
-            if (S.connected.value || S.appVisible || S.alwaysBg.value) lostSince = 0L
+            if (S.connected.value || S.appVisible || S.bgAlways()) lostSince = 0L
             else {
                 if (lostSince == 0L) lostSince = now
                 // Không luôn chạy nền (điện thoại): mất kết nối hộp quá 1 phút thì bỏ cuộc, ngừng nối lại và ngừng chạy nền. Mở app thì nối lại.

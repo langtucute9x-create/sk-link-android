@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.64"
+    const val VER = "1.4.65"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -123,6 +123,19 @@ object S {
     // bối cảnh + các tính năng khi lái xe
     val sceneSel = mutableIntStateOf(-1)                  // bối cảnh đang dùng (vị trí trong Scenes.all()), -1 = không
     /** Máy đang dùng: 0 chưa chọn (giữ cách cũ: chạy nền), 1 điện thoại (chỉ nối khi mở app), 2 màn hình xe / Android box (chạy nền). */
+    /** Máy là màn hình xe / Android box (không có pin, hoặc Android khai là thiết bị ô tô): app tự luôn chạy nền, không cần công tắc. */
+    val isCar = mutableStateOf(false)
+    fun bgAlways() = isCar.value || alwaysBg.value
+    private fun detectCar(c: Context) {
+        try {
+            val b = c.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val noBattery = b != null && !b.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, true)
+            val um = c.getSystemService(Context.UI_MODE_SERVICE) as? android.app.UiModeManager
+            val carUi = um?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_CAR || c.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+            isCar.value = noBattery || carUi
+        } catch (_: Exception) {}
+    }
+    val muteMic = mutableStateOf(true)                      // đổi trạng thái tắt tiếng của máy 2 lần liên tiếp (nút tắt tiếng trên vô lăng) thì mở mic
     val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
     val nightOn = mutableStateOf(false)                   // tự dịu đèn ban đêm
@@ -170,6 +183,8 @@ object S {
         app = c.applicationContext
         Crash.install(app)
         Act.init(app)
+        detectCar(app)
+        MuteKey.start()
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)
@@ -211,6 +226,7 @@ object S {
             sp.edit().putBoolean("floatDef2", true).putInt("floatMascot", 4).putInt("floatSize", 150).putInt("floatStyle2", 5).apply()
         }
         voiceReply.value = sp.getBoolean("voiceReply", true)
+        muteMic.value = sp.getBoolean("muteMic", true)
         voiceQuiet.value = true
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
@@ -243,7 +259,7 @@ object S {
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
-            .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
+            .putBoolean("voiceReply", voiceReply.value).putBoolean("muteMic", muteMic.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont2", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle2", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)
@@ -427,7 +443,7 @@ object S {
     fun syncService(ctx: Context = app, boot: Boolean = false) {
         val c = ctx.applicationContext
         try {
-            if (!(alwaysBg.value || boot || connected.value || ble.wants)) { c.stopService(Intent(c, KeepService::class.java)); return }
+            if (!(bgAlways() || boot || connected.value || ble.wants)) { c.stopService(Intent(c, KeepService::class.java)); return }
             if (Build.VERSION.SDK_INT >= 31 && c.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return
             c.startForegroundService(Intent(c, KeepService::class.java))
         } catch (_: Exception) {}

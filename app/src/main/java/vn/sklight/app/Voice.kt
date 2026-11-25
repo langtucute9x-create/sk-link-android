@@ -61,6 +61,7 @@ object Voice {
      * và luồng hệ thống từ lúc bắt đầu nghe tới khi có kết quả. Chỉ đụng tới luồng đang có tiếng, xong thì bật lại đúng các luồng đó.
      */
     private fun quiet(on: Boolean) {
+        MuteKey.selfAt = android.os.SystemClock.elapsedRealtime()
         try {
             val am = S.app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
             if (on) {
@@ -433,6 +434,25 @@ object Speaker {
     private var onDone: (() -> Unit)? = null
     private var seq = 0
     private var told = false
+    val note = androidx.compose.runtime.mutableStateOf("")                    // bộ đọc vừa làm gì (hiện ở trang Trợ lý), để dò khi không nghe thấy tiếng
+    private var focusReq: android.media.AudioFocusRequest? = null
+
+    /**
+     * Xin / trả quyền phát tiếng tạm thời quanh mỗi câu đọc. Nhiều màn hình xe chỉ cho app đang giữ quyền phát tiếng ra loa
+     * (khi app bản đồ hay nhạc đang giữ thì câu trả lời của SK Light bị nuốt mất). Phỏng đoán theo mô tả của chủ dự án 25/11, chưa thử trên xe.
+     */
+    private fun focus(on: Boolean) {
+        try {
+            val am = S.app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+            if (on) {
+                if (focusReq != null) return
+                val r = android.media.AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                    .setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH).build()).build()
+                focusReq = r; am.requestAudioFocus(r)
+            } else { focusReq?.let { am.abandonAudioFocusRequest(it) }; focusReq = null }
+        } catch (_: Exception) {}
+    }
 
     private fun open(c: Context, pkg: String?) {
         try {
@@ -478,16 +498,16 @@ object Speaker {
             if (want.isNotEmpty()) e.voices?.firstOrNull { it.name == want }?.let { e.voice = it }
         } catch (x: Exception) {}
         e.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(id: String?) {}
-            override fun onDone(id: String?) { finished(id) }
-            @Deprecated("") override fun onError(id: String?) { finished(id) }
+            override fun onStart(id: String?) { h.post { note.value = "đang phát tiếng ($engine)" } }
+            override fun onDone(id: String?) { finished(id, true) }
+            @Deprecated("") override fun onError(id: String?) { finished(id, false) }
         })
         val w = waiting; waiting = null
         w?.invoke(e)
     }
 
-    private fun finished(id: String?) {
-        h.post { if (id == "sk$seq") { val d = onDone; onDone = null; d?.invoke() } }
+    private fun finished(id: String?, ok: Boolean) {
+        h.post { if (id == "sk$seq") { focus(false); note.value = (if (ok) "đã đọc xong" else "bộ đọc báo lỗi") + " ($engine)"; val d = onDone; onDone = null; d?.invoke() } }
     }
 
     private fun noVoice(ctx: Context) {
@@ -499,8 +519,11 @@ object Speaker {
     private fun speak(e: TextToSpeech, text: String, then: (() -> Unit)?) {
         onDone = then
         val id = "sk${++seq}"
+        focus(true)
         val r = try { e.speak(text.replace("%", " phần trăm"), TextToSpeech.QUEUE_FLUSH, null, id) } catch (x: Exception) { TextToSpeech.ERROR }
-        if (r != TextToSpeech.SUCCESS) { onDone = null; then?.invoke() }
+        val quietNow = try { val am = S.app.getSystemService(Context.AUDIO_SERVICE) as AudioManager; am.isStreamMute(AudioManager.STREAM_MUSIC) || am.getStreamVolume(AudioManager.STREAM_MUSIC) == 0 } catch (x: Exception) { false }
+        note.value = (if (r == TextToSpeech.SUCCESS) "đã gửi câu cho bộ đọc" else "bộ đọc từ chối đọc") + " ($engine)" + (if (quietNow) ", máy đang tắt tiếng hoặc âm lượng 0" else "")
+        if (r != TextToSpeech.SUCCESS) { focus(false); onDone = null; then?.invoke() }
     }
 
     /** Đọc [text]; đọc xong (hoặc không đọc được) thì gọi [then]. [force]: đọc cả khi đã tắt công tắc trả lời (nút Nghe thử). */
@@ -564,7 +587,49 @@ object Speaker {
         Notice.show(ctx.applicationContext, L.tr("Máy này không mở được CH Play."), true)
     }
 
-    fun stop() { onDone = null; try { tts?.stop() } catch (e: Exception) {} }
+    fun stop() { onDone = null; focus(false); try { tts?.stop() } catch (e: Exception) {} }
+}
+
+/**
+ * Mở mic bằng nút tắt tiếng trên vô lăng: trạng thái tắt tiếng của máy đổi 2 lần liền nhau trong 1,5 giây (tắt rồi bật, hoặc bật rồi tắt) thì mở mic.
+ * App không nhận được phím vô lăng trực tiếp, nên dò trạng thái tắt tiếng / âm lượng 0 của luồng nhạc 5 lần mỗi giây.
+ * Chỉ dùng được khi màn hình xe đưa nút tắt tiếng qua Android; màn hình tắt tiếng bằng mạch riêng thì app không thấy gì. Chưa thử trên xe.
+ */
+object MuteKey {
+    private val h = Handler(Looper.getMainLooper())
+    private var started = false
+    private var last: Boolean? = null
+    private var changedAt = 0L
+    @Volatile var selfAt = 0L                        // lúc app tự tắt / bật tiếng khi nghe lệnh: bỏ qua thay đổi quanh lúc này
+    val seen = mutableIntStateOf(0)                  // số lần thấy trạng thái tắt tiếng đổi, hiện ở trang Trợ lý để kiểm tra
+
+    private val loop = object : Runnable {
+        override fun run() {
+            try {
+                val am = S.app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                if (am != null) {
+                    val m = am.isStreamMute(AudioManager.STREAM_MUSIC) || am.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
+                    val now = android.os.SystemClock.elapsedRealtime()
+                    val prev = last; last = m
+                    if (prev != null && prev != m && now - selfAt > 1500) {
+                        seen.intValue++
+                        if (S.muteMic.value && changedAt > 0 && now - changedAt <= 1500) { changedAt = 0; open() } else changedAt = now
+                    }
+                }
+            } catch (_: Exception) {}
+            h.postDelayed(this, 200)
+        }
+    }
+
+    fun start() { if (started) return; started = true; h.post(loop) }
+
+    private fun open() {
+        val c = S.app
+        if (S.voiceState.intValue == 1) return
+        if ((!S.connected.value || !Act.ok.value) && !S.dev.value) return          // chưa nối hộp / chưa kích hoạt: nút mic trên app cũng đang ẩn
+        if (c.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) { Notice.show(c, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), true); return }
+        Voice.start(c)
+    }
 }
 
 private fun micAllowed(ctx: Context) = ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
@@ -638,8 +703,13 @@ fun VoicePage() {
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (st == 3) OutlineBtn("Cài giọng đọc tiếng Việt", Modifier.weight(1.6f)) { Speaker.install(ctx) }
-            OutlineBtn(if (st == 3) "Kiểm tra lại" else "Nghe thử", Modifier.weight(1f)) { Speaker.reset(); Speaker.say(ctx, "Xin chào, em là SK Light", force = true) }
+            // chỉ đóng mở lại bộ đọc khi máy báo chưa có giọng (dò lại sau khi cài); đang dùng được thì đọc luôn
+            OutlineBtn(if (st == 3) "Kiểm tra lại" else "Nghe thử", Modifier.weight(1f)) { if (st == 3) Speaker.reset(); Speaker.say(ctx, "Xin chào, em là SK Light", force = true) }
         }
+        if (Speaker.note.value.isNotEmpty()) T("Bộ đọc: " + Speaker.note.value, 11, color = Grey)
+        Divider(top = 8.dp)
+        SwitchRow("Bấm 2 lần nút tắt tiếng để mở mic", "Dùng nút tắt tiếng trên vô lăng: tắt rồi bật (hoặc bật rồi tắt) liền nhau trong 1,5 giây.", S.muteMic.value) { S.muteMic.value = it; S.saveSettings() }
+        T("App đã thấy trạng thái tắt tiếng đổi ${MuteKey.seen.intValue} lần. Bấm nút trên vô lăng mà số này không tăng thì màn hình xe không báo cho Android, cách này không dùng được.", 11, color = Grey)
     }
 }
 

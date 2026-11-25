@@ -177,7 +177,7 @@ fun Root() {
                     2 -> {
                         val (granted, open) = navAccess()
                         // màn hình ngang: cột trái = trạng thái dẫn đường + mô phỏng, cột phải = cài đặt cảnh báo (bật tắt bên phải, xem đèn đổi bên trái)
-                        TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 }; SimCard() }, { NavBottom(granted, open, false) })
+                        TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 }; SimCard() }, { NavBottom(granted, open, false) }, half = true)
                     }
                     else -> if (S.subPage.intValue == 13) WideOne { ExtraPage(13) }
                     else if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
@@ -290,13 +290,14 @@ val LocalScrollKey = androidx.compose.runtime.compositionLocalOf<String?> { null
 
 /** Hai cột cuộn riêng cho màn ngang. */
 @Composable
-fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composable () -> Unit) {
+fun ColumnScope.TwoCol(leftW: Dp, left: @Composable () -> Unit, right: @Composable () -> Unit, half: Boolean = false) {
     // lề 4dp quanh mỗi cột để bóng đổ của thẻ không bị cắt ở mép vùng cuộn; khoảng cách giữa hai cột vẫn là 12dp
     val sk = LocalScrollKey.current
     val sl = if (sk == null) rememberScrollState() else ScrollMem.get("$sk-l")
     val sr = if (sk == null) rememberScrollState() else ScrollMem.get("$sk-r")
     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Column(Modifier.width(leftW + 8.dp).fillMaxHeight().verticalScroll(sl).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
+        // [half]: hai cột rộng bằng nhau (trang Dẫn đường); mặc định cột trái hẹp cố định
+        Column((if (half) Modifier.weight(1f) else Modifier.width(leftW + 8.dp)).fillMaxHeight().verticalScroll(sl).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { left() }
         Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(sr).padding(start = 4.dp, end = 4.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { right() }
     }
 }

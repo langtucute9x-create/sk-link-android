@@ -145,6 +145,8 @@ private fun Steps(step: Int) {
 @Composable
 fun RunModeRow() {
     val ctx = LocalContext.current
+    // màn hình xe / Android box (máy không có pin): luôn chạy nền, không hiện công tắc
+    if (S.isCar.value) { T("Máy này là màn hình xe / Android box nên app luôn chạy nền.", 12, color = Grey); return }
     SwitchRow("Luôn chạy nền", "", S.alwaysBg.value) {
         S.alwaysBg.value = it; S.saveSettings(); S.syncService(ctx); if (it) S.autoConnect()
     }
