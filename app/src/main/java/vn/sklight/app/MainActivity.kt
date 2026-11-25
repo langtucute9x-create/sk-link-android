@@ -908,12 +908,8 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
     val ctx = LocalContext.current
     val k = S.alertKind.intValue
 
-    // ---- thử nháy ----
-    Card {
-        GroupTitle(Icons.Filled.AutoAwesome, "Thử nháy 4 giây", 16)
-        Spacer(Modifier.height(12.dp))
-        Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, k == v, m, 44.dp, 12) { AlertBridge.test(v) } }
-    }
+    // ---- mô phỏng ----
+    SimCard()
 
     // ---- cảnh báo quá tốc độ ----
     Card {

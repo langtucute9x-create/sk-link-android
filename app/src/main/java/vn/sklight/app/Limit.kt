@@ -32,6 +32,7 @@ object Limit {
     fun clearOsm() { osm = 0; update() }
 
     fun update() {
+        if (Sim.running.value && Sim.kind.intValue == 3) return
         val now = System.currentTimeMillis()
         val v = if (scr > 0 && now - scrAt < 10000) scr else if (S.limitOsm.value && osm > 0 && now - osmAt < 90000) osm else 0
         main.post { if (S.speedLimit.intValue != v) { S.speedLimit.intValue = v; AlertBridge.refresh() } }

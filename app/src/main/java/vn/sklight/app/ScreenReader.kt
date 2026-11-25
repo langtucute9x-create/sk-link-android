@@ -142,12 +142,12 @@ class ScreenReader : AccessibilityService() {
     }
 
     /** Đọc số trên biển: thử vùng bên trong vành đỏ trước, không ra thì thử cả biển. */
-    private fun readSign(bmp: Bitmap, sign: Rect) {
+    private fun readSign(bmp: Bitmap, sign: Rect, onMiss: (() -> Unit)? = null) {
         val inner = Rect(sign.left + sign.width() * 18 / 100, sign.top + sign.height() * 18 / 100,
             sign.right - sign.width() * 18 / 100, sign.bottom - sign.height() * 18 / 100)
         val tries = listOf(inner, sign)
         fun attempt(i: Int) {
-            if (i >= tries.size) { S.ocrNote.value += " · không đọc được số"; return }
+            if (i >= tries.size) { S.ocrNote.value += " · không đọc được số"; onMiss?.invoke(); return }
             val c = crop(bmp, tries[i]) ?: return attempt(i + 1)
             val k = (240f / c.height).coerceIn(1f, 4f)
             val big = Bitmap.createScaledBitmap(c, (c.width * k).toInt(), (c.height * k).toInt(), true)
@@ -179,10 +179,11 @@ class ScreenReader : AccessibilityService() {
                     val bmp = Bitmap.wrapHardwareBuffer(hb, r.colorSpace)?.copy(Bitmap.Config.ARGB_8888, false)
                     hb.close()
                     if (bmp == null) return
-                    val rc = findRedRing(bmp)
-                    if (rc == null) { S.ocrNote.value = "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }
-                    S.ocrNote.value = "quét màn hình: thấy biển ${rc.width()}x${rc.height()}"
-                    readSign(bmp, rc)
+                    val rcs = findRedRings(bmp)
+                    if (rcs.isEmpty()) { S.ocrNote.value = "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }
+                    S.ocrNote.value = "quét màn hình: thấy ${rcs.size} biển tròn viền đỏ"
+                    fun tryAt(i: Int) { if (i < rcs.size) readSign(bmp, rcs[i]) { tryAt(i + 1) } }
+                    tryAt(0)
                 } catch (t: Throwable) { /* bỏ qua */ }
             }
             override fun onFailure(code: Int) {}
@@ -190,21 +191,21 @@ class ScreenReader : AccessibilityService() {
     }
 
     /** Tìm vùng viền đỏ hình vuông (biển tròn) có ruột sáng. Chạy trên ảnh thu nhỏ, trả về hình chữ nhật theo toạ độ ảnh gốc. */
-    private fun findRedRing(b: Bitmap): Rect? {
-        val sc = (b.width / 360f).coerceAtLeast(1f)
+    private fun findRedRings(b: Bitmap): List<Rect> {
+        val sc = (b.width / 720f).coerceAtLeast(1f)
         val w = (b.width / sc).toInt(); val hh = (b.height / sc).toInt()
         val s = Bitmap.createScaledBitmap(b, w, hh, true)
         val px = IntArray(w * hh); s.getPixels(px, 0, w, 0, 0, w, hh)
-        fun red(c: Int): Boolean { val r = (c shr 16) and 255; val g = (c shr 8) and 255; val bl = c and 255; return r > 150 && g < 80 && bl < 80 && r - g > 100 }
-        val cell = 6; val cw = w / cell; val ch = hh / cell
+        fun red(c: Int): Boolean { val r = (c shr 16) and 255; val g = (c shr 8) and 255; val bl = c and 255; return r >= 110 && r - g >= 60 && r - bl >= 45 && g < 120 }
+        val cell = 4; val cw = w / cell; val ch = hh / cell
         val on = BooleanArray(cw * ch)
         for (cy in 0 until ch) for (cx in 0 until cw) {
             var n = 0
             for (y in cy * cell until cy * cell + cell) for (x in cx * cell until cx * cell + cell) if (red(px[y * w + x])) n++
-            on[cy * cw + cx] = n >= 4
+            on[cy * cw + cx] = n >= 3
         }
         val seen = BooleanArray(on.size)
-        var best: Rect? = null; var bestScore = 0
+        val found = ArrayList<Pair<Int, Rect>>()
         for (i in on.indices) {
             if (!on[i] || seen[i]) continue
             var x0 = cw; var y0 = ch; var x1 = 0; var y1 = 0; var cnt = 0
@@ -221,16 +222,16 @@ class ScreenReader : AccessibilityService() {
             if (bw < 4 || bh < 4 || bw > cw / 3) continue
             val asp = bw.toFloat() / bh
             if (asp < 0.8f || asp > 1.25f) continue
-            if (cnt < (bw + bh) * 3 / 2 || cnt > bw * bh * 3 / 4) continue   // vành rỗng, không phải khối đặc
+            if (cnt < bw + bh || cnt > bw * bh * 3 / 4) continue   // vành rỗng, không phải khối đặc
             // ruột phải sáng (nền trắng của biển)
             var lit = 0; var tot = 0
             val ix0 = (x0 + bw / 4) * cell; val ix1 = (x1 + 1 - bw / 4) * cell; val iy0 = (y0 + bh / 4) * cell; val iy1 = (y1 + 1 - bh / 4) * cell
-            for (y in iy0 until minOf(iy1, hh)) for (x in ix0 until minOf(ix1, w)) { val c = px[y * w + x]; tot++; if (((c shr 16) and 255) > 190 && ((c shr 8) and 255) > 190 && (c and 255) > 190) lit++ }
-            if (tot == 0 || lit * 100 / tot < 35) continue
+            for (y in iy0 until minOf(iy1, hh)) for (x in ix0 until minOf(ix1, w)) { val c = px[y * w + x]; tot++; if (((c shr 16) and 255) > 120 && ((c shr 8) and 255) > 120 && (c and 255) > 120) lit++ }
+            if (tot == 0 || lit * 100 / tot < 30) continue
             val score = lit
-            if (score > bestScore) { bestScore = score; best = Rect((x0 * cell * sc).toInt(), (y0 * cell * sc).toInt(), ((x1 + 1) * cell * sc).toInt(), ((y1 + 1) * cell * sc).toInt()) }
+            run { found.add(score to Rect((x0 * cell * sc).toInt(), (y0 * cell * sc).toInt(), ((x1 + 1) * cell * sc).toInt(), ((y1 + 1) * cell * sc).toInt())) }
         }
-        return best
+        return found.sortedByDescending { it.first }.take(4).map { it.second }
     }
 
     private fun crop(b: Bitmap, r: Rect): Bitmap? {

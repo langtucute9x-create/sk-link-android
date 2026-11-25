@@ -17,7 +17,12 @@ object AlertBridge {
     private var testKind = 0
     private val SPEED = Pattern.compile("(\\d{2,3})\\s*km\\s*/\\s*h", Pattern.CASE_INSENSITIVE)
 
-    @JvmStatic fun onNav(s: NavState) {
+    @JvmStatic fun onNav(s: NavState) { if (Sim.running.value) return; applyNav(s) }
+    /** Dữ liệu dẫn đường giả của trang Mô phỏng; đi qua đúng bộ cảnh báo thật. */
+    fun simNav(s: NavState) = applyNav(s)
+    fun simOff() { h.post { S.navOn.value = false; S.navDist.intValue = -1; evaluate() } }
+
+    private fun applyNav(s: NavState) {
         h.post {
             S.navOn.value = true
             S.navDir.value = s.dir.toString()
@@ -31,7 +36,7 @@ object AlertBridge {
     /** Tính lại cảnh báo khi tốc độ hoặc giới hạn thay đổi. */
     @JvmStatic fun refresh() { h.post { evaluate() } }
 
-    @JvmStatic fun onNavOff() { h.post { S.navOn.value = false; S.navDist.intValue = -1; evaluate() } }
+    @JvmStatic fun onNavOff() { if (Sim.running.value) return; h.post { S.navOn.value = false; S.navDist.intValue = -1; evaluate() } }
 
     /** Ghi lại thông báo thô của app dẫn đường để xem trong trang Dẫn đường. */
     @JvmStatic fun onRaw(s: NavState) {
@@ -74,7 +79,7 @@ object AlertBridge {
         if (System.currentTimeMillis() < testUntil) return testKind
         val d = S.navDist.intValue
         var turn = 0
-        if (S.warnOn.value && S.navOn.value && d in 0..S.alertDist.intValue) {
+        if ((S.warnOn.value || Sim.running.value) && S.navOn.value && d in 0..S.alertDist.intValue) {
             if (S.navDir.value == "L") turn = 1
             if (S.navDir.value == "R") turn = 2
         }
@@ -82,7 +87,7 @@ object AlertBridge {
         if (turn != 0 && turn != expiredKind) return turn
         // Quá tốc độ: vượt giới hạn quá 3 km/h thì báo, xuống bằng giới hạn thì tắt
         val lim = S.speedLimit.intValue
-        if (S.speedWarn.value && lim > 0) {
+        if ((S.speedWarn.value || (Sim.running.value && Sim.kind.intValue == 3)) && lim > 0) {
             val v = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
             if (v > (if (kind == 3) lim else lim + 3)) return 3
         }
