@@ -40,9 +40,9 @@ class ScreenReader : AccessibilityService() {
     private val offRun = Runnable { navLost() }
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
-    override fun onServiceConnected() { connected = true; inst = this }
+    override fun onServiceConnected() { connected = true; inst = this; h.removeCallbacks(poll); h.post(poll) }
     override fun onUnbind(intent: Intent?): Boolean { connected = false; inst = null; return super.onUnbind(intent) }
-    override fun onDestroy() { if (inst === this) inst = null; super.onDestroy() }
+    override fun onDestroy() { h.removeCallbacks(poll); if (inst === this) inst = null; super.onDestroy() }
     override fun onInterrupt() {}
 
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {
@@ -55,8 +55,32 @@ class ScreenReader : AccessibilityService() {
             val pkg = e.packageName?.toString() ?: return
             if (skip(pkg)) return
             if (!test && !NavListener.isMapApp(pkg)) return
-            if (now - last < 700) return
+            evPkgAt = now
+            readNow(now)
+        } catch (t: Throwable) { /* bỏ qua một lần đọc lỗi */ }
+    }
+
+    // App bản đồ không gửi sự kiện khi đồng hồ tốc độ đổi số, nên đọc thêm theo nhịp 0,5 giây khi app bản đồ đang ở trước
+    private var evPkgAt = 0L
+    private var spdAt = 0L
+    private val poll = object : Runnable {
+        override fun run() {
+            try {
+                val now = System.currentTimeMillis()
+                if (connected && (S.screenOn.value || S.screenAuto.value) && now - evPkgAt < 15000) {
+                    readNow(now)
+                    if (spdAt > 0 && now - spdAt > 3000 && S.appSpeed.intValue >= 0) S.appSpeed.intValue = -1   // số cũ quá 3 giây: dùng tốc độ GPS
+                }
+            } catch (_: Throwable) {}
+            h.postDelayed(this, 500)
+        }
+    }
+
+    private fun readNow(now: Long) {
+        try {
+            if (now - last < 400) return
             last = now
+            val test = S.screenOn.value
             val out = LinkedHashSet<String>()
             val f = Found()
             var shown = ""
@@ -83,7 +107,9 @@ class ScreenReader : AccessibilityService() {
 
     private fun process(pkg: String, f: Found, now: Long) {
         val dist = NavParser.findDist(f.instr)
-        S.appSpeed.intValue = f.spd.filter { it.isDigit() }.toIntOrNull() ?: -1
+        val sp = f.spd.filter { it.isDigit() }.toIntOrNull()
+        if (sp != null) spdAt = now
+        S.appSpeed.intValue = sp ?: -1
         if (f.sign == null && Build.VERSION.SDK_INT >= 30 && now - lastScan > 2500L) { lastScan = now; scanScreen() }
         Limit.update()
         if (dist < 0) { AlertBridge.refresh(); return }
