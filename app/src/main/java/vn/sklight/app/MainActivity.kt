@@ -815,46 +815,14 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
     val k = S.alertKind.intValue
     SplitCard()
 
-    // ---- đang dẫn đường ----
-    Card {
-        if (!granted) {
-            T("Chưa cấp quyền đọc thông báo", 15, FontWeight.Bold)
-            Spacer(Modifier.height(4.dp))
-            Hint("App cần quyền này để đọc hướng rẽ và khoảng cách từ thông báo của Google Maps, Vietmap.", 12)
-            Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(Pink).clickable(onClick = openAccess), contentAlignment = Alignment.Center) {
-                T("Cấp quyền đọc thông báo", 13, FontWeight.Bold, Color.White)
-            }
-        } else if (!S.navOn.value) {
-            T("Chưa có chỉ đường", 15, FontWeight.Bold)
-        } else {
-            val dir = S.navDir.value
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TurnIcon(dir, 68.dp)
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    T("Đang dẫn đường · ${S.navApp.value}", 12, FontWeight.Bold, Color(0xFF2E8B3D))
-                    val d = S.navDist.intValue
-                    T(if (d < 0) "—" else if (d >= 1000) "${d / 100 / 10.0} km" else "$d m", 30, FontWeight.ExtraBold)
-                    val dt = L.tr(when (dir) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "Chưa rõ hướng" })
-                    T(if (S.navStreet.value.isEmpty()) dt else "$dt · ${S.navStreet.value}", 15, FontWeight.SemiBold)
-                }
-                val cur = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
-                val lim = S.speedLimit.intValue
-                val over = lim > 0 && cur > lim
-                Spacer(Modifier.width(8.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    if (lim > 0) SpeedSign(lim, 52.dp, over) else T("Chưa có biển", 11, color = Grey)
-                    Spacer(Modifier.height(4.dp))
-                    T("$cur km/h", 15, FontWeight.ExtraBold, if (over) Color(0xFFE53935) else Txt)
-                }
-            }
-        }
-        if (k != 0) {
-            Spacer(Modifier.height(10.dp))
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(8))).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(Theme.r(8))).padding(horizontal = 12.dp, vertical = 9.dp)) {
-                T(when (k) { 1 -> "Sắp rẽ trái: đèn vàng đang chạy theo hướng rẽ"; 2 -> "Sắp rẽ phải: đèn vàng đang chạy theo hướng rẽ"; else -> "Quá tốc độ: đang nháy đỏ" }, 13, FontWeight.Bold, AccentText)
-            }
+    // Hướng rẽ, khoảng cách, tốc độ và biển giới hạn giờ hiện ngay trên hình Mô phỏng (SimUi.Hud); ở đây chỉ còn lời nhắc cấp quyền.
+    if (!granted) Card {
+        T("Chưa cấp quyền đọc thông báo", 15, FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        Hint("App cần quyền này để đọc hướng rẽ và khoảng cách từ thông báo của Google Maps, Vietmap.", 12)
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth().height(43.dp).clip(RoundedCornerShape(Theme.r(6))).background(Pink).clickable(onClick = openAccess), contentAlignment = Alignment.Center) {
+            T("Cấp quyền đọc thông báo", 13, FontWeight.Bold, Color.White)
         }
     }
 

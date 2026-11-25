@@ -84,30 +84,37 @@ private fun Hud() {
     LaunchedEffect(ak, run) { lit0 = if (run && ak != 0) System.currentTimeMillis() else 0L }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(run) { while (run) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(100) } }
+    // Không chạy mô phỏng thì hình hiện dữ liệu thật: tốc độ, biển giới hạn, hướng rẽ và khoảng cách của app dẫn đường.
+    val spd = if (run) Sim.speed.floatValue.toInt() else if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
+    val lim = if (run) (if (k == 3) Sim.LIMIT else 0) else S.speedLimit.intValue
+    val over = lim > 0 && spd > lim
     Box(Modifier.fillMaxSize().padding(8.dp)) {
         // tốc độ + biển giới hạn
         Row(Modifier.align(Alignment.TopStart), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 10.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                T(Sim.speed.floatValue.toInt().toString(), 22, FontWeight.ExtraBold, color = if (k == 3 && ak == 3) Color(0xFFFF5252) else Color.White)
+                T(spd.toString(), 22, FontWeight.ExtraBold, color = if (over || ak == 3) Color(0xFFFF5252) else Color.White)
                 T("km/h", 10, color = Color(0xFFB8BCC6))
             }
-            if (k == 3 && run) {
-                Spacer(Modifier.width(8.dp))
-                Box(Modifier.size(40.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color.White).then(Modifier), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0xFFE53935)), contentAlignment = Alignment.Center) {
-                        Box(Modifier.size(25.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color.White), contentAlignment = Alignment.Center) { T("${Sim.LIMIT}", 13, FontWeight.ExtraBold, color = Color(0xFF111111)) }
-                    }
-                }
-            }
+            if (lim > 0) { Spacer(Modifier.width(8.dp)); SpeedSign(lim, 42.dp, over) }
         }
-        // khoảng cách tới chỗ rẽ
-        if (k != 3 && run) Column(Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 12.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        // góc phải: mô phỏng thì khoảng cách tới điểm mô phỏng; bình thường thì chỉ đường thật
+        if (run && k != 3) Column(Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 12.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             T(if (Sim.turn.floatValue > 0f) "Đang rẽ" else "Còn ${Sim.dist.floatValue.toInt().coerceAtLeast(0)} m", 18, FontWeight.ExtraBold, color = Color.White)
             T(if (k == 1) "◀ rẽ trái" else if (k == 2) "rẽ phải ▶" else "phía trước", 11, color = Color(0xFFB8BCC6))
         }
+        else if (!run && S.navOn.value) Row(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.62f).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 8.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+            val dir = S.navDir.value
+            TurnIcon(dir, 40.dp)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                val d = S.navDist.intValue
+                T(if (d < 0) "—" else if (d >= 1000) "${d / 100 / 10.0} km" else "$d m", 18, FontWeight.ExtraBold, color = Color.White, maxLines = 1)
+                val dt = L.tr(when (dir) { "L" -> "Rẽ trái"; "R" -> "Rẽ phải"; "U" -> "Quay đầu"; "O" -> "Vòng xuyến"; "A" -> "Đến nơi"; "S" -> "Đi thẳng"; else -> "Chưa rõ hướng" })
+                T(if (S.navStreet.value.isEmpty()) dt else "$dt · ${S.navStreet.value}", 11, color = Color(0xFFB8BCC6), maxLines = 1)
+            }
+        }
         // trạng thái đèn
         val txt = when {
-            !run -> "Chọn một tình huống bên dưới"
             ak == 1 || ak == 2 -> {
                 val left = if (S.alertMaxSec.intValue > 0 && lit0 > 0) max(0, S.alertMaxSec.intValue - ((now - lit0) / 1000).toInt()) else -1
                 (if (ak == 1) "ĐÈN BÁO RẼ TRÁI" else "ĐÈN BÁO RẼ PHẢI") + (if (left >= 0) " · còn $left giây" else "")
@@ -117,6 +124,8 @@ private fun Hud() {
             ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY"
             ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY"
             ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY"
+            !run && S.navOn.value -> "Đang dẫn đường · ${S.navApp.value}"
+            !run -> "Chọn một tình huống bên dưới"
             k == 3 || k >= 4 -> "Đang chạy trong giới hạn"
             Sim.turn.floatValue > 0f -> "Đã qua chỗ rẽ · đèn về như cũ"
             Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
@@ -162,7 +171,7 @@ private fun Scene(modifier: Modifier) {
     val kind = Sim.kind.intValue
     val run = Sim.running.value
     val turnP = Sim.turn.floatValue
-    val speed = Sim.speed.floatValue
+    val speed = if (run) Sim.speed.floatValue else if (S.appSpeed.intValue >= 0) S.appSpeed.intValue.toFloat() else S.speedKmh.floatValue
     // khu vực 1 = táp lô + cửa, khu vực 2 = gầm chân; mỗi khu có màu thường ngày riêng khi người dùng đặt hai màu
     val uni = S.czone.intValue == 0
     val idle1: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[1])
