@@ -222,15 +222,17 @@ object Voice {
                 S.refreshBlocks(); return "Em chưa đọc được cài đặt từ hộp đèn"
             }
         }
-        val cur = curBri(z)
-        Regex("độ sáng (\\d{1,3})").find(t)?.let { return bright(it.groupValues[1].toInt().coerceIn(0, 100), z) }
+        // không nêu khu vực thì luôn là CẢ XE, không theo khu vực đang chọn trên trang Đèn (nói một đằng, app làm một nẻo)
+        val zd = if (z < 0) 0 else z
+        val cur = curBri(zd)
+        Regex("độ sáng (\\d{1,3})").find(t)?.let { return bright(it.groupValues[1].toInt().coerceIn(0, 100), zd) }
         Regex("tốc độ (\\d{1,2})").find(t)?.let { return speed(it.groupValues[1].toInt().coerceIn(1, 10)) }
         if (has(t, "tắt đèn") || t == "tắt" || has(t, "tắt hết") || has(t, "màu đen")) { S.setPower(false); return "Em đã tắt đèn rồi" }
         if (has(t, "bật đèn") || has(t, "mở đèn") || t == "bật") { S.setPower(true); return "Em đã bật đèn rồi" }
-        if (has(t, "sáng tối đa") || has(t, "sáng nhất")) return bright(100, z)
-        if (has(t, "sáng tối thiểu") || has(t, "tối nhất")) return bright(5, z)
-        if (has(t, "sáng hơn") || has(t, "tăng sáng") || has(t, "sáng lên")) return bright((cur + 20).coerceAtMost(100), z)
-        if (has(t, "tối hơn") || has(t, "giảm sáng") || has(t, "tối lại") || has(t, "dịu")) return bright((cur - 20).coerceAtLeast(5), z)
+        if (has(t, "sáng tối đa") || has(t, "sáng nhất")) return bright(100, zd)
+        if (has(t, "sáng tối thiểu") || has(t, "tối nhất")) return bright(5, zd)
+        if (has(t, "sáng hơn") || has(t, "tăng sáng") || has(t, "sáng lên")) return bright((cur + 20).coerceAtMost(100), zd)
+        if (has(t, "tối hơn") || has(t, "giảm sáng") || has(t, "tối lại") || has(t, "dịu")) return bright((cur - 20).coerceAtLeast(5), zd)
         if (has(t, "tăng tốc") || has(t, "nhanh hơn")) return speed((S.speed.intValue + 2).coerceAtMost(10))
         if (has(t, "chậm lại") || has(t, "chậm hơn") || has(t, "giảm tốc")) return speed((S.speed.intValue - 2).coerceAtLeast(1))
         if (has(t, "đổi hướng") || has(t, "đảo hướng")) {
@@ -263,13 +265,11 @@ object Voice {
         // màu: cần chữ "màu", có nêu khu vực, hoặc câu rất ngắn
         if (z >= 0 || t.contains("màu") || t.split(" ").size <= 3) for (c in COLORS) if (c.first.any { has(t, it) }) {
             if (S.mode.intValue != 0) { S.mode.intValue = 0; S.sendEffect() }      // đang chạy hiệu ứng thì về Đơn sắc để thấy màu
-            if (z >= 0) {
-                if (z != 0 && S.czone.intValue == 0) { S.col[1] = S.col[0]; S.col[2] = S.col[0] }      // đang đồng nhất: khu vực còn lại giữ màu đang có
-                S.czone.intValue = z
-            }
+            if (zd != 0 && S.czone.intValue == 0) { S.col[1] = S.col[0]; S.col[2] = S.col[0] }      // đang đồng nhất: khu vực còn lại giữ màu đang có
+            S.czone.intValue = zd
             S.setColor(c.second)
             S.resendColorSoon()
-            return "Em đã đổi${zn(z)} sang màu ${c.third} rồi"
+            return "Em đã đổi${zn(zd)} sang màu ${c.third} rồi"
         }
         return null
     }
@@ -634,7 +634,7 @@ fun CmdListApp() {
     T("Thêm khi dùng nút mic trên app", 14, FontWeight.Bold)
     CmdLine("Độ sáng", "“độ sáng 50”")
     CmdLine("Màu", "“màu cam”, “màu hồng”")
-    CmdLine("Khu vực", "“khu vực 2 màu đỏ”, “khu vực 1 màu xanh”, “khu vực 2 sáng hơn”, “cả xe màu trắng”")
+    CmdLine("Khu vực", "“khu vực 2 màu đỏ”, “khu vực 1 màu xanh”, “khu vực 2 sáng hơn”, “cả xe màu trắng”. Không nêu khu vực thì là cả xe.")
     CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
     CmdLine("Tốc độ", "“tốc độ 8”")
     CmdLine("Chế độ", "gọi theo tên chế độ trên màn hình")
