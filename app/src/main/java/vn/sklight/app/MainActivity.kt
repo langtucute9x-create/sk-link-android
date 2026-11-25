@@ -171,7 +171,7 @@ fun Root() {
             if (!gated) VoicePanel()
             key(tab, S.subPage.intValue, lock) {
               androidx.compose.runtime.CompositionLocalProvider(LocalScrollKey provides (if (S.subPage.intValue == 0) "t$tab" else null)) {
-                if (unplugged && tab < 3) TwoCol(leftW.dp, { PlugCard() }, { }) else if (lock && tab < 3) WideOne { ActivationPage(true) } else when (tab) {
+                if (unplugged && tab < 3) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Column(Modifier.widthIn(max = 460.dp).fillMaxWidth()) { PlugCard() } } else if (lock && tab < 3) WideOne { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
