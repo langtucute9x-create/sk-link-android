@@ -176,7 +176,8 @@ fun Root() {
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
                         val (granted, open) = navAccess()
-                        TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 } }, { NavBottom(granted, open) })
+                        // màn hình ngang: cột trái = trạng thái dẫn đường + mô phỏng, cột phải = cài đặt cảnh báo (bật tắt bên phải, xem đèn đổi bên trái)
+                        TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 }; SimCard() }, { NavBottom(granted, open, false) })
                     }
                     else -> if (S.subPage.intValue == 13) WideOne { ExtraPage(13) }
                     else if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
@@ -851,12 +852,12 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
 
 /** Thử nháy + thông báo của app dẫn đường. */
 @Composable
-fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
+fun NavBottom(granted: Boolean, openAccess: () -> Unit, sim: Boolean = true) {
     val ctx = LocalContext.current
     val k = S.alertKind.intValue
 
-    // ---- mô phỏng ----
-    SimCard()
+    // ---- mô phỏng (màn hình ngang thì nằm ở cột trái, xem MainActivity) ----
+    if (sim) SimCard()
 
     // ---- cảnh báo: rẽ, quá tốc độ, theo biển, gộp một mục ----
     AlertsCard()
