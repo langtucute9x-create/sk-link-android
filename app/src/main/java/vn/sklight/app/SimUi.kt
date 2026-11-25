@@ -167,7 +167,7 @@ private fun Scene(modifier: Modifier) {
     val uni = S.czone.intValue == 0
     val idle1: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[1])
     val idle2: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[2])
-    val spz = S.speedZone.intValue
+    val spz = if (ak in 3..7) S.alertZone[ak] else 0
     val zl1 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 1))      // khu 1 có tham gia cảnh báo đang chạy không
     val zl2 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 2))
     val path = remember { Path() }

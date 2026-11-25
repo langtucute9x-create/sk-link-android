@@ -111,7 +111,7 @@ fun AlertsCard() {
         AlertItem("Quá tốc độ", "Nháy khi vượt giới hạn tốc độ.", S.speedWarn.value, { S.speedWarn.value = it; S.saveSettings(); S.syncService() }) {
             ColorPick(3)
             Spacer(Modifier.height(10.dp))
-            ZonePick()
+            ZonePick(3)
             if (S.dev.value && S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
             if (S.dev.value) S.signThumb.value?.let { bmp ->
                 Spacer(Modifier.height(6.dp))
@@ -126,19 +126,19 @@ fun AlertsCard() {
             SkSlider((S.camDist.intValue - 100) / 200f, { S.camDist.intValue = 100 + (it * 4).roundToInt() * 50; S.saveSettings() }, Pink, tint(0.2f), Pink,
                 Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, label = "${S.camDist.intValue} m")
             Spacer(Modifier.height(10.dp))
-            ZonePick()
+            ZonePick(4)
         }
 
         AlertItem("Camera vượt đèn đỏ", "Nháy nhanh.", S.redCamWarn.value, { S.redCamWarn.value = it; S.saveSettings(); S.syncService() }) {
-            ColorPick(5); Spacer(Modifier.height(10.dp)); ZonePick()
+            ColorPick(5); Spacer(Modifier.height(10.dp)); ZonePick(5)
         }
 
         AlertItem("Biển cấm (cấm vượt...)", "Nháy 2 giây.", S.banWarn.value, { S.banWarn.value = it; S.saveSettings(); S.syncService() }) {
-            ColorPick(6); Spacer(Modifier.height(10.dp)); ZonePick()
+            ColorPick(6); Spacer(Modifier.height(10.dp)); ZonePick(6)
         }
 
         AlertItem("Giới hạn tốc độ giảm", "Nháy khi giới hạn tụt từ 10 km/h trở lên.", S.limitChgWarn.value, { S.limitChgWarn.value = it; S.saveSettings(); S.syncService() }) {
-            ColorPick(7); Spacer(Modifier.height(10.dp)); ZonePick()
+            ColorPick(7); Spacer(Modifier.height(10.dp)); ZonePick(7)
         }
 
         Spacer(Modifier.height(2.dp))
@@ -146,13 +146,13 @@ fun AlertsCard() {
     }
 }
 
-/** Khu nháy dùng chung cho các cảnh báo nháy màu (quá tốc độ và cảnh báo theo biển). */
+/** Khu nháy của riêng một loại cảnh báo ([kind] 3..7): khu vực 1 (táp lô, cửa), khu vực 2 (gầm chân) hoặc cả xe. */
 @Composable
-private fun ZonePick() {
+private fun ZonePick(kind: Int) {
     T("Khu nháy", 13, FontWeight.Bold)
     Spacer(Modifier.height(6.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
-            Chip(label, S.speedZone.intValue == z, Modifier.weight(1f), 44.dp, 12) { S.speedZone.intValue = z; S.saveSettings() }
+            Chip(label, S.alertZone[kind] == z, Modifier.weight(1f), 44.dp, 12) { S.alertZone[kind] = z; S.saveSettings() }
     }
 }

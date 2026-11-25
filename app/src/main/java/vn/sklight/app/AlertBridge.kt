@@ -66,7 +66,7 @@ object AlertBridge {
     /** Khu [zone] (1 hoặc 2) có đang nháy trong cảnh báo hiện tại không. */
     fun lit(zone: Int): Boolean = when (S.alertKind.intValue) {
         1, 2 -> true
-        3, 4, 5, 6, 7 -> S.speedZone.intValue == 0 || S.speedZone.intValue == zone
+        3, 4, 5, 6, 7 -> S.alertZone[S.alertKind.intValue] == 0 || S.alertZone[S.alertKind.intValue] == zone
         else -> false
     }
 
@@ -213,7 +213,7 @@ object AlertBridge {
             val uni = S.czone.intValue == 0
             val b1 = if (uni) S.col[0] else S.col[1]
             val b2 = if (uni) S.col[0] else S.col[2]
-            val z = S.speedZone.intValue
+            val z = S.alertZone[kind.coerceIn(0, 7)]
             val c1 = if (z == 0 || z == 1) v else b1
             val c2 = if (z == 0 || z == 2) v else b2
             S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)

@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.63"
+    const val VER = "1.4.64"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -92,6 +92,7 @@ object S {
     val banWarn = mutableStateOf(false)                   // báo biển cấm (cấm vượt...)
     val limitChgWarn = mutableStateOf(false)              // báo giới hạn tốc độ giảm mạnh
     val alertCol = mutableStateListOf(0, 0, 0, 2, 1, 2, 0, 0)   // màu đèn cảnh báo theo loại (chỉ số trong AlertBridge.PAL): 3 quá tốc độ, 4 camera, 5 camera đèn đỏ, 6 biển cấm, 7 giới hạn giảm
+    val alertZone = mutableStateListOf(0, 0, 0, 0, 0, 0, 0, 0)  // khu nháy riêng từng loại cảnh báo (3..7): 0 = cả xe, 1 = khu vực 1, 2 = khu vực 2
     val camDist = mutableIntStateOf(300)                  // báo camera khi còn tới (m)
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
     val floatSize = mutableIntStateOf(150)                // kích thước nút nổi, % (50–250)
@@ -181,6 +182,9 @@ object S {
         speedWarn.value = sp.getBoolean("speedWarn", false)
         camWarn.value = sp.getBoolean("camWarn", false); redCamWarn.value = sp.getBoolean("redCamWarn", false); banWarn.value = sp.getBoolean("banWarn", false); limitChgWarn.value = sp.getBoolean("limitChgWarn", false)
         camDist.intValue = sp.getInt("camDist", 300).coerceIn(100, 300)
+        // khu nháy: trước 1.4.64 dùng chung một giá trị (speedZone) cho mọi cảnh báo; lần đầu lên bản mới thì chép giá trị đó cho từng loại
+        val az = (sp.getString("alertZone", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }
+        for (i in 0 until 8) alertZone[i] = (if (az.size == 8) az[i] else sp.getInt("speedZoneB", 0)).coerceIn(0, 2)
         (sp.getString("alertCol", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { l -> if (l.size == 8) for (i in 0 until 8) alertCol[i] = l[i].coerceIn(0, 6) }
         speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
         screenAuto.value = sp.getBoolean("screenAuto2", true)      // mặc định TỰ ĐỌC app dẫn đường không có thông báo (Gofa); khóa mới từ 1.0.0
@@ -234,7 +238,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("camWarn", camWarn.value).putBoolean("redCamWarn", redCamWarn.value).putBoolean("banWarn", banWarn.value).putBoolean("limitChgWarn", limitChgWarn.value).putInt("camDist", camDist.intValue).putString("alertCol", alertCol.joinToString(",")).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("camWarn", camWarn.value).putBoolean("redCamWarn", redCamWarn.value).putBoolean("banWarn", banWarn.value).putBoolean("limitChgWarn", limitChgWarn.value).putInt("camDist", camDist.intValue).putString("alertZone", alertZone.joinToString(",")).putString("alertCol", alertCol.joinToString(",")).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
