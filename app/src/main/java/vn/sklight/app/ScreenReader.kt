@@ -30,6 +30,8 @@ class ScreenReader : AccessibilityService() {
         var arrow: Rect? = null; var sign: Rect? = null
         val descs = ArrayList<String>()
         val tops = ArrayList<Int>()        // mép trên (px) của nút chứa dòng mô tả tương ứng
+        val rcs = ArrayList<Rect>()        // khung của nút đó
+        var seek = false                   // [arrow] mới là vùng tìm, phải dò hình mũi tên trắng trong đó
         var win: Rect? = null             // cửa sổ app bản đồ   // chữ mô tả theo thứ tự (Vietmap Live ghi tốc độ, km/h, giới hạn thành ba dòng liền nhau)
     }
 
@@ -126,7 +128,21 @@ class ScreenReader : AccessibilityService() {
                 if (wn != null && f.tops[i] > wn.top + wn.height() * 45 / 100) continue
                 val m = re.find(f.descs[i]) ?: continue
                 dist = NavParser.findDist(m.groupValues[1] + " " + m.groupValues[2])
-                if (dist >= 0) { f.road = m.groupValues[3].trim().ifEmpty { f.descs.getOrNull(i + 1)?.takeIf { f.tops[i + 1] == f.tops[i] } ?: "" }; break }
+                if (dist >= 0) {
+                    f.road = m.groupValues[3].trim().ifEmpty { f.descs.getOrNull(i + 1)?.takeIf { f.tops[i + 1] == f.tops[i] } ?: "" }
+                    // Mũi tên rẽ là hình trắng ở đầu trái dải chỉ đường, ngay trước chữ khoảng cách. Chưa biết khung của nút chữ là riêng dòng chữ
+                    // hay cả dải, nên xét cả hai: bên trái nút còn chỗ thì tìm ở đó, không thì tìm ở đầu trái của chính nút.
+                    val nr = f.rcs[i]
+                    if (wn != null) {
+                        val rowH = minOf(nr.height(), wn.height() * 13 / 100).coerceAtLeast(24)
+                        val pad = if (nr.height() <= rowH) rowH * 3 / 10 else 0
+                        val y0 = nr.top - pad; val y1 = nr.top + rowH + pad
+                        f.arrow = if (nr.left - wn.left >= rowH * 6 / 10) Rect(maxOf(wn.left, nr.left - rowH * 2), y0, nr.left, y1)
+                                  else Rect(nr.left, y0, nr.left + rowH * 11 / 10, y1)
+                        f.seek = true
+                    }
+                    break
+                }
             }
         }
         var sp = f.spd.filter { it.isDigit() }.toIntOrNull()
@@ -155,7 +171,7 @@ class ScreenReader : AccessibilityService() {
         if (Build.VERSION.SDK_INT >= 30 && (f.arrow != null || f.sign != null) &&
             now - lastShot > (if (changed || dirNow == '?') 600L else 2500L)) {
             lastShot = now
-            shoot(pkg, f.arrow, f.sign, f.road, dist)
+            shoot(pkg, f.arrow, f.sign, f.road, dist, f.seek)
         }
         lastDist = dist
         info()
@@ -178,7 +194,7 @@ class ScreenReader : AccessibilityService() {
         AlertBridge.onNavOff()
     }
 
-    private fun shoot(pkg: String, arrow: Rect?, sign: Rect?, road: String, dist: Int) {
+    private fun shoot(pkg: String, arrow: Rect?, sign: Rect?, road: String, dist: Int, seek: Boolean = false) {
         if (Build.VERSION.SDK_INT < 30) return
         takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
             override fun onSuccess(r: ScreenshotResult) {
@@ -187,8 +203,9 @@ class ScreenReader : AccessibilityService() {
                     val bmp = Bitmap.wrapHardwareBuffer(hb, r.colorSpace)?.copy(Bitmap.Config.ARGB_8888, false)
                     hb.close()
                     if (bmp == null) return
-                    if (arrow != null) crop(bmp, arrow)?.let { c ->
+                    if (arrow != null) (if (seek) whiteArrow(bmp, arrow) else crop(bmp, arrow))?.let { c ->
                         val d = NavParser.analyseIcon(Bitmap.createScaledBitmap(c, 64, 64, true), NavState())
+                        if (seek && S.dev.value) S.arrowThumb.value = c        // chế độ nghiên cứu: xem app đang cắt hình nào làm mũi tên
                         if (d != '?') { dirNow = d; dirRoad = road; pushNav(pkg, dist, road); info() }
                     }
                     if (sign != null) {
@@ -199,6 +216,29 @@ class ScreenReader : AccessibilityService() {
             }
             override fun onFailure(code: Int) {}
         })
+    }
+
+    /** Tìm hình mũi tên trắng đầu tiên (tính từ trái) trong vùng [r]: gom các cột có điểm trắng liền nhau, gặp khoảng trống thì dừng (sau đó là chữ). */
+    private fun whiteArrow(bmp: Bitmap, r: Rect): Bitmap? {
+        val c = crop(bmp, r) ?: return null
+        val w = c.width; val hh = c.height
+        val px = IntArray(w * hh); c.getPixels(px, 0, w, 0, 0, w, hh)
+        fun white(p: Int): Boolean { val cr = (p shr 16) and 255; val cg = (p shr 8) and 255; val cb = p and 255; return cr > 185 && cg > 185 && cb > 185 && maxOf(cr, cg, cb) - minOf(cr, cg, cb) < 45 }
+        val col = IntArray(w)
+        for (y in 0 until hh) for (x in 0 until w) if (white(px[y * w + x])) col[x]++
+        val gap = maxOf(4, hh * 6 / 100)
+        var x0 = -1; var x1 = -1; var empty = 0
+        for (x in 0 until w) {
+            if (col[x] >= 2) { if (x0 < 0) x0 = x; x1 = x; empty = 0 }
+            else if (x0 >= 0 && ++empty >= gap) break
+        }
+        if (x0 < 0 || x1 - x0 < 8) return null
+        var y0 = hh; var y1 = -1
+        for (y in 0 until hh) for (x in x0..x1) if (white(px[y * w + x])) { if (y < y0) y0 = y; if (y > y1) y1 = y }
+        if (y1 - y0 < 8) return null
+        val p = 3          // chừa viền nền tối quanh hình, để bộ nhận hướng lấy đúng màu nền ở góc
+        val ax = maxOf(0, x0 - p); val ay = maxOf(0, y0 - p)
+        return Bitmap.createBitmap(c, ax, ay, minOf(w, x1 + p + 1) - ax, minOf(hh, y1 + p + 1) - ay)
     }
 
     /** Đọc số trên biển: thử vùng bên trong vành đỏ trước, không ra thì thử cả biển. */
@@ -391,7 +431,7 @@ class ScreenReader : AccessibilityService() {
         val low = id.lowercase()
         val t = n.text?.toString()?.trim().orEmpty()
         val d = n.contentDescription?.toString()?.trim().orEmpty()
-        if (f != null && d.isNotEmpty() && f.descs.size < 60) { val rr = Rect(); n.getBoundsInScreen(rr); for (part in d.split('\n')) { val q = part.trim(); if (q.isNotEmpty()) { f.descs.add(q); f.tops.add(rr.top) } } }   // Vietmap gộp "0 / km/h / 50" thành MỘT mô tả nhiều dòng
+        if (f != null && d.isNotEmpty() && f.descs.size < 60) { val rr = Rect(); n.getBoundsInScreen(rr); for (part in d.split('\n')) { val q = part.trim(); if (q.isNotEmpty()) { f.descs.add(q); f.tops.add(rr.top); f.rcs.add(rr) } } }   // Vietmap gộp "0 / km/h / 50" thành MỘT mô tả nhiều dòng
         if (f != null) {
             if (t.isNotEmpty()) {
                 if (low.contains("instruction")) f.instr = t

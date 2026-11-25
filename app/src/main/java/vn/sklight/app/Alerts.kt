@@ -118,6 +118,11 @@ fun AlertsCard() {
                 T("Ảnh biển app đang đọc:", 11, color = Grey)
                 Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
             }
+            if (S.dev.value) S.arrowThumb.value?.let { bmp ->
+                Spacer(Modifier.height(6.dp))
+                T("Hình mũi tên rẽ app đang đọc:", 11, color = Grey)
+                Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(60.dp))
+            }
         }
 
         AlertItem("Camera phạt nguội / AI / đo tốc độ", "Báo khi biển camera còn gần.", S.camWarn.value, { S.camWarn.value = it; S.saveSettings(); S.syncService() }) {

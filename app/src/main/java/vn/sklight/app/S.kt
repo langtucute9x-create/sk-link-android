@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.86"
+    const val VER = "1.4.87"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -104,6 +104,7 @@ object S {
     fun commonBox() = !dev.value && devName.value.contains("CTH", ignoreCase = true)
     val dev = mutableStateOf(false)                       // chế độ kỹ thuật: hiện mục đang thử (Chức năng gốc xe) và công cụ kiểm tra
     val screenAuto = mutableStateOf(true)                 // tự đọc màn hình app bản đồ
+    val arrowThumb = mutableStateOf<android.graphics.Bitmap?>(null)  // hình mũi tên rẽ app cắt từ màn hình Vietmap (để kiểm tra)
     val signThumb = mutableStateOf<android.graphics.Bitmap?>(null)   // ảnh cắt biển tốc độ app đang đọc (để kiểm tra)
     val ocrNote = mutableStateOf("")                      // kết quả đọc biển tốc độ gần nhất (để kiểm tra)
     val screenInfo = mutableStateOf("")                   // kết quả đọc gần nhất, để kiểm tra
