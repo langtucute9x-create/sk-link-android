@@ -256,9 +256,10 @@ class ScreenReader : AccessibilityService() {
         }
         if (tot == 0) return
         val gp = green * 1000 / tot; val rp = redIn * 1000 / tot          // phần nghìn diện tích ruột biển
-        val park = blue * 1000 / tot >= 300                               // ruột xanh dương: biển cấm dừng / cấm đỗ
-        val kind = if (park || rp >= 35) 6 else if (gp >= 2 || rp >= 2) 5 else 4
-        val name = when (kind) { 6 -> if (park) "cấm dừng đỗ" else "cấm vượt"; 5 -> "camera đèn đỏ"; else -> "camera" }
+        // ruột xanh dương: biển cấm dừng / cấm đỗ. Chủ dự án quyết định 26/11: loại này KHÔNG báo đèn.
+        if (blue * 1000 / tot >= 300) { S.ocrNote.value += " · cấm dừng đỗ (không báo đèn)"; return }
+        val kind = if (rp >= 35) 6 else if (gp >= 2 || rp >= 2) 5 else 4
+        val name = when (kind) { 6 -> "cấm vượt"; 5 -> "camera đèn đỏ"; else -> "camera" }
         fun fire(d: Int) {
             S.ocrNote.value += " · $name" + (if (d >= 0) " $d m" else " (không đọc được khoảng cách)")
             if (kind == 6) {

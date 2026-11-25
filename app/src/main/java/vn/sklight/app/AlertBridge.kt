@@ -137,6 +137,9 @@ object AlertBridge {
         kind = k
         S.alertKind.intValue = k
         if (k == 0) return
+        // Đèn cảnh báo sáng đúng mức người dùng đang đặt: app không gửi mức sáng nào khác, và gửi lại đúng mức đang đặt
+        // sau khi hộp đã đổi sang hiệu ứng / màu cảnh báo (phòng khi hộp tự về mức khác lúc đổi chế độ; chưa kiểm chứng trên hộp).
+        for (d in longArrayOf(250, 1100)) h.postDelayed({ try { if (kind == k && S.connected.value && S.on.value) S.sendBright() } catch (_: Exception) {} }, d)
         // Không dùng lệnh cấu hình cửa (04) để nháy: nó làm lệch đồng bộ hộp với xe.
         if (k == 1 || k == 2) {
             // Sắp rẽ: chỉ dùng kiểu đèn chạy theo hướng rẽ (đã bỏ kiểu nháy vàng cả xe). Chưa đọc được hướng chạy từ hộp thì hỏi lại rồi thử tiếp.
