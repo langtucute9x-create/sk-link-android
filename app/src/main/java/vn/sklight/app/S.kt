@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.68"
+    const val VER = "1.4.69"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -376,11 +376,18 @@ object S {
         // chế độ chạy đuổi của hộp: chọn màu là về Đơn sắc, cả xe một màu đã chọn
         var wasFx = false
         if (mode.intValue in intArrayOf(52, 6, 10, 12, 13)) { mode.intValue = 0; czone.intValue = 0; sendEffect(); wasFx = true }
+        // các hiệu ứng khác của hộp (1..99): hộp chỉ cho khu vực 2 nhận màu, khu vực 1 vẫn chạy hiệu ứng. Đang chọn "Đồng nhất" hoặc "Khu vực 1"
+        // mà chọn màu thì về Đơn sắc để màu lên đúng chỗ đã chọn; đang chọn "Khu vực 2" thì giữ hiệu ứng, chỉ đổi màu khu vực 2 như cũ.
+        else if (mode.intValue in 1..99 && czone.intValue != 2) { mode.intValue = 0; sendEffect(); wasFx = true }
         col[czone.intValue] = rgb
         on.value = true; sceneSel.intValue = -1
         saveColSoon()
         if (!Auto.running()) ble.send(colorFrame(), 2, true)      // đang có chế độ / kiểu vùng 2 của app thì nhịp kế tiếp tự gửi màu mới
-        if (wasFx) resendColorSoon()
+        if (wasFx) {
+            // gửi lại lệnh về Đơn sắc một lần nữa rồi mới gửi lại màu, phòng khi hộp bỏ sót khung đầu
+            main.postDelayed({ try { if (connected.value && mode.intValue == 0 && !Auto.running() && alertKind.intValue == 0) ble.send(Protocol.effect(sens.intValue, m1, 0, 0, speed.intValue), 3, true) } catch (_: Exception) {} }, 250)
+            resendColorSoon()
+        }
     }
 
     /** Gửi lại màu đang đặt sau 0,35 và 0,9 giây: vừa đổi hộp về Đơn sắc mà gửi màu ngay thì hộp có thể bỏ qua khung màu đầu (phỏng đoán, chưa kiểm chứng). */

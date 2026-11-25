@@ -127,6 +127,19 @@ object X {
     }
     fun onReset() { if (resetState == 1) resetState = 2 }
 
+    // ---- nhật ký khung hộp gửi về (40 khung gần nhất, kèm giờ): để dò hộp báo gì khi bấm nút đổi chế độ trên hộp ----
+    val rxLog = mutableStateListOf<String>()
+    private var rxLast = ""
+    private var rxN = 1
+    fun logRx(d: ByteArray) {
+        val hex = d.joinToString(" ") { "%02X".format(it) }
+        val tm = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+        if (hex == rxLast && rxLog.isNotEmpty()) { rxN++; rxLog[0] = "$tm  $hex  x$rxN"; return }      // khung lặp lại (app hỏi 4 giây một lần): chỉ đếm
+        rxLast = hex; rxN = 1
+        rxLog.add(0, "$tm  $hex")
+        while (rxLog.size > 40) rxLog.removeAt(rxLog.size - 1)
+    }
+
     // ---- chụp trạng thái hộp: hỏi mọi khối đọc được rồi ghi lại nguyên văn, để so trước / sau khi đổi một cài đặt ----
     @Volatile var snapOn = false
     private val snapCur = java.util.TreeMap<String, String>()
@@ -383,6 +396,27 @@ fun UpgradePage() {
 }
 
 @Composable
+private fun RxLogCard() {
+    val ctx = LocalContext.current
+    Card {
+        T("Hộp gửi về (40 khung gần nhất)", 15, FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        T("Bấm nút đổi chế độ trên hộp, chờ vài giây rồi bấm Sao chép nhật ký để gửi.", 12, color = SubTxt)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            OutlineBtn("Sao chép nhật ký", Modifier.weight(1.4f)) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("rx", "SK Light ${S.VER}, hộp gửi về (mới nhất ở trên):\n" + X.rxLog.joinToString("\n")))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
+            OutlineBtn("Xóa hết", Modifier.weight(1f)) { X.rxLog.clear() }
+        }
+        Spacer(Modifier.height(8.dp))
+        for (l in X.rxLog) T(l, 11, color = SubTxt)
+    }
+}
+
+@Composable
 fun SnapPage() {
     val ctx = LocalContext.current
     X.ver.intValue
@@ -411,6 +445,7 @@ fun SnapPage() {
             Notice.show(ctx, L.tr("Đã sao chép"))
         }
     }
+    RxLogCard()
 }
 
 @Composable

@@ -630,6 +630,7 @@ class BleLed(private val ctx: Context) {
     }
 
     private fun rxOne(d: ByteArray) {
+        run { val c0 = d.copyOf(); main.post { X.logRx(c0) } }
         if (X.snapOn) { val c = d.copyOf(); main.post { X.onSnapFrame(c) } }
         if (d.size >= 5 && (d[0].toInt() and 0xFF) == 0x2E) {
             val t = d[1].toInt() and 0xFF
