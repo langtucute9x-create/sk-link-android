@@ -198,6 +198,17 @@ object Voice {
 
     /** Thực hiện câu lệnh. Trả về câu trả lời (hiện trên thẻ và đọc thành tiếng), hoặc null nếu không có lệnh này. So trên chữ CÓ DẤU. */
     fun run(raw: String): String? {
+        // câu có nhiều lệnh nối bằng "và / rồi / sau đó": làm lần lượt từng lệnh (trước đây chỉ làm lệnh khớp đầu tiên)
+        val parts = raw.lowercase().split(Regex("\\s+(?:và|rồi|sau đó|đồng thời)\\s+")).map { it.trim() }.filter { it.isNotEmpty() }
+        if (parts.size < 2) return runOne(raw)
+        val outs = LinkedHashSet<String>(); var aft = 0
+        for (p in parts) { val r = runOne(p); if (r != null) { outs.add(r); if (after != 0) aft = after } }
+        if (outs.isEmpty()) return runOne(raw)
+        after = aft
+        return outs.joinToString(". ")
+    }
+
+    private fun runOne(raw: String): String? {
         after = 0
         var t = raw.lowercase().replace(Regex("[.,!?]"), " ").replace(Regex("\\s+"), " ").trim()
         if (t.isEmpty()) return null
