@@ -45,17 +45,6 @@ class ScreenReader : AccessibilityService() {
     override fun onDestroy() { h.removeCallbacks(poll); if (inst === this) inst = null; super.onDestroy() }
     override fun onInterrupt() {}
 
-    /**
-     * Phím cứng đi qua Android (phím vô lăng, nếu màn hình xe đưa qua): báo cho MuteKey để mở mic khi bấm 2 lần phím đã chọn.
-     * Không nuốt phím (trả về false) và không lưu lại gì ngoài tên phím vừa bấm để hiện ở trang Trợ lý.
-     */
-    override fun onKeyEvent(event: android.view.KeyEvent?): Boolean {
-        try {
-            if (event != null && event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) { val code = event.keyCode; h.post { MuteKey.onKey(code) } }
-        } catch (_: Throwable) {}
-        return false
-    }
-
     override fun onAccessibilityEvent(e: AccessibilityEvent?) {
         try {
             if (e == null) return

@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.71"
+    const val VER = "1.4.72"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -136,9 +136,6 @@ object S {
         } catch (_: Exception) {}
     }
     val z2Speed = mutableIntStateOf(5)                      // tốc độ riêng của kiểu khu vực 2 do app chạy (Màu thở, Màu chớp, Màu cầu vồng), 1..10
-    val micKey = mutableIntStateOf(0)                       // mã phím cứng dùng để mở mic (bấm 2 lần); 0 = nút tắt tiếng (VOLUME_MUTE / MUTE)
-    val learnKey = mutableStateOf(false)                    // đang chờ người dùng bấm phím để chọn làm phím mở mic
-    val muteMic = mutableStateOf(true)                      // đổi trạng thái tắt tiếng của máy 2 lần liên tiếp (nút tắt tiếng trên vô lăng) thì mở mic
     val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
     val nightOn = mutableStateOf(false)                   // tự dịu đèn ban đêm
@@ -187,7 +184,6 @@ object S {
         Crash.install(app)
         Act.init(app)
         detectCar(app)
-        MuteKey.start()
         sp = app.getSharedPreferences("sklight", Context.MODE_PRIVATE)
         invert.value = sp.getBoolean("invert2", false)        // khóa mới từ 0.5.28, bỏ giá trị "invert" cũ (mặc định sai)
         warnOn.value = sp.getBoolean("warnOn", false)
@@ -229,8 +225,6 @@ object S {
             sp.edit().putBoolean("floatDef2", true).putInt("floatMascot", 4).putInt("floatSize", 150).putInt("floatStyle2", 5).apply()
         }
         voiceReply.value = sp.getBoolean("voiceReply", true)
-        muteMic.value = sp.getBoolean("muteMic", true)
-        micKey.intValue = sp.getInt("micKey", 0)
         z2Speed.intValue = sp.getInt("z2Speed", 5).coerceIn(1, 10)
         voiceQuiet.value = true
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
@@ -264,7 +258,7 @@ object S {
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
-            .putBoolean("voiceReply", voiceReply.value).putBoolean("muteMic", muteMic.value).putInt("micKey", micKey.intValue).putInt("z2Speed", z2Speed.intValue).putBoolean("voiceQuiet", voiceQuiet.value)
+            .putBoolean("voiceReply", voiceReply.value).putInt("z2Speed", z2Speed.intValue).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont2", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle2", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)

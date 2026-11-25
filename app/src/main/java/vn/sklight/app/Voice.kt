@@ -61,7 +61,6 @@ object Voice {
      * và luồng hệ thống từ lúc bắt đầu nghe tới khi có kết quả. Chỉ đụng tới luồng đang có tiếng, xong thì bật lại đúng các luồng đó.
      */
     private fun quiet(on: Boolean) {
-        MuteKey.selfAt = android.os.SystemClock.elapsedRealtime()
         try {
             val am = S.app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
             if (on) {
@@ -591,62 +590,6 @@ object Speaker {
     fun stop() { onDone = null; focus(false); try { tts?.stop() } catch (e: Exception) {} }
 }
 
-/**
- * Mở mic bằng nút tắt tiếng trên vô lăng: trạng thái tắt tiếng của máy đổi 2 lần liền nhau trong 1,5 giây (tắt rồi bật, hoặc bật rồi tắt) thì mở mic.
- * App không nhận được phím vô lăng trực tiếp, nên dò trạng thái tắt tiếng / âm lượng 0 của luồng nhạc 5 lần mỗi giây.
- * Chỉ dùng được khi màn hình xe đưa nút tắt tiếng qua Android; màn hình tắt tiếng bằng mạch riêng thì app không thấy gì. Chưa thử trên xe.
- */
-object MuteKey {
-    private val h = Handler(Looper.getMainLooper())
-    private var started = false
-    private var last: Boolean? = null
-    private var changedAt = 0L
-    @Volatile var selfAt = 0L                        // lúc app tự tắt / bật tiếng khi nghe lệnh: bỏ qua thay đổi quanh lúc này
-    val seen = mutableIntStateOf(0)                  // số lần thấy trạng thái tắt tiếng đổi, hiện ở trang Trợ lý để kiểm tra
-
-    private val loop = object : Runnable {
-        override fun run() {
-            try {
-                val am = S.app.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-                if (am != null) {
-                    val m = am.isStreamMute(AudioManager.STREAM_MUSIC) || am.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
-                    val now = android.os.SystemClock.elapsedRealtime()
-                    val prev = last; last = m
-                    if (prev != null && prev != m && now - selfAt > 1500) {
-                        seen.intValue++
-                        if (S.muteMic.value && changedAt > 0 && now - changedAt <= 1500) { changedAt = 0; open() } else changedAt = now
-                    }
-                }
-            } catch (_: Exception) {}
-            h.postDelayed(this, 200)
-        }
-    }
-
-    fun start() { if (started) return; started = true; h.post(loop) }
-
-    // ---- cách 2: bắt phím cứng qua quyền Hỗ trợ tiếp cận (ScreenReader.onKeyEvent) ----
-    val keySeen = androidx.compose.runtime.mutableStateOf("")      // phím cứng app vừa thấy, hiện ở trang Trợ lý
-    private var keyLast = 0
-    private var keyAt = 0L
-    fun keyName(code: Int) = android.view.KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_") + " ($code)"
-    fun onKey(code: Int) {
-        keySeen.value = keyName(code)
-        if (S.learnKey.value) { S.micKey.intValue = code; S.learnKey.value = false; S.saveSettings(); keyAt = 0; return }
-        val mine = if (S.micKey.intValue > 0) code == S.micKey.intValue else (code == android.view.KeyEvent.KEYCODE_VOLUME_MUTE || code == android.view.KeyEvent.KEYCODE_MUTE)
-        if (!S.muteMic.value || !mine) return
-        val now = android.os.SystemClock.elapsedRealtime()
-        if (code == keyLast && keyAt > 0 && now - keyAt <= 1500) { keyAt = 0; open() } else { keyLast = code; keyAt = now }
-    }
-
-    private fun open() {
-        val c = S.app
-        if (S.voiceState.intValue == 1) return
-        if ((!S.connected.value || !Act.ok.value) && !S.dev.value) return          // chưa nối hộp / chưa kích hoạt: nút mic trên app cũng đang ẩn
-        if (c.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) { Notice.show(c, L.tr("Cần quyền micro để ra lệnh bằng giọng nói."), true); return }
-        Voice.start(c)
-    }
-}
-
 private fun micAllowed(ctx: Context) = ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
 /** Nút mic: chạm để nói, chạm lần nữa để hủy. */
@@ -722,17 +665,6 @@ fun VoicePage() {
             OutlineBtn(if (st == 3) "Kiểm tra lại" else "Nghe thử", Modifier.weight(1f)) { if (st == 3) Speaker.reset(); Speaker.say(ctx, "Xin chào, em là SK Light", force = true) }
         }
         if (Speaker.note.value.isNotEmpty()) T("Bộ đọc: " + Speaker.note.value, 11, color = Grey)
-        Divider(top = 8.dp)
-        SwitchRow("Bấm 2 lần nút tắt tiếng để mở mic", "Bấm 2 lần liền nhau trong 1,5 giây. Cần bật quyền Hỗ trợ tiếp cận cho SK Light.", S.muteMic.value) { S.muteMic.value = it; S.saveSettings() }
-        if (S.muteMic.value) {
-            T(L.tr("Phím app vừa thấy:") + " " + (if (MuteKey.keySeen.value.isEmpty()) L.tr("chưa thấy phím nào") else MuteKey.keySeen.value), 12, color = Grey)
-            T(L.tr("Phím mở mic:") + " " + (if (S.micKey.intValue > 0) MuteKey.keyName(S.micKey.intValue) else L.tr("nút tắt tiếng (mặc định)")), 12, color = Grey)
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlineBtn(if (S.learnKey.value) "Đang chờ bấm phím…" else "Chọn phím khác", Modifier.weight(1.3f)) { S.learnKey.value = !S.learnKey.value }
-                if (S.micKey.intValue > 0) OutlineBtn("Về mặc định", Modifier.weight(1f)) { S.micKey.intValue = 0; S.learnKey.value = false; S.saveSettings() }
-            }
-        }
     }
 }
 
