@@ -25,8 +25,6 @@ object Sim {
     private var t0 = 0L
     private var last = 0L
     private var turnAt = -1f
-    private var savedLimit = 0
-    private var savedApp = -1
     private var startDist = 0f
 
     private val step = object : Runnable {
@@ -61,10 +59,9 @@ object Sim {
     }
 
     private var fired = false
-    /** Xe chạy đều 45 km/h, sau 2 giây gặp biển: cho đúng sự kiện đó đi qua bộ cảnh báo thật. */
+    /** Xe chạy đều 45 km/h, khoảng 2 giây sau tới điểm báo của biển: cho đúng sự kiện đó đi qua bộ cảnh báo thật. */
     private fun signTick(dt: Float) {
         move(dt, 45f)
-        S.appSpeed.intValue = 45
         dist.floatValue -= 45f / 3.6f * dt
         val trig = when (kind.intValue) { 4 -> S.camDist.intValue; 5 -> 150; else -> 100 }
         if (!fired && dist.floatValue <= trig) { fired = true; AlertBridge.event(kind.intValue) }
@@ -72,19 +69,19 @@ object Sim {
     }
 
     private fun speedTick(dt: Float) {
-        // 45 km/h -> vượt lên 68 km/h trong 6 giây -> giữ 6 giây -> giảm về 45 km/h trong 4 giây
+        // 45 km/h trong 1 giây -> vượt lên 68 km/h trong 3 giây (qua ngưỡng báo sau khoảng 2 giây) -> giữ 6 giây -> giảm về 45 km/h trong 3 giây
+        // Tốc độ và giới hạn của mô phỏng do AlertBridge đọc thẳng từ đây, không ghi vào S.appSpeed / S.speedLimit (bộ đọc màn hình ghi đè liên tục).
         val t = sec.floatValue
         val v = when {
-            t < 3f -> 45f
-            t < 9f -> 45f + (t - 3f) / 6f * 23f
-            t < 15f -> 68f
-            t < 19f -> 68f - (t - 15f) / 4f * 23f
+            t < 1f -> 45f
+            t < 4f -> 45f + (t - 1f) / 3f * 23f
+            t < 10f -> 68f
+            t < 13f -> 68f - (t - 10f) / 3f * 23f
             else -> 45f
         }
         move(dt, v)
-        S.appSpeed.intValue = Math.round(v)
         AlertBridge.refresh()
-        if (t > 22f) stop()
+        if (t > 15f) stop()
     }
 
     fun start(k: Int) {
@@ -93,10 +90,10 @@ object Sim {
         fired = false; AlertBridge.evClear()
         running.value = true
         turn.floatValue = 0f; turnAt = -1f; sec.floatValue = 0f; travelled.floatValue = 0f
-        startDist = (when (k) { 1, 2 -> S.alertDist.intValue; 4 -> S.camDist.intValue; else -> 200 } + 90).toFloat()
+        // xuất phát chỉ cách điểm báo khoảng 2 giây chạy, để không phải chờ lâu mới thấy đèn
+        startDist = (when (k) { 1, 2 -> S.alertDist.intValue; 4 -> S.camDist.intValue; 5 -> 150; else -> 100 } + 24).toFloat()
         dist.floatValue = startDist
         speed.floatValue = if (k == 3) 45f else 40f
-        if (k == 3) { savedLimit = S.speedLimit.intValue; savedApp = S.appSpeed.intValue; S.speedLimit.intValue = LIMIT }
         t0 = System.currentTimeMillis(); last = t0
         h.post(step)
     }
@@ -106,7 +103,6 @@ object Sim {
         if (!running.value) return
         val k = kind.intValue
         running.value = false
-        if (k == 3) { S.speedLimit.intValue = savedLimit; S.appSpeed.intValue = savedApp }
         AlertBridge.simOff(); AlertBridge.evClear()
         Limit.update()
         AlertBridge.refresh()

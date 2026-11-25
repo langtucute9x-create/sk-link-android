@@ -109,7 +109,7 @@ object Gps {
                 val l = try { m.getLastKnownLocation(p) } catch (e: Exception) { null }
                 if (l != null) { S.setPlace(l.latitude, l.longitude); break }
             }
-            m.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, ll)
+            m.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, ll)   // 0 = nhanh nhất máy cho phép, để số km/h bớt trễ
             lm = m
         } catch (e: Exception) { /* máy không có GPS: bỏ qua, tốc độ để 0 */ }
     }

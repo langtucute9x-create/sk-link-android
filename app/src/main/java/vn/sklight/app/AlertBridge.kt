@@ -88,6 +88,7 @@ object AlertBridge {
         val e = EV[k] ?: return
         h.post {
             val now = System.currentTimeMillis()
+            if (Sim.running.value && Sim.kind.intValue != k) return@post          // đang mô phỏng loại khác
             if (!evOn(k) || now - evLast[k] < e[2] + e[3] || now < evUntil) return@post
             evLast[k] = now; evKind = k; evUntil = now + e[2]
             h.postDelayed({ evaluate() }, e[2] + 60)
@@ -106,7 +107,9 @@ object AlertBridge {
         if (System.currentTimeMillis() < testUntil) return testKind
         val d = S.navDist.intValue
         var turn = 0
-        if ((S.warnOn.value || Sim.running.value) && S.navOn.value && d in 0..S.alertDist.intValue) {
+        // đang mô phỏng thì chỉ xét đúng loại đang mô phỏng: dữ liệu dẫn đường / tốc độ thật không được chen vào
+        val simK = if (Sim.running.value) Sim.kind.intValue else 0
+        if (simK in 0..2 && (S.warnOn.value || simK != 0) && S.navOn.value && d in 0..S.alertDist.intValue) {
             if (S.navDir.value == "L") turn = 1
             if (S.navDir.value == "R") turn = 2
         }
@@ -114,8 +117,9 @@ object AlertBridge {
         if (turn != 0 && turn != expiredKind) return turn
         if (System.currentTimeMillis() < evUntil) return evKind
         // Quá tốc độ: vượt giới hạn quá 3 km/h thì báo, xuống bằng giới hạn thì tắt
+        if (simK == 3) return if (Math.round(Sim.speed.floatValue) > (if (kind == 3) Sim.LIMIT else Sim.LIMIT + 3)) 3 else 0
         val lim = S.speedLimit.intValue
-        if ((S.speedWarn.value || (Sim.running.value && Sim.kind.intValue == 3)) && lim > 0) {
+        if (simK == 0 && S.speedWarn.value && lim > 0) {
             val v = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
             if (v > (if (kind == 3) lim else lim + 3)) return 3
         }
