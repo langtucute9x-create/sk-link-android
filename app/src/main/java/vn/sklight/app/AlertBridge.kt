@@ -210,6 +210,7 @@ object AlertBridge {
     private fun boost() {
         try {
             if (!S.connected.value || !S.on.value) return
+            if (keptFx && kind >= 3) return          // kiểu nháy bằng độ sáng khu vực 2: nhịp nháy tự gửi mức sáng
             val z = if (kind >= 3) S.alertZone[kind.coerceIn(0, 7)] else 0          // khu chạy cảnh báo: 0 cả xe, 1, 2 (báo rẽ luôn là cả xe)
             val b1 = if (S.zone.intValue == 0) S.bri[0] else S.bri[1]
             S.ble.send(Protocol.bright(true, false, if (z == 2) b1 else (b1 + BOOST).coerceAtMost(100), 100), 1, true)
@@ -248,7 +249,13 @@ object AlertBridge {
             val z = S.alertZone[kind.coerceIn(0, 7)]
             val c1 = if (z == 0 || z == 1) v else b1
             val c2 = if (z == 0 || z == 2) v else b2
-            S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
+            if (keptFx) {
+                // Hộp đang chạy hiệu ứng ở khu vực 1: chủ dự án thử 26/11 thấy khu vực 2 nhận màu cảnh báo nhưng KHÔNG nháy theo lệnh màu sáng / tắt.
+                // Nên giữ màu cảnh báo ở khu vực 2 và nháy bằng độ sáng khu vực 2 (tối đa <-> 0); khu vực 1 giữ mức đang đặt.
+                S.ble.send(Protocol.color(false, b1, colorOf(kind), S.invert.value), 2)
+                val k1 = if (S.zone.intValue == 0) S.bri[0] else S.bri[1]
+                S.ble.send(Protocol.bright(true, false, k1, if (on) 100 else 0), 1, true)
+            } else S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
             h.postDelayed(this, EV[kind]?.get(1) ?: 250L)
         }
     }
