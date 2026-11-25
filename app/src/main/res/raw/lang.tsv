@@ -836,3 +836,8 @@ Mật khẩu	Password	パスワード	비밀번호	รหัสผ่าน	ព�
 Mật khẩu chưa đúng.	Wrong password.	パスワードが違います。	비밀번호가 올바르지 않습니다.	รหัสผ่านไม่ถูกต้อง	ពាក្យសម្ងាត់មិនត្រឹមត្រូវ។	ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.
 Chế độ nghiên cứu	Research mode	研究モード	연구 모드	โหมดวิจัย	របៀបស្រាវជ្រាវ	ໂໝດຄົ້ນຄວ້າ
 Nghiên cứu	Research	研究	연구	วิจัย	ស្រាវជ្រាវ	ຄົ້ນຄວ້າ
+Kích thước nút nổi	Floating button size	フローティングボタンのサイズ	플로팅 버튼 크기	ขนาดปุ่มลอย	ទំហំប៊ូតុងអណ្តែត	ຂະໜາດປຸ່ມລອຍ
+Vào màn hình chờ sau	Enter idle screen after	待機画面に入るまでの時間	대기 화면 진입 시간	เข้าสู่หน้าจอรอหลังจาก	ចូលអេក្រង់រង់ចាំបន្ទាប់ពី	ເຂົ້າໜ້າຈໍລໍຖ້າຫຼັງຈາກ
+Tra giới hạn tốc độ theo vị trí	Look up speed limit by location	位置から制限速度を検索	위치로 제한 속도 조회	ค้นหาขีดจำกัดความเร็วตามตำแหน่ง	រកកំណត់ល្បឿនតាមទីតាំង	ຊອກຫາຂີດຈຳກັດຄວາມໄວຕາມຕຳແໜ່ງ
+Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.	Used when the sign can't be read from the map app. Needs internet; sends your location to the OpenStreetMap server; many roads have no data.	地図アプリから標識を読み取れない時に使用。ネット接続が必要で、位置情報をOpenStreetMapサーバーに送信します。データのない道路も多くあります。	지도 앱에서 표지판을 읽지 못할 때 사용합니다. 인터넷이 필요하며 위치가 OpenStreetMap 서버로 전송됩니다. 데이터가 없는 도로가 많습니다.	ใช้เมื่ออ่านป้ายจากแอปแผนที่ไม่ได้ ต้องใช้อินเทอร์เน็ต ส่งตำแหน่งไปยังเซิร์ฟเวอร์ OpenStreetMap ถนนหลายสายยังไม่มีข้อมูล	ប្រើនៅពេលមិនអាចអានស្លាកពីកម្មវិធីផែនទី។ ត្រូវការអ៊ីនធឺណិត ផ្ញើទីតាំងទៅម៉ាស៊ីនមេ OpenStreetMap ផ្លូវជាច្រើនមិនទាន់មានទិន្នន័យ។	ໃຊ້ເມື່ອອ່ານປ້າຍຈາກແອັບແຜນທີ່ບໍ່ໄດ້. ຕ້ອງການອິນເຕີເນັດ ສົ່ງຕຳແໜ່ງໄປເຊີບເວີ OpenStreetMap ຖະໜົນຫຼາຍເສັ້ນຍັງບໍ່ມີຂໍ້ມູນ.
+giây	seconds	秒	초	วินาที	វិនាទី	ວິນາທີ

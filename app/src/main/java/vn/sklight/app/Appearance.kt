@@ -144,6 +144,10 @@ fun AppearanceIdle() {
         }
         Spacer(Modifier.height(12.dp))
         Grid(IDLE_STYLES.indices.toList(), 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
+        Spacer(Modifier.height(12.dp))
+        T("Vào màn hình chờ sau", 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Grid(listOf(5, 10, 15, 20, 30, 60), 3) { v, m -> Chip("$v " + L.tr("giây"), S.idleDelay.intValue == v, m, 40.dp, 12) { S.idleDelay.intValue = v; S.saveSettings() } }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
             OutlineBtn("Chọn ảnh của tôi", Modifier.fillMaxWidth()) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
         }
@@ -153,6 +157,10 @@ fun AppearanceIdle() {
         Spacer(Modifier.height(12.dp))
         // hình xem trước của kiểu đang chọn, đổi ngay khi chạm một kiểu
         FloatPreview(S.floatStyle.intValue)
+        Spacer(Modifier.height(12.dp))
+        T("Kích thước nút nổi", 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Grid(listOf(80, 100, 125, 150, 180), 3) { v, m -> Chip("$v%", S.floatSize.intValue == v, m, 40.dp, 12) { S.floatSize.intValue = v; S.saveSettings(); FloatButton.sync(ctx) } }
         Spacer(Modifier.height(12.dp))
         Grid(listOf(5, 1, 2, 3, 4), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
     }

@@ -51,7 +51,7 @@ object FloatButton {
         val c = ctx.applicationContext
         val want = S.floatOn.value && !S.appVisible && try { Settings.canDrawOverlays(c) } catch (e: Exception) { false }
         if (!want) { hide(c); return }
-        if (root != null && shownStyle != S.floatStyle.intValue) hide(c)
+        if (root != null && (shownStyle != S.floatStyle.intValue || shownSize != S.floatSize.intValue)) hide(c)
         try { show(c) } catch (e: Exception) { hide(c) }
     }
 
@@ -61,7 +61,8 @@ object FloatButton {
         root = null; bubble = null; shownStyle = -1; shifted = 0
     }
 
-    private fun dp(c: Context, v: Int) = (v * c.resources.displayMetrics.density).toInt()
+    private fun dp(c: Context, v: Int) = (v * c.resources.displayMetrics.density * S.floatSize.intValue / 100f).toInt()
+    private var shownSize = 100
     private fun box(color: Int, stroke: Int, radius: Float, sw: Int = 2) = GradientDrawable().apply { setColor(color); setStroke(sw, stroke); cornerRadius = radius }
     private fun oval(color: Int, stroke: Int = 0, sw: Int = 0) = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color); if (sw > 0) setStroke(sw, stroke) }
 
@@ -83,28 +84,37 @@ object FloatButton {
     /** Biểu tượng vẽ tay (không có chữ): 0 nguồn, 1 trừ, 2 cộng, 3 micro, 4 đổi bối cảnh. */
     private class Ico(val kind: Int, val color: Int) : Drawable() {
         private val pt = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
-        override fun draw(cv: Canvas) {
-            val b = bounds
-            val s = minOf(b.width(), b.height()).toFloat()
-            val cx = b.exactCenterX(); val cy = b.exactCenterY()
-            val r = s * 0.34f
-            pt.color = color; pt.style = Paint.Style.STROKE; pt.strokeWidth = s * 0.10f
+        private fun light(c: Int): Int { val k = 0.55f; return Color.argb(255, (Color.red(c) + (255 - Color.red(c)) * k).toInt(), (Color.green(c) + (255 - Color.green(c)) * k).toInt(), (Color.blue(c) + (255 - Color.blue(c)) * k).toInt()) }
+        private fun body(cv: Canvas, cx: Float, cy: Float, s: Float, r: Float) {
             when (kind) {
-                0 -> { cv.drawArc(RectF(cx - r, cy - r + s * 0.04f, cx + r, cy + r + s * 0.04f), -60f, 300f, false, pt); cv.drawLine(cx, cy - r - s * 0.04f, cx, cy - s * 0.02f, pt) }
-                1 -> cv.drawLine(cx - r, cy, cx + r, cy, pt)
-                2 -> { cv.drawLine(cx - r, cy, cx + r, cy, pt); cv.drawLine(cx, cy - r, cx, cy + r, pt) }
+                0 -> { pt.style = Paint.Style.STROKE; cv.drawArc(RectF(cx - r, cy - r + s * 0.04f, cx + r, cy + r + s * 0.04f), -60f, 300f, false, pt); cv.drawLine(cx, cy - r - s * 0.04f, cx, cy - s * 0.02f, pt) }
+                1 -> { pt.style = Paint.Style.STROKE; cv.drawLine(cx - r, cy, cx + r, cy, pt) }
+                2 -> { pt.style = Paint.Style.STROKE; cv.drawLine(cx - r, cy, cx + r, cy, pt); cv.drawLine(cx, cy - r, cx, cy + r, pt) }
                 3 -> {
+                    pt.style = Paint.Style.STROKE
                     val w = s * 0.13f
                     cv.drawRoundRect(RectF(cx - w, cy - r - s * 0.04f, cx + w, cy + s * 0.04f), w, w, pt)
                     cv.drawArc(RectF(cx - s * 0.24f, cy - s * 0.22f, cx + s * 0.24f, cy + s * 0.22f), 0f, 180f, false, pt)
                     cv.drawLine(cx, cy + s * 0.22f, cx, cy + r + s * 0.06f, pt)
                 }
                 else -> {
+                    pt.style = Paint.Style.STROKE
                     cv.drawCircle(cx, cy, r, pt)
                     pt.style = Paint.Style.FILL
                     for (a in intArrayOf(-150, -90, -30)) { val g = Math.toRadians(a.toDouble()); cv.drawCircle(cx + (cos(g) * r * 0.52f).toFloat(), cy + (sin(g) * r * 0.52f).toFloat(), s * 0.07f, pt) }
                 }
             }
+        }
+        /** Biểu tượng nổi khối: bóng đổ phía dưới phải, nét chính, rồi vệt sáng mảnh phía trên trái. */
+        override fun draw(cv: Canvas) {
+            val b = bounds
+            val s = minOf(b.width(), b.height()).toFloat()
+            val cx = b.exactCenterX(); val cy = b.exactCenterY()
+            val r = s * 0.34f
+            pt.strokeWidth = s * 0.10f
+            pt.color = 0x66000000; cv.save(); cv.translate(s * 0.035f, s * 0.05f); body(cv, cx, cy, s, r); cv.restore()
+            pt.color = color; body(cv, cx, cy, s, r)
+            pt.strokeWidth = s * 0.035f; pt.color = light(color); cv.save(); cv.translate(-s * 0.02f, -s * 0.025f); body(cv, cx, cy, s, r); cv.restore()
         }
         override fun setAlpha(a: Int) {}
         override fun setColorFilter(cf: ColorFilter?) {}
@@ -166,6 +176,7 @@ object FloatButton {
             background = bubbleBg(c, st)
             val bp = dp(c, if (st >= 3) 15 else 9); setPadding(bp, bp, bp, bp)
             contentDescription = "Nút nổi SK Light"
+            elevation = dp(c, 6).toFloat()
         }
         val pw = when (st) { 0 -> dp(c, 280); 1, 4 -> dp(c, 244); 3 -> dp(c, 96); 5 -> dp(c, 56); else -> ViewGroup.LayoutParams.WRAP_CONTENT }
         val ph = if (st == 3) dp(c, 212) else ViewGroup.LayoutParams.WRAP_CONTENT
@@ -203,7 +214,7 @@ object FloatButton {
         fun binBg(hot: Boolean) = oval(if (hot) 0xFFF44336.toInt() else 0xCC15161C.toInt(), Color.WHITE, dp(c, 2))
         fun showBin() {
             if (bin != null) return
-            val v = TextView(c).apply { text = "\u2715"; gravity = Gravity.CENTER; textSize = 24f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; background = binBg(false) }
+            val v = TextView(c).apply { text = "\u2715"; gravity = Gravity.CENTER; textSize = 24f * S.floatSize.intValue / 100f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD; background = binBg(false) }
             val bl = WindowManager.LayoutParams(binSize, binSize, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, PixelFormat.TRANSLUCENT
             ).apply { gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; y = binGap }
@@ -242,7 +253,7 @@ object FloatButton {
             true
         }
         try { wm.addView(all, l) } catch (e: Exception) { return }
-        root = all; bubble = b; shownStyle = st; shifted = 0
+        root = all; bubble = b; shownStyle = st; shownSize = S.floatSize.intValue; shifted = 0
     }
 
     /** Dựng lại nội dung bảng theo trạng thái hiện tại và kiểu đang chọn. */
@@ -261,7 +272,7 @@ object FloatButton {
                 val r1 = hrow(c)
                 r1.addView(key(c, 0, if (S.on.value) led() else 0xFF9AA0B0.toInt(), kb()) { S.setPower(!S.on.value); again() }, lpw(k, k))
                 r1.addView(key(c, 1, Color.WHITE, kb()) { brightBy(-10); again() }, lpw(k, k, gap))
-                r1.addView(TextView(c).apply { text = "${S.bri[S.zone.intValue]}%"; gravity = Gravity.CENTER; textSize = 17f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, wrap, 1f))
+                r1.addView(TextView(c).apply { text = "${S.bri[S.zone.intValue]}%"; gravity = Gravity.CENTER; textSize = 17f * S.floatSize.intValue / 100f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, wrap, 1f))
                 r1.addView(key(c, 2, Color.WHITE, kb()) { brightBy(10); again() }, lpw(k, k))
                 p.addView(r1)
                 if (scenes.isNotEmpty()) {
@@ -269,7 +280,7 @@ object FloatButton {
                     scenes.take(6).forEachIndexed { i, sc -> r2.addView(dot(c, sc, S.sceneSel.intValue == i) { Scenes.apply(i); again() }, lpw(dp(c, 30), dp(c, 30), if (i == 0) 0 else dp(c, 8))) }
                     p.addView(r2, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = dp(c, 12) })
                     val name = scenes.getOrNull(S.sceneSel.intValue)?.name ?: ""
-                    if (name.isNotEmpty()) p.addView(TextView(c).apply { text = L.tr(name); textSize = 12f; setTextColor(0xFFC3C9D6.toInt()) }, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = dp(c, 6) })
+                    if (name.isNotEmpty()) p.addView(TextView(c).apply { text = L.tr(name); textSize = 12f * S.floatSize.intValue / 100f; setTextColor(0xFFC3C9D6.toInt()) }, LinearLayout.LayoutParams(wrap, wrap).apply { topMargin = dp(c, 6) })
                 }
                 val r3 = hrow(c)
                 if (vi) r3.addView(key(c, 3, PINK, kb()) { askMic(c, p) }, lpw(k, k))
@@ -322,7 +333,7 @@ object FloatButton {
     private fun btn(c: Context, text: String, sel: Boolean = false, onClick: () -> Unit) = TextView(c).apply {
         this.text = text
         gravity = Gravity.CENTER
-        textSize = 13f
+        textSize = 13f * S.floatSize.intValue / 100f
         setTextColor(TXT)
         typeface = if (sel) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         minHeight = dp(c, 46)
@@ -339,7 +350,7 @@ object FloatButton {
         val row = hrow(c)
         row.addView(btn(c, L.tr(if (S.on.value) "Tắt đèn" else "Bật đèn")) { S.setPower(!S.on.value); again() }, LinearLayout.LayoutParams(dp(c, 76), wrap))
         row.addView(btn(c, "−") { brightBy(-10); again() }, LinearLayout.LayoutParams(dp(c, 46), wrap).apply { leftMargin = gap })
-        row.addView(TextView(c).apply { text = "${S.bri[S.zone.intValue]}%"; gravity = Gravity.CENTER; textSize = 16f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, wrap, 1f))
+        row.addView(TextView(c).apply { text = "${S.bri[S.zone.intValue]}%"; gravity = Gravity.CENTER; textSize = 16f * S.floatSize.intValue / 100f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, wrap, 1f))
         row.addView(btn(c, "+") { brightBy(10); again() }, LinearLayout.LayoutParams(dp(c, 46), wrap))
         p.addView(row)
         Scenes.all().withIndex().chunked(2).forEach { pair ->
@@ -352,7 +363,7 @@ object FloatButton {
             p.addView(r, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, wrap).apply { topMargin = gap })
         }
         p.addView(TextView(c).apply {
-            text = L.tr("Mở SK Light"); gravity = Gravity.CENTER; textSize = 13f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD; minHeight = dp(c, 44)
+            text = L.tr("Mở SK Light"); gravity = Gravity.CENTER; textSize = 13f * S.floatSize.intValue / 100f; setTextColor(0xFFC4127F.toInt()); typeface = Typeface.DEFAULT_BOLD; minHeight = dp(c, 44)
             setOnClickListener { openApp(c); p.visibility = View.GONE }
         }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, wrap).apply { topMargin = dp(c, 4) })
     }

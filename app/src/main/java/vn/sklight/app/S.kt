@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.50"
+    const val VER = "1.4.51"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -88,6 +88,9 @@ object S {
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
     val speedZone = mutableIntStateOf(0)                  // quá tốc độ: khu nào nháy đỏ (0 = cả xe, 1, 2). Mặc định cả xe.
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
+    val floatSize = mutableIntStateOf(100)                // kích thước nút nổi, % (70–180)
+    val idleDelay = mutableIntStateOf(10)                 // số giây không chạm trước khi vào màn hình chờ
+    val limitOsm = mutableStateOf(true)                   // tra giới hạn tốc độ theo vị trí (dữ liệu OpenStreetMap, cần mạng)
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
     val appSpeed = mutableIntStateOf(-1)                  // tốc độ xe đọc từ app dẫn đường, -1 = chưa biết
     /** Hộp dùng chung (tên có CTH): không có chọn mẫu xe, chức năng gốc, dữ liệu CAN. Chế độ nghiên cứu bật thì hiện hết. */
@@ -184,6 +187,7 @@ object S {
         nightTo.intValue = sp.getInt("nightTo", 6 * 60)
         nightBri.intValue = sp.getInt("nightBri", 30)
         idleOn.value = sp.getBoolean("idleOn", false)
+        floatSize.intValue = sp.getInt("floatSize", 100).coerceIn(70, 180); idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
         floatStyle.intValue = sp.getInt("floatStyle2", 5).coerceIn(1, 5)     // bỏ Kiểu gốc (24/11), mặc định Cột neon
@@ -220,7 +224,7 @@ object S {
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
-            .putBoolean("idleOn", idleOn.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
+            .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
@@ -330,6 +334,8 @@ object S {
     fun setColor(rgb: Int) {
         // chế độ tự tạo cả xe không dùng màu gốc (cầu vồng, lửa…): chọn màu là rời chế độ đó. Kiểu vùng 2 của app thì chạy tiếp.
         if (Auto.main.intValue != 0 && !Auto.usesBase()) { Auto.leave(); if (mode.intValue >= 100) mode.intValue = 0 }
+        // chế độ chạy đuổi của hộp: chọn màu là về Đơn sắc, cả xe một màu đã chọn
+        if (mode.intValue in intArrayOf(52, 6, 10, 12, 13)) { mode.intValue = 0; czone.intValue = 0; sendEffect() }
         col[czone.intValue] = rgb
         on.value = true; sceneSel.intValue = -1
         saveColSoon()

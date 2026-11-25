@@ -134,7 +134,7 @@ fun Root() {
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
-            if (S.idleOn.value && !S.idleShow.value && maxOf(S.speedKmh.floatValue, S.appSpeed.intValue.toFloat()) >= 10f && System.currentTimeMillis() - S.lastTouch > 10000) S.idleShow.value = true
+            if (S.idleOn.value && !S.idleShow.value && maxOf(S.speedKmh.floatValue, S.appSpeed.intValue.toFloat()) >= 10f && System.currentTimeMillis() - S.lastTouch > S.idleDelay.intValue * 1000L) S.idleShow.value = true
         }
     }
 
@@ -921,6 +921,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
         Spacer(Modifier.height(8.dp))
         SwitchRow("Nháy đỏ khi quá tốc độ", "", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); if (!it) Limit.clearOsm() }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))

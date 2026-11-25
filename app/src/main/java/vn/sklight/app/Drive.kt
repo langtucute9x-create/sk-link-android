@@ -93,6 +93,7 @@ object Gps {
         override fun onLocationChanged(l: Location) {
             S.speedKmh.floatValue = if (l.hasSpeed()) l.speed * 3.6f else 0f
             S.setPlace(l.latitude, l.longitude)
+            Limit.onLocation(l.latitude, l.longitude, S.speedKmh.floatValue)
         }
         @Deprecated("old") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
         override fun onProviderEnabled(p: String) {}
