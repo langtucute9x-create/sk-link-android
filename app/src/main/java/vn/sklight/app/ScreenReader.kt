@@ -150,7 +150,7 @@ class ScreenReader : AccessibilityService() {
     private var lastDist = -1
     private var budget = 0          // số nút giao diện còn được duyệt trong một lần đọc
     private fun info() {
-        S.screenInfo.value = "khoảng cách ${if (lastDist < 0) "chưa có" else "$lastDist m"}, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ ${S.appSpeed.intValue}"
+        S.screenInfo.value = "khoảng cách ${if (lastDist < 0) "chưa có" else "$lastDist m"}, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ trên app bản đồ ${S.appSpeed.intValue} (không dùng), GPS ${S.carSpeed()}"
     }
 
     private fun pushNav(pkg: String, dist: Int, road: String) {

@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.84"
+    const val VER = "1.4.85"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -163,13 +163,11 @@ object S {
     val speedKmh = mutableFloatStateOf(0f)
     @Volatile var gpsAt = 0L                                // lúc GPS của máy báo tốc độ gần nhất
     /**
-     * Tốc độ xe (km/h) dùng cho cảnh báo và hiển thị. Ưu tiên GPS của máy (cùng nguồn với app bản đồ, không trễ như đọc số trên màn hình);
-     * GPS im quá 3 giây (app chạy nền, mất sóng) thì mới lấy số đọc từ app bản đồ.
+     * Tốc độ xe (km/h) dùng cho cảnh báo và hiển thị: CHỈ lấy từ GPS của máy. Chủ dự án thử trên xe 26/11: số GPS của app khớp đồng hồ xe,
+     * số trên Vietmap thì sai và trễ, nên không dùng tốc độ của app bản đồ nữa (app bản đồ chỉ còn cho biển báo và báo rẽ).
+     * GPS im quá 5 giây (mất sóng, bị tắt) thì coi như chưa biết tốc độ = 0, không giữ số cũ kẻo cảnh báo quá tốc độ kẹt lại.
      */
-    fun carSpeed(): Int {
-        val g = speedKmh.floatValue; val a = appSpeed.intValue
-        return if (System.currentTimeMillis() - gpsAt < 3000) Math.round(g) else if (a >= 0) a else Math.round(g)
-    }
+    fun carSpeed(): Int = if (System.currentTimeMillis() - gpsAt < 5000) Math.round(speedKmh.floatValue) else 0
     val song = mutableStateOf("")
     val placeVer = mutableIntStateOf(0)
     var lat = Double.NaN

@@ -142,7 +142,7 @@ fun Root() {
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
-            if (S.idleOn.value && !S.idleShow.value && maxOf(S.speedKmh.floatValue, S.appSpeed.intValue.toFloat()) >= 10f && System.currentTimeMillis() - S.lastTouch > S.idleDelay.intValue * 1000L) S.idleShow.value = true
+            if (S.idleOn.value && !S.idleShow.value && S.carSpeed() >= 10 && System.currentTimeMillis() - S.lastTouch > S.idleDelay.intValue * 1000L) S.idleShow.value = true
         }
     }
 

@@ -212,6 +212,8 @@ object AlertBridge {
     private val tick = object : Runnable {
         override fun run() {
             if (kind < 3) return                       // rẽ chạy bằng hiệu ứng hộp; còn lại nháy bằng lệnh màu
+            // quá tốc độ: tự xét lại theo từng nhịp nháy, để GPS mất sóng (không còn số mới báo về) thì cảnh báo cũng tắt
+            if (kind == 3 && wanted() != 3) { evaluate(); return }
             val on = !S.alertPhase.value
             S.alertPhase.value = on
             // Quá tốc độ: khu được chọn nháy đỏ
