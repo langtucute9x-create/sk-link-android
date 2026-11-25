@@ -98,8 +98,16 @@ class MainActivity : ComponentActivity() {
     /** Đang hiện màn hình báo lỗi của lần mở trước: không chạy các phần khác của app. */
     private var crashShown = false
 
-    override fun onStart() { super.onStart(); if (crashShown) return; Gps.start(this); S.autoConnect(); S.syncService(this) }
-    override fun onStop() { if (!crashShown) { Gps.stop(); S.syncService(this) }; super.onStop() }
+    override fun onStart() { super.onStart(); if (crashShown) return; S.uiStarted = true; Gps.start(this); S.autoConnect(); S.syncService(this) }
+    override fun onStop() {
+        if (!crashShown) {
+            S.uiStarted = false
+            // Bật cảnh báo quá tốc độ và app còn chạy nền thì GPS chạy tiếp (tốc độ lấy từ GPS của máy, không đọc số trên app bản đồ)
+            if (!(KeepService.alive && S.speedWarn.value)) Gps.stop()
+            S.syncService(this)
+        }
+        super.onStop()
+    }
     override fun onResume() { super.onResume(); if (crashShown) return; Split.inSplit.value = isInMultiWindowMode; S.appVisible = true; S.lastTouch = System.currentTimeMillis(); FloatButton.sync(this)
         // vừa bấm mic ở màn hình nổi: nghe ngay khi app mở lên
         if (S.pendingMic) { S.pendingMic = false; if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) Voice.start(this) }

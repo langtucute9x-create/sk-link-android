@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.83"
+    const val VER = "1.4.84"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -161,12 +161,22 @@ object S {
     val voiceReply = mutableStateOf(true)                 // trả lời bằng tiếng nói sau mỗi câu lệnh
     val voiceQuiet = mutableStateOf(true)                 // tắt tiếng báo của bộ nhận giọng nói khi bấm mic
     val speedKmh = mutableFloatStateOf(0f)
+    @Volatile var gpsAt = 0L                                // lúc GPS của máy báo tốc độ gần nhất
+    /**
+     * Tốc độ xe (km/h) dùng cho cảnh báo và hiển thị. Ưu tiên GPS của máy (cùng nguồn với app bản đồ, không trễ như đọc số trên màn hình);
+     * GPS im quá 3 giây (app chạy nền, mất sóng) thì mới lấy số đọc từ app bản đồ.
+     */
+    fun carSpeed(): Int {
+        val g = speedKmh.floatValue; val a = appSpeed.intValue
+        return if (System.currentTimeMillis() - gpsAt < 3000) Math.round(g) else if (a >= 0) a else Math.round(g)
+    }
     val song = mutableStateOf("")
     val placeVer = mutableIntStateOf(0)
     var lat = Double.NaN
     var lon = Double.NaN
     @Volatile var lastTouch = 0L
     var appVisible = false
+    @Volatile var uiStarted = false                         // màn hình app đang mở (kể cả khi chia đôi màn hình mà không được chọn)
     var userOff = false                                   // người dùng vừa bấm Ngắt kết nối: không tự nối lại
     val main = Handler(Looper.getMainLooper())
     val subPage = mutableIntStateOf(0)                    // trang con trong Cài đặt: 0 không, 1 Cài đặt giao diện, 2 Cài đặt ngôn ngữ, 3 Thử chế độ tự tạo, 4 Giọng nói AI

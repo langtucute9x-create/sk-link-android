@@ -124,7 +124,7 @@ object AlertBridge {
         if (simK == 3) return if (Math.round(Sim.speed.floatValue) > (if (kind == 3) Sim.LIMIT else Sim.LIMIT + 3)) 3 else 0
         val lim = S.speedLimit.intValue
         if (simK == 0 && S.speedWarn.value && lim > 0) {
-            val v = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
+            val v = S.carSpeed()
             if (v > (if (kind == 3) lim else lim + 3)) return 3
         }
         return 0

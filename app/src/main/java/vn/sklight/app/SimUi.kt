@@ -85,7 +85,7 @@ private fun Hud() {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(run) { while (run) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(100) } }
     // Không chạy mô phỏng thì hình hiện dữ liệu thật: tốc độ, biển giới hạn, hướng rẽ và khoảng cách của app dẫn đường.
-    val spd = if (run) Sim.speed.floatValue.toInt() else if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else Math.round(S.speedKmh.floatValue)
+    val spd = if (run) Sim.speed.floatValue.toInt() else S.carSpeed()
     val lim = if (run) (if (k == 3) Sim.LIMIT else 0) else S.speedLimit.intValue
     val over = lim > 0 && spd > lim
     Box(Modifier.fillMaxSize().padding(8.dp)) {
@@ -171,7 +171,7 @@ private fun Scene(modifier: Modifier) {
     val kind = Sim.kind.intValue
     val run = Sim.running.value
     val turnP = Sim.turn.floatValue
-    val speed = if (run) Sim.speed.floatValue else if (S.appSpeed.intValue >= 0) S.appSpeed.intValue.toFloat() else S.speedKmh.floatValue
+    val speed = if (run) Sim.speed.floatValue else S.carSpeed().toFloat()
     // khu vực 1 = táp lô + cửa, khu vực 2 = gầm chân; mỗi khu có màu thường ngày riêng khi người dùng đặt hai màu
     val uni = S.czone.intValue == 0
     val idle1: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[1])

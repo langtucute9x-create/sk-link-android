@@ -31,6 +31,7 @@ import kotlin.math.abs
 
 /** Dịch vụ chạy nền: giữ kết nối với hộp đèn (tự nối lại), và giữ nút nổi trên màn hình. */
 class KeepService : Service() {
+    companion object { @Volatile var alive = false }
     private val h = Handler(Looper.getMainLooper())
     private var lostSince = 0L
     private val loop = object : Runnable {
@@ -60,9 +61,19 @@ class KeepService : Service() {
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setContentIntent(pi).setOngoing(true).build()
         try {
-            if (Build.VERSION.SDK_INT >= 29) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+            if (Build.VERSION.SDK_INT >= 29) {
+                // Thêm loại "vị trí" để GPS còn chạy khi app ở nền (tốc độ cho cảnh báo quá tốc độ). Máy không cho (chưa cấp quyền vị trí,
+                // hoặc dịch vụ được bật lúc máy khởi động khi app chưa mở) thì chạy như cũ, chỉ giữ kết nối hộp; lần mở app kế tiếp sẽ thêm lại.
+                var ok = false
+                if (S.speedWarn.value && checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    try { startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION); ok = true } catch (_: Exception) {}
+                }
+                if (!ok) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+            }
             else startForeground(1, n)
         } catch (e: Exception) { stopSelf(); return START_NOT_STICKY }
+        alive = true
+        if (S.speedWarn.value) Gps.start(this)
         lostSince = 0L
         h.removeCallbacks(loop); h.post(loop)
         FloatButton.sync(this)
@@ -70,6 +81,8 @@ class KeepService : Service() {
     }
 
     override fun onDestroy() {
+        alive = false
+        if (!S.uiStarted) Gps.stop()
         h.removeCallbacks(loop)
         FloatButton.hide(this)
         super.onDestroy()

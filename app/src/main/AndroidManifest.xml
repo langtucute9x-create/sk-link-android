@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -68,7 +69,7 @@
         </provider>
 
         <!-- Giữ kết nối với hộp đèn khi app không mở, và giữ nút nổi -->
-        <service android:name=".KeepService" android:exported="false" android:foregroundServiceType="connectedDevice" />
+        <service android:name=".KeepService" android:exported="false" android:foregroundServiceType="connectedDevice|location" />
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -92,8 +92,10 @@ object Gps {
     private val ll = object : LocationListener {
         override fun onLocationChanged(l: Location) {
             S.speedKmh.floatValue = if (l.hasSpeed()) l.speed * 3.6f else 0f
+            if (l.hasSpeed()) S.gpsAt = System.currentTimeMillis()
             S.setPlace(l.latitude, l.longitude)
             Limit.onLocation(l.latitude, l.longitude, S.speedKmh.floatValue)
+            AlertBridge.refresh()                               // xét quá tốc độ ngay khi GPS có số mới, không chờ lần đọc màn hình kế tiếp
         }
         @Deprecated("old") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
         override fun onProviderEnabled(p: String) {}
@@ -117,7 +119,7 @@ object Gps {
     fun stop() {
         try { lm?.removeUpdates(ll) } catch (_: Exception) {}
         lm = null
-        S.speedKmh.floatValue = 0f
+        S.speedKmh.floatValue = 0f; S.gpsAt = 0L
     }
 }
 

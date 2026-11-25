@@ -299,7 +299,7 @@ private fun NavCard(hero: Boolean, wide: Boolean) {
             if (line.isNotEmpty()) Text(line, fontSize = (if (hero) 22 else 16).sp, fontWeight = FontWeight.SemiBold, color = Color.White, fontFamily = Inter, maxLines = if (hero) 2 else 1, overflow = TextOverflow.Ellipsis)
             if (hero && S.navApp.value.isNotEmpty()) Text(S.navApp.value, fontSize = 13.sp, color = DimTxt, fontFamily = Inter, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        if (S.speedLimit.intValue > 0) { Spacer(Modifier.width(10.dp)); SpeedSign(S.speedLimit.intValue, if (hero) 76.dp else 52.dp, (if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else S.speedKmh.floatValue.roundToInt()) > S.speedLimit.intValue) }
+        if (S.speedLimit.intValue > 0) { Spacer(Modifier.width(10.dp)); SpeedSign(S.speedLimit.intValue, if (hero) 76.dp else 52.dp, S.carSpeed() > S.speedLimit.intValue) }
     }
 }
 
@@ -374,7 +374,7 @@ fun IdleScreen(wide: Boolean, preview: Boolean = false) {
     val exit = { if (!preview) { S.idleShow.value = false; S.lastTouch = System.currentTimeMillis() } }
     val nextStyle = { S.idleStyle.intValue = (style + 1) % IDLE_STYLES.size; S.saveSettings(); S.lastTouch = System.currentTimeMillis() }
     val nav = S.navOn.value
-    val spd = if (S.appSpeed.intValue >= 0) S.appSpeed.intValue else S.speedKmh.floatValue.roundToInt()
+    val spd = S.carSpeed()
     val limit = S.speedLimit.intValue
     val spdColor = if (limit > 0 && spd > limit) LimitRed else Color.White
     Box(Modifier.fillMaxSize().background(if (plain) Color.Black else Color(0xFF0D0F15)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = exit)) {
