@@ -28,6 +28,7 @@ class ScreenReader : AccessibilityService() {
     private class Found {
         var instr = ""; var road = ""; var spd = ""
         var arrow: Rect? = null; var sign: Rect? = null
+        val descs = ArrayList<String>()   // chữ mô tả theo thứ tự (Vietmap Live ghi tốc độ, km/h, giới hạn thành ba dòng liền nhau)
     }
 
     private val h = Handler(Looper.getMainLooper())
@@ -109,7 +110,18 @@ class ScreenReader : AccessibilityService() {
 
     private fun process(pkg: String, f: Found, now: Long) {
         val dist = NavParser.findDist(f.instr)
-        val sp = f.spd.filter { it.isDigit() }.toIntOrNull()
+        var sp = f.spd.filter { it.isDigit() }.toIntOrNull()
+        // Vietmap Live: ba dòng mô tả liền nhau "tốc độ" / "km/h" / "giới hạn" (giới hạn chỉ có khi đường có biển)
+        val ki = f.descs.indexOfFirst { it.equals("km/h", true) }
+        if (ki > 0) {
+            val v = f.descs[ki - 1].toIntOrNull()
+            if (sp == null && v != null && v in 0..250) sp = v
+            val lim = f.descs.getOrNull(ki + 1)?.toIntOrNull()
+            if (lim != null && lim in 10..140 && lim % 5 == 0) {
+                Limit.setScreen(lim)
+                if (S.dev.value) S.ocrNote.value = "đọc giới hạn $lim từ chữ của app bản đồ"
+            }
+        }
         if (sp != null) spdAt = now
         S.appSpeed.intValue = sp ?: -1
         if (f.sign == null && Build.VERSION.SDK_INT >= 30 && now - lastScan > 2500L) { lastScan = now; scanScreen() }
@@ -322,10 +334,10 @@ class ScreenReader : AccessibilityService() {
             val asp = bw.toFloat() / bh
             if (asp < 0.8f || asp > 1.25f) continue
             if (cnt < bw + bh || cnt > bw * bh * 3 / 4) continue   // vành rỗng, không phải khối đặc
-            // ruột phải sáng (nền trắng của biển)
+            // ruột phải sáng (nền trắng hoặc xanh của biển)
             var lit = 0; var tot = 0
             val ix0 = (x0 + bw / 4) * cell; val ix1 = (x1 + 1 - bw / 4) * cell; val iy0 = (y0 + bh / 4) * cell; val iy1 = (y1 + 1 - bh / 4) * cell
-            for (y in iy0 until minOf(iy1, hh)) for (x in ix0 until minOf(ix1, w)) { val c = px[y * w + x]; tot++; if (((c shr 16) and 255) > 120 && ((c shr 8) and 255) > 120 && (c and 255) > 120) lit++ }
+            for (y in iy0 until minOf(iy1, hh)) for (x in ix0 until minOf(ix1, w)) { val c = px[y * w + x]; tot++; val cr = (c shr 16) and 255; val cg = (c shr 8) and 255; val cb = c and 255; if ((cr > 120 && cg > 120 && cb > 120) || (cb > 150 && cr < 90 && cb - cr > 90)) lit++ }   // ruột trắng (biển tốc độ, camera) hoặc xanh dương (biển cấm dừng đỗ)
             if (tot == 0 || lit * 100 / tot < 30) continue
             val score = lit
             run { found.add(score to Rect((x0 * cell * sc).toInt(), (y0 * cell * sc).toInt(), ((x1 + 1) * cell * sc).toInt(), ((y1 + 1) * cell * sc).toInt())) }
@@ -349,6 +361,7 @@ class ScreenReader : AccessibilityService() {
         val low = id.lowercase()
         val t = n.text?.toString()?.trim().orEmpty()
         val d = n.contentDescription?.toString()?.trim().orEmpty()
+        if (f != null && d.isNotEmpty() && f.descs.size < 60) f.descs.add(d)
         if (f != null) {
             if (t.isNotEmpty()) {
                 if (low.contains("instruction")) f.instr = t
