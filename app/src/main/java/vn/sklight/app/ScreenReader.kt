@@ -363,7 +363,7 @@ class ScreenReader : AccessibilityService() {
         val low = id.lowercase()
         val t = n.text?.toString()?.trim().orEmpty()
         val d = n.contentDescription?.toString()?.trim().orEmpty()
-        if (f != null && d.isNotEmpty() && f.descs.size < 60) f.descs.add(d)
+        if (f != null && d.isNotEmpty() && f.descs.size < 60) for (part in d.split('\n')) { val q = part.trim(); if (q.isNotEmpty()) f.descs.add(q) }   // Vietmap gộp "0 / km/h / 50" thành MỘT mô tả nhiều dòng
         if (f != null) {
             if (t.isNotEmpty()) {
                 if (low.contains("instruction")) f.instr = t
