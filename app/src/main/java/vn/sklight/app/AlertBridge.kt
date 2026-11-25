@@ -137,9 +137,10 @@ object AlertBridge {
         kind = k
         S.alertKind.intValue = k
         if (k == 0) return
-        // Đèn cảnh báo sáng đúng mức người dùng đang đặt: app không gửi mức sáng nào khác, và gửi lại đúng mức đang đặt
-        // sau khi hộp đã đổi sang hiệu ứng / màu cảnh báo (phòng khi hộp tự về mức khác lúc đổi chế độ; chưa kiểm chứng trên hộp).
-        for (d in longArrayOf(250, 1100)) h.postDelayed({ try { if (kind == k && S.connected.value && S.on.value) S.sendBright() } catch (_: Exception) {} }, d)
+        // Chủ dự án yêu cầu 26/11: lúc cảnh báo đèn sáng hơn mức đang đặt MỘT nấc (BOOST), cảnh báo xong trả về đúng mức đang đặt (xem stop()).
+        // Chỉ gửi mức sáng tạm cho hộp, không đổi S.bri. Gửi lại hai lần sau khi hộp đã đổi sang hiệu ứng / màu cảnh báo.
+        boost()
+        for (d in longArrayOf(250, 1100)) h.postDelayed({ if (kind == k) boost() }, d)
         // Không dùng lệnh cấu hình cửa (04) để nháy: nó làm lệch đồng bộ hộp với xe.
         if (k == 1 || k == 2) {
             // Sắp rẽ: chỉ dùng kiểu đèn chạy theo hướng rẽ (đã bỏ kiểu nháy vàng cả xe). Chưa đọc được hướng chạy từ hộp thì hỏi lại rồi thử tiếp.
@@ -199,8 +200,23 @@ object AlertBridge {
         else { S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3, true); S.ble.send(S.colorFrame(), 2) }
     }
 
+    const val BOOST = 20          // một nấc độ sáng (%), bằng một lần nói "sáng hơn"
+    private fun boost() {
+        try {
+            if (!S.connected.value || !S.on.value) return
+            fun up(v: Int) = (v + BOOST).coerceAtMost(100)
+            val f = if (S.zone.intValue == 0) Protocol.bright(true, true, up(S.bri[0]), up(S.bri[0])) else Protocol.bright(true, false, up(S.bri[1]), up(S.bri[2]))
+            S.ble.send(f, 1, true)
+        } catch (_: Exception) {}
+    }
+    private fun unboost() {
+        try { if (S.connected.value && S.on.value) S.sendBright() } catch (_: Exception) {}
+        h.postDelayed({ try { if (kind == 0 && S.connected.value && S.on.value) S.sendBright() } catch (_: Exception) {} }, 500)
+    }
+
     /** Kết thúc cảnh báo đang chạy: trả đèn về như cũ. */
     private fun stop() {
+        if (kind != 0) unboost()
         h.removeCallbacks(tick)
         h.removeCallbacks(expire)
         S.alertPhase.value = false

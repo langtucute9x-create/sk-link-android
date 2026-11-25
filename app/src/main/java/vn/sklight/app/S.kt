@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.87"
+    const val VER = "1.4.88"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -324,6 +324,7 @@ object S {
     }
 
     fun onBright(flag: Int, b1: Int, b2: Int) {
+        if (alertKind.intValue != 0) return                   // đang cảnh báo: hộp đang ở mức sáng tạm (cao hơn một nấc), không lấy làm mức người dùng đặt
         on.value = (flag and 0x40) != 0
         if ((flag and 0x08) != 0) { bri[0] = b1.coerceIn(0, 100) }
         else { bri[1] = b1.coerceIn(0, 100); bri[2] = b2.coerceIn(0, 100) }
