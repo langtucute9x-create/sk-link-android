@@ -64,12 +64,14 @@ class ScreenReader : AccessibilityService() {
     // App bản đồ không gửi sự kiện khi đồng hồ tốc độ đổi số, nên đọc thêm theo nhịp 0,5 giây khi app bản đồ đang ở trước
     private var evPkgAt = 0L
     private var spdAt = 0L
+    private var idleAt = 0L
     private val poll = object : Runnable {
         override fun run() {
             try {
                 val now = System.currentTimeMillis()
-                if (connected && (S.screenOn.value || S.screenAuto.value) && now - evPkgAt < 15000) {
-                    readNow(now)
+                if (connected && (S.screenOn.value || S.screenAuto.value)) {
+                    // bản đồ đứng yên không gửi sự kiện nào: vẫn tự đọc lại mỗi 2 giây (đang thử thì đọc liên tục) để thấy biển và số mới
+                    if (now - evPkgAt < 15000 || S.screenOn.value || now - idleAt > 2000) { idleAt = now; readNow(now) }
                     if (spdAt > 0 && now - spdAt > 3000 && S.appSpeed.intValue >= 0) S.appSpeed.intValue = -1   // số cũ quá 3 giây: dùng tốc độ GPS
                 }
             } catch (_: Throwable) {}
