@@ -124,6 +124,7 @@ object Voice {
         w[0].toIntOrNull()?.let { return it }
         if (w[0] == "mười") return 10 + (w.getOrNull(1)?.let { DIGIT[it] } ?: 0)
         val d = DIGIT[w[0]] ?: return null
+        if (w.getOrNull(1) == "trăm") return d * 100
         if (w.getOrNull(1) == "mươi") return d * 10 + (w.getOrNull(2)?.let { DIGIT[it] } ?: 0)
         return d
     }
@@ -185,7 +186,11 @@ object Voice {
     }
     private fun zn(z: Int) = when (z) { 1 -> " khu vực 1"; 2 -> " khu vực 2"; 0 -> " cả xe"; else -> "" }
     /** Độ sáng hiện tại của khu vực [z] (-1 = khu vực đang chọn trong trang Đèn). */
-    private fun curBri(z: Int) = if (z > 0 && S.zone.intValue == 0) S.bri[0] else S.bri[if (z >= 0) z else S.zone.intValue]
+    private fun curBri(z: Int) = when {
+        z > 0 && S.zone.intValue == 0 -> S.bri[0]
+        z == 0 && S.zone.intValue != 0 -> maxOf(S.bri[1], S.bri[2])      // hai khu đang đặt riêng: bri[0] là số cũ, lấy khu sáng hơn làm mốc
+        else -> S.bri[if (z >= 0) z else S.zone.intValue]
+    }
     private fun bright(v: Int, z: Int): String {
         if (z >= 0 && z != S.zone.intValue) {
             if (z != 0 && S.zone.intValue == 0) { S.bri[1] = S.bri[0]; S.bri[2] = S.bri[0] }      // đang đồng nhất: khu vực còn lại giữ mức đang sáng
@@ -199,14 +204,23 @@ object Voice {
     /** Thực hiện câu lệnh. Trả về câu trả lời (hiện trên thẻ và đọc thành tiếng), hoặc null nếu không có lệnh này. So trên chữ CÓ DẤU. */
     fun run(raw: String): String? {
         // câu có nhiều lệnh nối bằng "và / rồi / sau đó": làm lần lượt từng lệnh (trước đây chỉ làm lệnh khớp đầu tiên)
-        val parts = raw.lowercase().split(Regex("\\s+(?:và|rồi|sau đó|đồng thời)\\s+")).map { it.trim() }.filter { it.isNotEmpty() }
+        carryZ = -1
+        val low = raw.lowercase()
+        val join = Regex("\\s+(?:và|rồi|sau đó|đồng thời)\\s+")
+        // tên chế độ / bối cảnh tự đặt có sẵn chữ nối ("Xanh và đỏ") thì không tách, kẻo gọi tên lại thành hai lệnh đổi màu
+        val named = (Seqs.list.map { it.name } + Scenes.all().map { it.name } + Effects.all.map { it.name })
+            .any { n -> n.isNotBlank() && join.containsMatchIn(n.lowercase()) && low.contains(n.lowercase()) }
+        val parts = if (named) listOf(low) else low.split(join).map { it.trim() }.filter { it.isNotEmpty() }
         if (parts.size < 2) return runOne(raw)
         val outs = LinkedHashSet<String>(); var aft = 0
         for (p in parts) { val r = runOne(p); if (r != null) { outs.add(r); if (after != 0) aft = after } }
+        carryZ = -1
         if (outs.isEmpty()) return runOne(raw)
         after = aft
         return outs.joinToString(". ")
     }
+
+    private var carryZ = -1          // khu vực nêu ở vế trước của cùng một câu: "khu vực 2 màu đỏ và sáng hơn" thì vế sau vẫn là khu vực 2
 
     private fun runOne(raw: String): String? {
         after = 0
@@ -226,7 +240,9 @@ object Voice {
             t = t.removeRange(m.range).replace(Regex("\\s+"), " ").trim()
         }
         if (z < 0 && (has(t, "cả xe") || has(t, "đồng nhất") || has(t, "toàn bộ") || has(t, "tất cả"))) z = 0
-        if (z == 2) {      // chế độ màu của khu vực 2 (tĩnh / tự động / nhấp nháy)
+        val said = z                                     // khu vực nêu ngay trong vế này
+        if (z >= 0) carryZ = z else z = carryZ
+        if (said == 2) {      // chế độ màu của khu vực 2 (tĩnh / tự động / nhấp nháy)
             val v = if (has(t, "tự động")) 1 else if (has(t, "nhấp nháy") || has(t, "chớp")) 2 else if (has(t, "tĩnh") || has(t, "đứng yên")) 0 else -1
             if (v >= 0) {
                 if (S.setZ2(v)) return "Em đã chuyển khu vực 2 sang ${listOf("màu tĩnh", "màu tự động", "màu nhấp nháy")[v]} rồi"
@@ -238,6 +254,9 @@ object Voice {
         val cur = curBri(zd)
         Regex("độ sáng (\\d{1,3})").find(t)?.let { return bright(it.groupValues[1].toInt().coerceIn(0, 100), zd) }
         Regex("tốc độ (\\d{1,2})").find(t)?.let { return speed(it.groupValues[1].toInt().coerceIn(1, 10)) }
+        // máy nghe ra số bằng chữ: "độ sáng bảy mươi phần trăm", "tốc độ năm"
+        Regex("độ sáng (.+)$").find(t)?.let { m -> viNum(m.groupValues[1].split(' '))?.let { return bright(it.coerceIn(0, 100), zd) } }
+        Regex("tốc độ (.+)$").find(t)?.let { m -> viNum(m.groupValues[1].split(' '))?.let { return speed(it.coerceIn(1, 10)) } }
         if (has(t, "tắt đèn") || t == "tắt" || has(t, "tắt hết") || has(t, "màu đen")) { S.setPower(false); return "Em đã tắt đèn rồi" }
         if (has(t, "bật đèn") || has(t, "mở đèn") || t == "bật") { S.setPower(true); return "Em đã bật đèn rồi" }
         if (has(t, "sáng tối đa") || has(t, "sáng nhất")) return bright(100, zd)

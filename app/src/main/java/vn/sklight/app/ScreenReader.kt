@@ -65,6 +65,8 @@ class ScreenReader : AccessibilityService() {
     private var evPkgAt = 0L
     private var spdAt = 0L
     private var idleAt = 0L
+    private var txtLim = 0          // giới hạn đọc được từ CHỮ của app bản đồ (chắc hơn số đọc từ ảnh chụp)
+    private var txtLimAt = 0L
     private val poll = object : Runnable {
         override fun run() {
             try {
@@ -89,6 +91,7 @@ class ScreenReader : AccessibilityService() {
             var shown = ""
             var mapPkg = ""
             val rects = ArrayList<Rect>()
+            budget = 1500
             for (w in windows) {
                 val r = w.root ?: continue
                 val p = r.packageName?.toString() ?: continue
@@ -121,7 +124,7 @@ class ScreenReader : AccessibilityService() {
             val lim = f.descs.getOrNull(ki + 1)?.toIntOrNull()
             if (lim != null && lim in 10..140 && lim % 5 == 0) {
                 Limit.setScreen(lim)
-                if (S.dev.value) S.ocrNote.value = "đọc giới hạn $lim từ chữ của app bản đồ"
+                txtLim = lim; txtLimAt = now
             }
         }
         if (sp != null) spdAt = now
@@ -145,6 +148,7 @@ class ScreenReader : AccessibilityService() {
     }
 
     private var lastDist = -1
+    private var budget = 0          // số nút giao diện còn được duyệt trong một lần đọc
     private fun info() {
         S.screenInfo.value = "khoảng cách ${if (lastDist < 0) "chưa có" else "$lastDist m"}, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ ${S.appSpeed.intValue}"
     }
@@ -214,6 +218,7 @@ class ScreenReader : AccessibilityService() {
     @Volatile private var mapRects: List<Rect> = emptyList()      // vùng các cửa sổ của app bản đồ trên màn hình; chỉ đọc biển nằm trong đó
     private var banAt = 0L
     private var banN = 0
+    private var banDone = false
 
     /**
      * Biển tròn viền đỏ không có số trên màn hình Vietmap (xem ảnh chủ dự án gửi 25/11): phân loại theo hình bên trong.
@@ -239,27 +244,31 @@ class ScreenReader : AccessibilityService() {
             if (ok) hits++
         }
         if (hits < 13) { S.ocrNote.value += " · viền đỏ không tròn"; return }
-        val ri = (rad * 0.62f).toInt(); var tot = 0; var green = 0; var redIn = 0
+        val ri = (rad * 0.62f).toInt(); var tot = 0; var green = 0; var redIn = 0; var blue = 0
         for (y in (cy - ri).toInt()..(cy + ri).toInt()) for (x in (cx - ri).toInt()..(cx + ri).toInt()) {
             if (x !in 0 until bmp.width || y !in 0 until bmp.height) continue
             if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > ri * ri) continue
-            val c = bmp.getPixel(x, y); val r = (c shr 16) and 255; val g = (c shr 8) and 255
+            val c = bmp.getPixel(x, y); val r = (c shr 16) and 255; val g = (c shr 8) and 255; val bl = c and 255
             tot++
-            if (g >= 110 && g - r >= 40) green++
+            if (g >= 110 && g - r >= 40 && g - bl >= 30) green++          // xanh lá thật; nền xanh dương của biển cấm đỗ không tính
+            if (bl > 150 && r < 90 && bl - r > 90) blue++
             if (isRed(c)) redIn++
         }
         if (tot == 0) return
         val gp = green * 1000 / tot; val rp = redIn * 1000 / tot          // phần nghìn diện tích ruột biển
-        val kind = if (rp >= 35) 6 else if (gp >= 2 || rp >= 2) 5 else 4
-        val name = when (kind) { 6 -> "cấm vượt"; 5 -> "camera đèn đỏ"; else -> "camera" }
+        val park = blue * 1000 / tot >= 300                               // ruột xanh dương: biển cấm dừng / cấm đỗ
+        val kind = if (park || rp >= 35) 6 else if (gp >= 2 || rp >= 2) 5 else 4
+        val name = when (kind) { 6 -> if (park) "cấm dừng đỗ" else "cấm vượt"; 5 -> "camera đèn đỏ"; else -> "camera" }
         fun fire(d: Int) {
             S.ocrNote.value += " · $name" + (if (d >= 0) " $d m" else " (không đọc được khoảng cách)")
             if (kind == 6) {
                 if (d > 200) return
                 val now = System.currentTimeMillis()
-                banN = if (now - banAt < 6000) banN + 1 else 1          // phải thấy 2 lần liên tiếp mới báo, đỡ nhiễu
-                banAt = now
-                if (banN >= 2) { banN = 0; AlertBridge.event(6) }
+                // phải thấy 2 lần liên tiếp mới báo, đỡ nhiễu. Biển còn nằm trên màn hình (Vietmap giữ biển cấm đỗ suốt cả con phố) thì chỉ báo MỘT lần;
+                // biển biến mất quá 10 giây rồi hiện lại mới tính là biển mới.
+                if (now - banAt > 10000) { banN = 0; banDone = false }
+                banN++; banAt = now
+                if (banN >= 2 && !banDone) { banDone = true; AlertBridge.event(6) }
             } else if (d in 0..S.camDist.intValue) AlertBridge.event(kind)
         }
         val c = crop(bmp, Rect(ring.left - w / 2, ring.bottom, ring.right + w / 2, ring.bottom + hh * 3 / 4)) ?: run { fire(-1); return }
@@ -286,12 +295,14 @@ class ScreenReader : AccessibilityService() {
                     // chỉ lấy biển nằm trong cửa sổ app bản đồ: màn hình còn có biển do chính SK Light vẽ (thẻ dẫn đường, mô phỏng)
                     val zone = mapRects
                     val rcs = findRedRings(bmp).filter { r -> zone.isEmpty() || zone.any { it.contains(r.centerX(), r.centerY()) } }.take(4)
-                    if (rcs.isEmpty()) { S.ocrNote.value = "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }
-                    S.ocrNote.value = "quét màn hình: thấy ${rcs.size} biển tròn viền đỏ"
+                    val byText = System.currentTimeMillis() - txtLimAt < 5000
+                    val head = if (byText) "giới hạn $txtLim đọc từ chữ của app bản đồ · " else ""
+                    if (rcs.isEmpty()) { S.ocrNote.value = head + "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }
+                    S.ocrNote.value = head + "quét màn hình: thấy ${rcs.size} biển tròn viền đỏ"
                     // Xét lần lượt TỪNG biển: có số = biển giới hạn (chỉ lấy biển đầu tiên), không có số = camera / cấm vượt.
                     // Trước 1.4.64 đọc được biển giới hạn là dừng luôn, nên biển camera đứng cạnh không bao giờ được xét.
                     val more = S.camWarn.value || S.redCamWarn.value || S.banWarn.value
-                    var gotLimit = false
+                    var gotLimit = byText          // số đọc từ ảnh có thể sai (đọc nhầm 50 thành 30 là sinh cảnh báo "giới hạn giảm" giả)
                     fun tryAt(i: Int) {
                         if (i >= rcs.size) return
                         readSign(bmp, rcs[i], apply = !gotLimit, onHit = { gotLimit = true; if (more) tryAt(i + 1) }, onMiss = { classify(bmp, rcs[i]); tryAt(i + 1) })
@@ -309,6 +320,7 @@ class ScreenReader : AccessibilityService() {
         val w = (b.width / sc).toInt(); val hh = (b.height / sc).toInt()
         val s = Bitmap.createScaledBitmap(b, w, hh, true)
         val px = IntArray(w * hh); s.getPixels(px, 0, w, 0, 0, w, hh)
+        if (s !== b) s.recycle()          // ảnh thu nhỏ chỉ cần tới đây; quét 2,5 giây một lần nên trả bộ nhớ ngay
         fun red(c: Int): Boolean { val r = (c shr 16) and 255; val g = (c shr 8) and 255; val bl = c and 255; return r >= 110 && r - g >= 60 && r - bl >= 45 && g < 120 }
         val cell = 4; val cw = w / cell; val ch = hh / cell
         val on = BooleanArray(cw * ch)
@@ -358,7 +370,8 @@ class ScreenReader : AccessibilityService() {
         p.contains("inputmethod") || p.contains("launcher")
 
     private fun walk(n: AccessibilityNodeInfo?, out: MutableSet<String>, f: Found?, depth: Int) {
-        if (n == null || depth > 40 || out.size >= 80 || !n.isVisibleToUser) return
+        if (n == null || depth > 40 || !n.isVisibleToUser || --budget < 0) return
+        if (f == null && out.size >= 80) return          // cửa sổ app khác chỉ để xem thử; cửa sổ app bản đồ thì luôn đọc hết
         val id = n.viewIdResourceName?.substringAfter(":id/") ?: ""
         val low = id.lowercase()
         val t = n.text?.toString()?.trim().orEmpty()
