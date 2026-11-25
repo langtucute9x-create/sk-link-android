@@ -176,6 +176,9 @@ private fun Scene(modifier: Modifier) {
     val uni = S.czone.intValue == 0
     val idle1: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[1])
     val idle2: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[2])
+    // độ sáng đèn trong hình theo độ sáng đang đặt (không luôn tối đa)
+    val bf1 = (S.bri[if (S.zone.intValue == 0) 0 else 1] / 100f).coerceIn(0.12f, 1f)
+    val bf2 = (S.bri[if (S.zone.intValue == 0) 0 else 2] / 100f).coerceIn(0.12f, 1f)
     val spz = if (ak in 3..7) S.alertZone[ak] else 0
     val zl1 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 1))      // khu 1 có tham gia cảnh báo đang chạy không
     val zl2 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 2))
@@ -324,16 +327,16 @@ private fun Scene(modifier: Modifier) {
             val pos = if (ak == 2) -0.2f + 1.4f * ph else 1.2f - 1.4f * ph
             return max(0.18f, 1f - abs(u - pos) / 0.25f)
         }
-        fun led(a: Offset, b: Offset, u: Float, w: Float, zoneLit: Boolean = zl1, idle: Color? = idle1) {
-            val m = if (zoneLit) min(1f, amt(u)) else 0f
+        fun led(a: Offset, b: Offset, u: Float, w: Float, zoneLit: Boolean = zl1, idle: Color? = idle1, f: Float = bf1) {
+            val m = if (zoneLit) min(1f, amt(u)) * f else 0f
             ln(a, b, w, Color(0xFF2A2F39))
-            if ((!act || !zoneLit) && idle != null) ln(a, b, w, idle.copy(alpha = 0.45f))
+            if ((!act || !zoneLit) && idle != null) ln(a, b, w, idle.copy(alpha = 0.45f * f))
             if (m > 0f) { ln(a, b, w * 3f, kc.copy(alpha = 0.22f * m)); ln(a, b, w, kc.copy(alpha = m)) }
         }
         fun glow(x: Float, y: Float, r: Float, a: Float) {
             if (a <= 0f) return
             val c = Offset(x, y)
-            drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.5f * min(1f, a)), kc.copy(alpha = 0f)), c, r), r, c)
+            drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.5f * min(1f, a) * bf1), kc.copy(alpha = 0f)), c, r), r, c)
         }
         fun vent(x: Float, y: Float, r: Float) {
             val c = Offset(x, y)
@@ -431,12 +434,12 @@ private fun Scene(modifier: Modifier) {
                     val cx = if (fi == 0) 200f else 480f
                     val a = if (zl2) min(1f, amt(if (fi == 0) 0.3f else 0.7f)) else 0f
                     val c = Offset(cx, 664f)
-                    if (a > 0f) drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.62f * a), kc.copy(alpha = 0f)), c, 200f), 200f, c)
-                    else if ((!act || !zl2) && idle2 != null) drawCircle(Brush.radialGradient(listOf(idle2.copy(alpha = 0.3f), idle2.copy(alpha = 0f)), c, 180f), 180f, c)
+                    if (a > 0f) drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.62f * a * bf2), kc.copy(alpha = 0f)), c, 200f), 200f, c)
+                    else if ((!act || !zl2) && idle2 != null) drawCircle(Brush.radialGradient(listOf(idle2.copy(alpha = 0.3f * bf2), idle2.copy(alpha = 0f)), c, 180f), 180f, c)
                 }
             }
-            led(Offset(98f, 613f), Offset(298f, 613f), 0.3f, 5f, zl2, idle2)
-            led(Offset(382f, 613f), Offset(582f, 613f), 0.7f, 5f, zl2, idle2)
+            led(Offset(98f, 613f), Offset(298f, 613f), 0.3f, 5f, zl2, idle2, bf2)
+            led(Offset(382f, 613f), Offset(582f, 613f), 0.7f, 5f, zl2, idle2, bf2)
             for (i in 0 until 5) {
                 val ta = i / 5f; val tb = (i + 1) / 5f; val tm = (ta + tb) / 2f
                 led(Offset(10f + 56f * ta, 620f - 112f * ta), Offset(10f + 56f * tb, 620f - 112f * tb), 0.25f * tm, 7f)
