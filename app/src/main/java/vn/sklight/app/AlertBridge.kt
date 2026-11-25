@@ -137,7 +137,8 @@ object AlertBridge {
         kind = k
         S.alertKind.intValue = k
         if (k == 0) return
-        // Chủ dự án yêu cầu 26/11: lúc cảnh báo đèn sáng hơn mức đang đặt MỘT nấc (BOOST), cảnh báo xong trả về đúng mức đang đặt (xem stop()).
+        // Chủ dự án yêu cầu 26/11: lúc cảnh báo khu vực 2 sáng tối đa; khu vực 1 sáng hơn mức đang đặt một nấc (BOOST) khi cảnh báo chạy ở khu vực 1
+        // hoặc cả xe, giữ nguyên khi cảnh báo chỉ chạy ở khu vực 2. Cảnh báo xong trả về đúng mức đang đặt (xem stop()).
         // Chỉ gửi mức sáng tạm cho hộp, không đổi S.bri. Gửi lại hai lần sau khi hộp đã đổi sang hiệu ứng / màu cảnh báo.
         boost()
         for (d in longArrayOf(250, 1100)) h.postDelayed({ if (kind == k) boost() }, d)
@@ -149,8 +150,11 @@ object AlertBridge {
             if (S.alertMaxSec.intValue > 0 && System.currentTimeMillis() >= testUntil) h.postDelayed(expire, S.alertMaxSec.intValue * 1000L)
             return
         }
-        // Quá tốc độ: nháy đỏ bằng lệnh màu, đưa hộp về Đơn sắc trước
-        if (S.mode.intValue != 0) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
+        // Nháy bằng lệnh màu. Cảnh báo có khu vực 1 thì đưa hộp về Đơn sắc trước. Cảnh báo CHỈ ở khu vực 2 mà hộp đang chạy hiệu ứng thường (1..99,
+        // không phải loại chạy đuổi) thì giữ nguyên hiệu ứng: hộp vẫn cho khu vực 2 nhận màu riêng, khu vực 1 chạy tiếp chế độ đang để.
+        val m = S.mode.intValue
+        keptFx = S.alertZone[k.coerceIn(0, 7)] == 2 && m in 1..99 && m !in CHASE
+        if (m != 0 && !keptFx) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         S.alertPhase.value = false
         h.post(tick)
     }
@@ -201,12 +205,14 @@ object AlertBridge {
     }
 
     const val BOOST = 20          // một nấc độ sáng (%), bằng một lần nói "sáng hơn"
+    private var keptFx = false    // cảnh báo chỉ ở khu vực 2 và hộp đang chạy hiệu ứng: khu vực 1 vẫn chạy hiệu ứng đó, không về Đơn sắc
+    private val CHASE = intArrayOf(52, 6, 10, 12, 13)          // hiệu ứng chạy đuổi của hộp: không nhận màu riêng cho khu vực 2 (xem S.setColor)
     private fun boost() {
         try {
             if (!S.connected.value || !S.on.value) return
-            fun up(v: Int) = (v + BOOST).coerceAtMost(100)
-            val f = if (S.zone.intValue == 0) Protocol.bright(true, true, up(S.bri[0]), up(S.bri[0])) else Protocol.bright(true, false, up(S.bri[1]), up(S.bri[2]))
-            S.ble.send(f, 1, true)
+            val z = if (kind >= 3) S.alertZone[kind.coerceIn(0, 7)] else 0          // khu chạy cảnh báo: 0 cả xe, 1, 2 (báo rẽ luôn là cả xe)
+            val b1 = if (S.zone.intValue == 0) S.bri[0] else S.bri[1]
+            S.ble.send(Protocol.bright(true, false, if (z == 2) b1 else (b1 + BOOST).coerceAtMost(100), 100), 1, true)
         } catch (_: Exception) {}
     }
     private fun unboost() {
@@ -222,6 +228,7 @@ object AlertBridge {
         S.alertPhase.value = false
         if (flow) { stopFlow(); return }
         if (kind == 0) return
+        if (keptFx) { keptFx = false; S.ble.send(S.colorFrame(), 2); return }          // hiệu ứng vẫn đang chạy: chỉ trả màu khu vực 2
         if (S.mode.intValue != 0) S.sendEffect() else S.ble.send(S.colorFrame(), 2)
     }
 
