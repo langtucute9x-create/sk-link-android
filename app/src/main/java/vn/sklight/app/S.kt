@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.69"
+    const val VER = "1.4.70"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -135,6 +135,8 @@ object S {
             isCar.value = noBattery || carUi
         } catch (_: Exception) {}
     }
+    val micKey = mutableIntStateOf(0)                       // mã phím cứng dùng để mở mic (bấm 2 lần); 0 = nút tắt tiếng (VOLUME_MUTE / MUTE)
+    val learnKey = mutableStateOf(false)                    // đang chờ người dùng bấm phím để chọn làm phím mở mic
     val muteMic = mutableStateOf(true)                      // đổi trạng thái tắt tiếng của máy 2 lần liên tiếp (nút tắt tiếng trên vô lăng) thì mở mic
     val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
@@ -227,6 +229,7 @@ object S {
         }
         voiceReply.value = sp.getBoolean("voiceReply", true)
         muteMic.value = sp.getBoolean("muteMic", true)
+        micKey.intValue = sp.getInt("micKey", 0)
         voiceQuiet.value = true
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
         lon = (sp.getString("lon", "") ?: "").toDoubleOrNull() ?: Double.NaN
@@ -259,7 +262,7 @@ object S {
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
-            .putBoolean("voiceReply", voiceReply.value).putBoolean("muteMic", muteMic.value).putBoolean("voiceQuiet", voiceQuiet.value)
+            .putBoolean("voiceReply", voiceReply.value).putBoolean("muteMic", muteMic.value).putInt("micKey", micKey.intValue).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)
             .putInt("themeFont2", Theme.font.intValue).putInt("themeScale", Theme.scale.intValue).putInt("themeStyle2", Theme.style.intValue).putInt("themeCorner", Theme.corner.intValue).putBoolean("themeFx2", Theme.fx.value)

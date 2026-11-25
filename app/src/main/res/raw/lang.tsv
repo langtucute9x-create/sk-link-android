@@ -893,3 +893,11 @@ QUÁ TỐC ĐỘ · ĐÈN NHÁY	OVER SPEED · LIGHTS FLASH	速度超過・点滅
 Bấm 2 lần nút tắt tiếng để mở mic	Press the mute button twice to open the mic	ミュートボタンを2回押してマイクを開く	음소거 버튼을 두 번 눌러 마이크 열기	กดปุ่มปิดเสียง 2 ครั้งเพื่อเปิดไมค์
 Dùng nút tắt tiếng trên vô lăng: tắt rồi bật (hoặc bật rồi tắt) liền nhau trong 1,5 giây.	Use the steering-wheel mute button: mute then unmute (or the reverse) within 1.5 seconds.	ステアリングのミュートボタン：1.5秒以内にミュート→解除（または逆）。	핸들의 음소거 버튼: 1.5초 안에 음소거 후 해제(또는 반대).	ใช้ปุ่มปิดเสียงบนพวงมาลัย: ปิดแล้วเปิด (หรือกลับกัน) ภายใน 1.5 วินาที
 Máy này là màn hình xe / Android box nên app luôn chạy nền.	This device is a car screen / Android box, so the app always runs in the background.	この端末は車載モニター／Android boxのため、アプリは常にバックグラウンドで動作します。	이 기기는 차량 화면/안드로이드 박스이므로 앱이 항상 백그라운드에서 실행됩니다.	เครื่องนี้เป็นจอรถ / Android box แอปจึงทำงานเบื้องหลังตลอด
+Bấm 2 lần liền nhau trong 1,5 giây. Cần bật quyền Hỗ trợ tiếp cận cho SK Light.	Press twice within 1.5 seconds. Needs the Accessibility permission for SK Light.	1.5秒以内に2回押します。SK Lightのユーザー補助の許可が必要です。	1.5초 안에 두 번 누르세요. SK Light 접근성 권한이 필요합니다.	กด 2 ครั้งภายใน 1.5 วินาที ต้องเปิดสิทธิ์การช่วยเหลือพิเศษให้ SK Light
+Phím app vừa thấy:	Last key seen:	最後に検出したキー:	마지막으로 감지한 키:	ปุ่มล่าสุดที่เห็น:
+chưa thấy phím nào	none yet	まだありません	아직 없음	ยังไม่มี
+Phím mở mic:	Mic key:	マイクのキー:	마이크 키:	ปุ่มเปิดไมค์:
+nút tắt tiếng (mặc định)	mute button (default)	ミュートボタン（既定）	음소거 버튼(기본)	ปุ่มปิดเสียง (ค่าเริ่มต้น)
+Đang chờ bấm phím…	Waiting for a key press…	キー入力を待っています…	키 입력 대기 중…	กำลังรอการกดปุ่ม…
+Chọn phím khác	Choose another key	別のキーを選ぶ	다른 키 선택	เลือกปุ่มอื่น
+Về mặc định	Back to default	既定に戻す	기본값으로	กลับค่าเริ่มต้น
