@@ -920,7 +920,6 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
         Spacer(Modifier.height(8.dp))
         SwitchRow("Nháy đỏ khi quá tốc độ", "", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
-        SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); if (!it) Limit.clearOsm() }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
@@ -1008,6 +1007,11 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
                 }
             }
         }
+    }
+
+    // ---- tra giới hạn tốc độ theo vị trí (cách 2), luôn ở cuối màn hình dẫn đường ----
+    Card {
+        SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); if (!it) Limit.clearOsm() }
     }
 }
 
