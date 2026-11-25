@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.53"
+    const val VER = "1.4.54"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -88,7 +88,7 @@ object S {
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
     val speedZone = mutableIntStateOf(0)                  // quá tốc độ: khu nào nháy đỏ (0 = cả xe, 1, 2). Mặc định cả xe.
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
-    val floatSize = mutableIntStateOf(100)                // kích thước nút nổi, % (70–180)
+    val floatSize = mutableIntStateOf(100)                // kích thước nút nổi, % (50–250)
     val idleDelay = mutableIntStateOf(10)                 // số giây không chạm trước khi vào màn hình chờ
     val limitOsm = mutableStateOf(true)                   // tra giới hạn tốc độ theo vị trí (dữ liệu OpenStreetMap, cần mạng)
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
@@ -128,6 +128,7 @@ object S {
     val idleStyle = mutableIntStateOf(0)                  // 0 đồng hồ + tốc độ, 1 chỉ đồng hồ, 2 tốc độ lớn, 3 ảnh của tôi
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
+    val floatMascot = mutableIntStateOf(0)                // nhân vật trên nút nổi: 0 = logo SK, 1..5 = Mascot.IDS
     val floatStyle = mutableIntStateOf(5)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
     val pickNow = mutableStateOf(false)                  // yêu cầu mở hộp chọn hộp đèn (từ thẻ mất kết nối)
     val menuTop = mutableStateOf(true)                    // màn ngang: menu nằm trên (true) hay cột bên trái (false)
@@ -187,7 +188,7 @@ object S {
         nightTo.intValue = sp.getInt("nightTo", 6 * 60)
         nightBri.intValue = sp.getInt("nightBri", 30)
         idleOn.value = sp.getBoolean("idleOn", false)
-        floatSize.intValue = sp.getInt("floatSize", 100).coerceIn(70, 180); idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
+        floatSize.intValue = sp.getInt("floatSize", 100).coerceIn(50, 250); floatMascot.intValue = sp.getInt("floatMascot", 0).coerceIn(0, 5); idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
         floatStyle.intValue = sp.getInt("floatStyle2", 5).coerceIn(1, 5)     // bỏ Kiểu gốc (24/11), mặc định Cột neon
@@ -224,7 +225,7 @@ object S {
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
-            .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
+            .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)

@@ -36,6 +36,8 @@ object FloatButton {
     val STYLES = listOf("Kiểu gốc", "Kính mờ", "Thanh viên thuốc", "Quạt tròn", "Khối nổi 3D", "Cột neon")
     private var root: LinearLayout? = null
     private var bubble: ImageView? = null
+    private var mv: android.webkit.WebView? = null
+    private var shownMascot = 0
     private var shownStyle = -1
     private var shifted = 0                      // số px đã kéo cửa sổ lên khi mở bảng (để nút nổi đứng yên), trả lại khi đóng
     private const val PINK = 0xFFFE2CAA.toInt()
@@ -51,13 +53,14 @@ object FloatButton {
         val c = ctx.applicationContext
         val want = S.floatOn.value && !S.appVisible && try { Settings.canDrawOverlays(c) } catch (e: Exception) { false }
         if (!want) { hide(c); return }
-        if (root != null && (shownStyle != S.floatStyle.intValue || shownSize != S.floatSize.intValue)) hide(c)
+        if (root != null && (shownStyle != S.floatStyle.intValue || shownSize != S.floatSize.intValue || shownMascot != S.floatMascot.intValue)) hide(c)
         try { show(c) } catch (e: Exception) { hide(c) }
     }
 
     fun hide(ctx: Context) {
         val r = root ?: return
         try { (ctx.applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager).removeView(r) } catch (_: Exception) {}
+        Mascot.free(mv); mv = null
         root = null; bubble = null; shownStyle = -1; shifted = 0
     }
 
@@ -171,23 +174,29 @@ object FloatButton {
             else -> { p.background = box(Color.WHITE, BD, dp(c, 12).toFloat()); p.setPadding(pad, pad, pad, pad) }
         }
         p.visibility = View.GONE
+        val mw = if (S.floatMascot.intValue > 0) Mascot.view(c, S.floatMascot.intValue) else null
+        val bsz = if (mw != null) 72 else 56
         val b = ImageView(c).apply {
-            setImageResource(R.drawable.sk_mark)
-            background = bubbleBg(c, st)
-            val bp = dp(c, if (st >= 3) 15 else 9); setPadding(bp, bp, bp, bp)
+            if (mw == null) {
+                setImageResource(R.drawable.sk_mark)
+                background = bubbleBg(c, st)
+                val bp = dp(c, if (st >= 3) 15 else 9); setPadding(bp, bp, bp, bp)
+                elevation = dp(c, 6).toFloat()
+            }
             contentDescription = "Nút nổi SK Light"
-            elevation = dp(c, 6).toFloat()
         }
-        val pw = when (st) { 0 -> dp(c, 280); 1, 4 -> dp(c, 244); 3 -> dp(c, 96); 5 -> dp(c, 56); else -> ViewGroup.LayoutParams.WRAP_CONTENT }
+        val bwrap = FrameLayout(c).apply { if (mw != null) addView(mw, FrameLayout.LayoutParams(-1, -1)); addView(b, FrameLayout.LayoutParams(-1, -1)) }
+        val pw = when (st) { 0 -> dp(c, 280); 1, 4 -> dp(c, 244); 3 -> dp(c, 96); 5 -> dp(c, bsz); else -> ViewGroup.LayoutParams.WRAP_CONTENT }
         val ph = if (st == 3) dp(c, 212) else ViewGroup.LayoutParams.WRAP_CONTENT
         all.addView(p, LinearLayout.LayoutParams(pw, ph).apply { if (vertical) bottomMargin = dp(c, 8) else rightMargin = dp(c, if (st == 3) 0 else 10) })
-        all.addView(b, LinearLayout.LayoutParams(dp(c, 56), dp(c, 56)))
+        all.addView(bwrap, LinearLayout.LayoutParams(dp(c, bsz), dp(c, bsz)))
         val l = WindowManager.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT
         ).apply { gravity = Gravity.TOP or Gravity.END; x = dp(c, 12); y = dp(c, 160) }
 
         fun toggle() {
+            Mascot.jump(mw)
             if (p.visibility == View.VISIBLE) {
                 p.visibility = View.GONE
                 l.y += shifted; shifted = 0
@@ -196,8 +205,8 @@ object FloatButton {
                 p.visibility = View.VISIBLE
                 // quạt tròn và cột neon làm cửa sổ cao thêm về phía trên nút nổi: kéo cửa sổ lên đúng bằng phần đó để nút nổi đứng yên
                 val want = when (st) {
-                    3 -> (dp(c, 212) - dp(c, 56)) / 2
-                    5 -> { p.measure(View.MeasureSpec.makeMeasureSpec(dp(c, 56), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)); p.measuredHeight + dp(c, 8) }
+                    3 -> (dp(c, 212) - dp(c, bsz)) / 2
+                    5 -> { p.measure(View.MeasureSpec.makeMeasureSpec(dp(c, bsz), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)); p.measuredHeight + dp(c, 8) }
                     else -> 0
                 }
                 val ny = (l.y - want).coerceAtLeast(0)
@@ -253,13 +262,13 @@ object FloatButton {
             true
         }
         try { wm.addView(all, l) } catch (e: Exception) { return }
-        root = all; bubble = b; shownStyle = st; shownSize = S.floatSize.intValue; shifted = 0
+        root = all; bubble = b; mv = mw; shownMascot = S.floatMascot.intValue; shownStyle = st; shownSize = S.floatSize.intValue; shifted = 0
     }
 
     /** Dựng lại nội dung bảng theo trạng thái hiện tại và kiểu đang chọn. */
     private fun fill(c: Context, p: ViewGroup, st: Int) {
         p.removeAllViews()
-        bubble?.background = bubbleBg(c, st)
+        if (mv == null) bubble?.background = bubbleBg(c, st)
         fun again() = fill(c, p, st)
         val vi = L.cur.intValue == 0          // nút mic chỉ có khi dùng tiếng Việt
         val scenes = Scenes.all()

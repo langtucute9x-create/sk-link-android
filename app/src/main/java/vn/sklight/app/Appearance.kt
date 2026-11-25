@@ -158,9 +158,21 @@ fun AppearanceIdle() {
         // hình xem trước của kiểu đang chọn, đổi ngay khi chạm một kiểu
         FloatPreview(S.floatStyle.intValue)
         Spacer(Modifier.height(12.dp))
+        T("Biểu tượng nút nổi", 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        if (S.floatMascot.intValue > 0) {
+            androidx.compose.ui.viewinterop.AndroidView(
+                factory = { c -> android.widget.FrameLayout(c) },
+                update = { fl -> val k = S.floatMascot.intValue; if (fl.tag != k) { fl.tag = k; Mascot.free(fl.getChildAt(0) as? android.webkit.WebView); fl.removeAllViews(); Mascot.view(fl.context, k)?.let { fl.addView(it, android.widget.FrameLayout.LayoutParams(-1, -1)) } } },
+                modifier = Modifier.fillMaxWidth().height(120.dp)
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        Grid(listOf(0, 1, 2, 3, 4, 5), 3) { i, m -> Chip(Mascot.NAMES[i], S.floatMascot.intValue == i, m, 44.dp, 12) { S.floatMascot.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
+        Spacer(Modifier.height(12.dp))
         T("Kích thước nút nổi", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        Grid(listOf(80, 100, 125, 150, 180), 3) { v, m -> Chip("$v%", S.floatSize.intValue == v, m, 40.dp, 12) { S.floatSize.intValue = v; S.saveSettings(); FloatButton.sync(ctx) } }
+        Grid(listOf(60, 80, 100, 125, 150, 200, 250), 3) { v, m -> Chip("$v%", S.floatSize.intValue == v, m, 40.dp, 12) { S.floatSize.intValue = v; S.saveSettings(); FloatButton.sync(ctx) } }
         Spacer(Modifier.height(12.dp))
         Grid(listOf(5, 1, 2, 3, 4), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
     }
