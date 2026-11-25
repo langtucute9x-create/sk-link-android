@@ -95,6 +95,7 @@ object Gps {
             if (l.hasSpeed()) S.gpsAt = System.currentTimeMillis()
             S.setPlace(l.latitude, l.longitude)
             Limit.onLocation(l.latitude, l.longitude, S.speedKmh.floatValue)
+            LimitSign.sync()
             AlertBridge.refresh()                               // xét quá tốc độ ngay khi GPS có số mới, không chờ lần đọc màn hình kế tiếp
         }
         @Deprecated("old") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}

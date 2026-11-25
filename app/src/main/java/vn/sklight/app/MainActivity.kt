@@ -98,12 +98,12 @@ class MainActivity : ComponentActivity() {
     /** Đang hiện màn hình báo lỗi của lần mở trước: không chạy các phần khác của app. */
     private var crashShown = false
 
-    override fun onStart() { super.onStart(); if (crashShown) return; S.uiStarted = true; Gps.start(this); S.autoConnect(); S.syncService(this) }
+    override fun onStart() { super.onStart(); if (crashShown) return; S.uiStarted = true; LimitSign.sync(); Gps.start(this); S.autoConnect(); S.syncService(this) }
     override fun onStop() {
         if (!crashShown) {
-            S.uiStarted = false
+            S.uiStarted = false; LimitSign.sync()
             // Bật cảnh báo quá tốc độ và app còn chạy nền thì GPS chạy tiếp (tốc độ lấy từ GPS của máy, không đọc số trên app bản đồ)
-            if (!(KeepService.alive && S.speedWarn.value)) Gps.stop()
+            if (!(KeepService.alive && S.bgGps())) Gps.stop()
             S.syncService(this)
         }
         super.onStop()
@@ -926,7 +926,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit, sim: Boolean = true) {
 
     // ---- tra giới hạn tốc độ theo vị trí (cách 2), luôn ở cuối màn hình dẫn đường ----
     Card {
-        SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); if (!it) Limit.clearOsm() }
+        SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); S.syncService(); if (!it) Limit.clearOsm() }
     }
 }
 

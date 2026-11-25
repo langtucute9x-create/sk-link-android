@@ -65,7 +65,7 @@ class KeepService : Service() {
                 // Thêm loại "vị trí" để GPS còn chạy khi app ở nền (tốc độ cho cảnh báo quá tốc độ). Máy không cho (chưa cấp quyền vị trí,
                 // hoặc dịch vụ được bật lúc máy khởi động khi app chưa mở) thì chạy như cũ, chỉ giữ kết nối hộp; lần mở app kế tiếp sẽ thêm lại.
                 var ok = false
-                if (S.speedWarn.value && checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                if (S.bgGps() && checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     try { startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION); ok = true } catch (_: Exception) {}
                 }
                 if (!ok) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
@@ -73,7 +73,7 @@ class KeepService : Service() {
             else startForeground(1, n)
         } catch (e: Exception) { stopSelf(); return START_NOT_STICKY }
         alive = true
-        if (S.speedWarn.value) Gps.start(this)
+        if (S.bgGps()) Gps.start(this)
         lostSince = 0L
         h.removeCallbacks(loop); h.post(loop)
         FloatButton.sync(this)
@@ -82,6 +82,7 @@ class KeepService : Service() {
 
     override fun onDestroy() {
         alive = false
+        LimitSign.hide()
         if (!S.uiStarted) Gps.stop()
         h.removeCallbacks(loop)
         FloatButton.hide(this)

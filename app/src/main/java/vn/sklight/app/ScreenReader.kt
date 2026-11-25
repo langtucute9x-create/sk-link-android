@@ -349,7 +349,8 @@ class ScreenReader : AccessibilityService() {
                     if (bmp == null) return
                     // chỉ lấy biển nằm trong cửa sổ app bản đồ: màn hình còn có biển do chính SK Light vẽ (thẻ dẫn đường, mô phỏng)
                     val zone = mapRects
-                    val rcs = findRedRings(bmp).filter { r -> zone.isEmpty() || zone.any { it.contains(r.centerX(), r.centerY()) } }.take(4)
+                    val own = LimitSign.rect          // biển nổi của chính SK Light: không đọc lại
+                    val rcs = findRedRings(bmp).filter { r -> (zone.isEmpty() || zone.any { it.contains(r.centerX(), r.centerY()) }) && own?.contains(r.centerX(), r.centerY()) != true }.take(4)
                     val byText = System.currentTimeMillis() - txtLimAt < 5000
                     val head = if (byText) "giới hạn $txtLim đọc từ chữ của app bản đồ · " else ""
                     if (rcs.isEmpty()) { S.ocrNote.value = head + "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }

@@ -25,6 +25,8 @@ object Limit {
     private var qLat = Double.NaN
     private var qLon = Double.NaN
     @Volatile private var busy = false
+    /** Nguồn của giới hạn đang dùng (đọc từ luồng khác): 1 app bản đồ, 2 bản đồ mở, 0 chưa có. */
+    @Volatile var source = 0
     private var src = 0          // nguồn của giới hạn đang dùng: 1 màn hình app bản đồ, 2 bản đồ mở, 0 chưa có
 
     /** Biển đọc được trên màn hình (km/h). */
@@ -37,14 +39,16 @@ object Limit {
         val from = if (scr > 0 && now - scrAt < 10000) 1 else if (S.limitOsm.value && osm > 0 && now - osmAt < 90000) 2 else 0
         val v = when (from) { 1 -> scr; 2 -> osm; else -> 0 }
         main.post {
-            val o = S.speedLimit.intValue; val same = from == src; src = from
+            val o = S.speedLimit.intValue; val same = from == src; src = from; source = from
             // "giới hạn giảm" chỉ báo khi cùng một nguồn đổi số; đổi nguồn (biển trên màn hình hết hạn, chuyển sang số của bản đồ mở) không phải biển mới
             if (o != v) { S.speedLimit.intValue = v; if (same && o > 0 && v > 0 && o - v >= 10) AlertBridge.event(7); AlertBridge.refresh() }
+            LimitSign.sync()
         }
     }
 
     /** Gọi mỗi lần GPS có vị trí mới. */
     fun onLocation(lat: Double, lon: Double, kmh: Float) {
+        if (kmh < 5f && osm > 0) osmAt = System.currentTimeMillis()      // xe đứng yên (chờ đèn đỏ): vẫn là đoạn đường đó, giữ giới hạn đã tra
         update()
         if (!S.limitOsm.value || kmh < 5f || busy) return
         val now = System.currentTimeMillis()

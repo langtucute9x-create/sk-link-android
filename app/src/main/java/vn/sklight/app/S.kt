@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.88"
+    const val VER = "1.4.89"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -175,6 +175,8 @@ object S {
     var lon = Double.NaN
     @Volatile var lastTouch = 0L
     var appVisible = false
+    /** GPS có cần chạy khi app ở nền không: để cảnh báo quá tốc độ, hoặc để tra giới hạn tốc độ theo vị trí. */
+    fun bgGps() = speedWarn.value || limitOsm.value
     @Volatile var uiStarted = false                         // màn hình app đang mở (kể cả khi chia đôi màn hình mà không được chọn)
     var userOff = false                                   // người dùng vừa bấm Ngắt kết nối: không tự nối lại
     val main = Handler(Looper.getMainLooper())
