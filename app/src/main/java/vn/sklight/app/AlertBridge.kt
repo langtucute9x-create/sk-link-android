@@ -72,8 +72,12 @@ object AlertBridge {
 
     // ---- cảnh báo biển (4-7): nháy theo thời gian ngắn, mỗi loại có thời gian nghỉ riêng ----
     // màu, nhịp nháy (ms), thời lượng (ms), nghỉ giữa hai lần (ms)
-    private val EV = mapOf(4 to longArrayOf(0xFFB000, 400, 6000, 20000), 5 to longArrayOf(0xFF0000, 160, 5000, 20000),
-        6 to longArrayOf(0xFFE000, 300, 2000, 15000), 7 to longArrayOf(0xFFE000, 300, 2000, 8000))
+    private val EV = mapOf(4 to longArrayOf(0, 400, 6000, 20000), 5 to longArrayOf(0, 160, 5000, 20000),
+        6 to longArrayOf(0, 300, 2000, 15000), 7 to longArrayOf(0, 300, 2000, 8000))
+    /** Bảng màu đèn cảnh báo, người dùng chọn theo chỉ số. */
+    val PAL = intArrayOf(0xFFC400, 0xFF8A00, 0xFF2D2D, 0x22C55E, 0x3B82F6, 0xA855F7, 0xFFFFFF)
+    val PAL_NAMES = listOf("Vàng", "Cam", "Đỏ", "Xanh lá", "Xanh dương", "Tím", "Trắng")
+    fun colorOf(k: Int): Int = PAL[S.alertCol[k.coerceIn(0, 7)].coerceIn(0, PAL.size - 1)]
     private var evKind = 0
     private var evUntil = 0L
     private val evLast = LongArray(8)
@@ -201,7 +205,7 @@ object AlertBridge {
             S.alertPhase.value = on
             // Quá tốc độ: khu được chọn nháy đỏ
             val ev = EV[kind]
-            val v = if (on) (ev?.get(0)?.toInt() ?: 0xFF0000) else 0x000000
+            val v = if (on) colorOf(kind) else 0x000000
             val uni = S.czone.intValue == 0
             val b1 = if (uni) S.col[0] else S.col[1]
             val b2 = if (uni) S.col[0] else S.col[2]

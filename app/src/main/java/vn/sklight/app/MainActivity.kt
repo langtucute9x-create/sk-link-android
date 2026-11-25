@@ -847,59 +847,6 @@ fun NavTop(granted: Boolean, openAccess: () -> Unit, toWelcome: () -> Unit) {
         }
     }
 
-    // ---- cảnh báo rẽ ----
-    Card {
-        GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo rẽ", 16)
-        Spacer(Modifier.height(8.dp))
-        SwitchRow("Báo đèn khi sắp rẽ", "", S.warnOn.value) { S.warnOn.value = it; S.saveSettings(); S.syncService() }
-        SwitchRow("Đảo chiều chạy", "", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
-        Spacer(Modifier.height(10.dp))
-        T("Hiệu ứng khi báo rẽ", 14, FontWeight.SemiBold)
-        Spacer(Modifier.height(8.dp))
-        val tf = S.turnFx.intValue.coerceIn(0, AlertBridge.TURN_FX.size - 1)
-        Grid(listOf(1, 2, 0), 3) { n, m -> Chip(AlertBridge.TURN_NAMES[n], tf == n, m, 44.dp, 12) { S.turnFx.intValue = n; S.saveSettings() } }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
-            T("Tốc độ đèn chạy", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Box(Modifier.height(27.dp).widthIn(min = 40.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                T("${S.turnSpd[tf]}", 14, FontWeight.ExtraBold, Pink)
-            }
-        }
-        SkSlider((S.turnSpd[tf] - 1) / 9f, { S.turnSpd[tf] = 1 + (it * 9).roundToInt(); S.saveSettings() }, Pink, tint(0.2f), Pink,
-            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, 10, "${S.turnSpd[tf]}")
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
-            T("Báo trước", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Box(Modifier.height(27.dp).widthIn(min = 58.dp).clip(RoundedCornerShape(Theme.r(6))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(6))).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                T("${S.alertDist.intValue} m", 14, FontWeight.ExtraBold, Pink)
-            }
-        }
-        SkSlider((S.alertDist.intValue - 50) / 450f, { S.alertDist.intValue = 50 + (it * 45).roundToInt() * 10; S.saveSettings() }, Pink, tint(0.2f), Pink,
-            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, label = "${S.alertDist.intValue} m")
-        Spacer(Modifier.height(10.dp))
-        var open by remember { mutableStateOf(false) }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            T("Thời gian đèn chạy", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Box {
-                Row(
-                    Modifier.height(34.dp).clip(RoundedCornerShape(Theme.r(8))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(8)))
-                        .clickable { open = true }.padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    T(if (S.alertMaxSec.intValue == 0) "Tới khi rẽ xong" else "${S.alertMaxSec.intValue} giây", 14, FontWeight.ExtraBold, Pink)
-                    Spacer(Modifier.width(4.dp))
-                    Icon(Icons.Filled.ArrowDropDown, null, tint = Pink, modifier = Modifier.size(20.dp))
-                }
-                androidx.compose.material3.DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                    (listOf(0) + (1..20)).forEach { sec ->
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { T(if (sec == 0) "Tới khi rẽ xong" else "$sec giây", 14, if (S.alertMaxSec.intValue == sec) FontWeight.ExtraBold else FontWeight.Medium, if (S.alertMaxSec.intValue == sec) Pink else Txt) },
-                            onClick = { S.alertMaxSec.intValue = sec; S.saveSettings(); open = false }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
 }
 
 /** Thử nháy + thông báo của app dẫn đường. */
@@ -911,23 +858,8 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
     // ---- mô phỏng ----
     SimCard()
 
-    // ---- cảnh báo quá tốc độ ----
-    Card {
-        GroupTitle(Icons.Filled.NotificationsNone, "Cảnh báo quá tốc độ", 16)
-        Spacer(Modifier.height(8.dp))
-        SwitchRow("Nháy đỏ khi quá tốc độ", "", S.speedWarn.value) { S.speedWarn.value = it; S.saveSettings(); S.syncService() }
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for ((label, z) in listOf("Khu vực 1" to 1, "Khu vực 2" to 2, "Cả xe" to 0))
-                Chip(label, S.speedZone.intValue == z, Modifier.weight(1f), 44.dp, 12) { S.speedZone.intValue = z; S.saveSettings() }
-        }
-        if (S.dev.value && S.ocrNote.value.isNotEmpty()) T(S.ocrNote.value, 11, color = Grey)
-        if (S.dev.value) S.signThumb.value?.let { bmp ->
-            Spacer(Modifier.height(6.dp))
-            T("Ảnh biển app đang đọc:", 11, color = Grey)
-            androidx.compose.foundation.Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.height(90.dp))
-        }
-    }
+    // ---- cảnh báo: rẽ, quá tốc độ, theo biển, gộp một mục ----
+    AlertsCard()
 
     // ---- quyền còn thiếu: chỉ hiện khi chưa cấp đủ; cấp xong thì thẻ tự ẩn ----
     var accOn by remember { mutableStateOf(true) }
@@ -1003,25 +935,6 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
                 }
             }
         }
-    }
-
-    // ---- cảnh báo theo biển trên màn hình app bản đồ (thử nghiệm, đọc từ ảnh màn hình) ----
-    Card {
-        GroupTitle(Icons.Filled.Warning, "Cảnh báo theo biển", 16)
-        Spacer(Modifier.height(4.dp))
-        SwitchRow("Camera phạt nguội / AI / đo tốc độ", "Đèn nháy cam khi biển camera còn gần.", S.camWarn.value) { S.camWarn.value = it; S.saveSettings(); S.syncService() }
-        SwitchRow("Camera vượt đèn đỏ", "Đèn nháy đỏ nhanh.", S.redCamWarn.value) { S.redCamWarn.value = it; S.saveSettings(); S.syncService() }
-        SwitchRow("Biển cấm (cấm vượt...)", "Đèn nháy vàng 2 giây.", S.banWarn.value) { S.banWarn.value = it; S.saveSettings(); S.syncService() }
-        SwitchRow("Giới hạn tốc độ giảm", "Đèn nháy vàng khi giới hạn tụt từ 10 km/h trở lên.", S.limitChgWarn.value) { S.limitChgWarn.value = it; S.saveSettings(); S.syncService() }
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            T("Báo camera khi còn", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            T("${S.camDist.intValue} m", 14, FontWeight.ExtraBold, Pink)
-        }
-        SkSlider((S.camDist.intValue - 100) / 400f, { S.camDist.intValue = 100 + (it * 8).roundToInt() * 50; S.saveSettings() }, Pink, tint(0.2f), Pink,
-            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, label = "${S.camDist.intValue} m")
-        Spacer(Modifier.height(4.dp))
-        T("Đọc biển từ ảnh màn hình nên có thể nhầm hoặc sót, cần thử trên xe thật.", 12, color = Grey)
     }
 
     // ---- tra giới hạn tốc độ theo vị trí (cách 2), luôn ở cuối màn hình dẫn đường ----

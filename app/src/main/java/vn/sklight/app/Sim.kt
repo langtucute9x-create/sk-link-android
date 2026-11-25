@@ -65,8 +65,10 @@ object Sim {
     private fun signTick(dt: Float) {
         move(dt, 45f)
         S.appSpeed.intValue = 45
-        if (!fired && sec.floatValue >= 2f) { fired = true; AlertBridge.event(kind.intValue) }
-        if (sec.floatValue > 10f) stop()
+        dist.floatValue -= 45f / 3.6f * dt
+        val trig = when (kind.intValue) { 4 -> S.camDist.intValue; 5 -> 150; else -> 100 }
+        if (!fired && dist.floatValue <= trig) { fired = true; AlertBridge.event(kind.intValue) }
+        if (dist.floatValue < -50f) stop()
     }
 
     private fun speedTick(dt: Float) {
@@ -91,7 +93,7 @@ object Sim {
         fired = false; AlertBridge.evClear()
         running.value = true
         turn.floatValue = 0f; turnAt = -1f; sec.floatValue = 0f; travelled.floatValue = 0f
-        startDist = (S.alertDist.intValue + 90).toFloat()
+        startDist = (when (k) { 1, 2 -> S.alertDist.intValue; 4 -> S.camDist.intValue; else -> 200 } + 90).toFloat()
         dist.floatValue = startDist
         speed.floatValue = if (k == 3) 45f else 40f
         if (k == 3) { savedLimit = S.speedLimit.intValue; savedApp = S.appSpeed.intValue; S.speedLimit.intValue = LIMIT }

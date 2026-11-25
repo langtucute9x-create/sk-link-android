@@ -40,7 +40,7 @@ fun SimCard() {
     Card {
         GroupTitle(Icons.Filled.DirectionsCar, "Mô phỏng", 16)
         Spacer(Modifier.height(10.dp))
-        Box(Modifier.fillMaxWidth().height(250.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF9CC9F2))) {
+        Box(Modifier.fillMaxWidth().aspectRatio(680f / 600f).clip(RoundedCornerShape(14.dp)).background(Color(0xFFE9EFF7))) {
             Scene(Modifier.fillMaxSize())
             Hud()
         }
@@ -48,12 +48,12 @@ fun SimCard() {
         val maxS = S.alertMaxSec.intValue
         T(
             if (k in 4..7) when (k) {
-                4 -> "Xe chạy 45 km/h, gặp camera phạt nguội: đèn nháy cam khoảng 6 giây."
-                5 -> "Xe chạy 45 km/h, gặp camera vượt đèn đỏ: đèn nháy đỏ nhanh khoảng 5 giây."
-                6 -> "Xe chạy 45 km/h, gặp biển cấm (cấm vượt...): đèn nháy vàng 2 giây."
-                else -> "Xe chạy 45 km/h, giới hạn tụt từ 60 xuống 40: đèn nháy vàng 2 giây."
+                4 -> "Xe chạy 45 km/h, gặp camera phạt nguội: đèn nháy khoảng 6 giây."
+                5 -> "Xe chạy 45 km/h, gặp camera vượt đèn đỏ: đèn nháy nhanh khoảng 5 giây."
+                6 -> "Xe chạy 45 km/h, gặp biển cấm (cấm vượt...): đèn nháy 2 giây."
+                else -> "Xe chạy 45 km/h, giới hạn tụt từ 60 xuống 40: đèn nháy 2 giây."
             }
-            else if (k == 3) "Xe chạy 45 km/h rồi vượt giới hạn ${Sim.LIMIT} km/h: khu được chọn nháy đỏ, về dưới giới hạn thì tắt."
+            else if (k == 3) "Xe chạy 45 km/h rồi vượt giới hạn ${Sim.LIMIT} km/h: khu được chọn nháy, về dưới giới hạn thì tắt."
             else "Xe chạy tới chỗ rẽ. Đèn báo bắt đầu khi còn ${S.alertDist.intValue} m, " + (if (maxS > 0) "chạy tối đa $maxS giây." else "chạy tới khi qua chỗ rẽ."),
             12, color = Grey
         )
@@ -92,9 +92,9 @@ private fun Hud() {
             }
         }
         // khoảng cách tới chỗ rẽ
-        if (k < 3 && run) Column(Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 12.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            T(if (Sim.turn.floatValue > 0f) "Đang rẽ" else "Còn ${Sim.dist.floatValue.toInt()} m", 18, FontWeight.ExtraBold, color = Color.White)
-            T(if (k == 1) "◀ rẽ trái" else "rẽ phải ▶", 11, color = Color(0xFFB8BCC6))
+        if (k != 3 && run) Column(Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 12.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            T(if (Sim.turn.floatValue > 0f) "Đang rẽ" else "Còn ${Sim.dist.floatValue.toInt().coerceAtLeast(0)} m", 18, FontWeight.ExtraBold, color = Color.White)
+            T(if (k == 1) "◀ rẽ trái" else if (k == 2) "rẽ phải ▶" else "phía trước", 11, color = Color(0xFFB8BCC6))
         }
         // trạng thái đèn
         val txt = when {
@@ -103,23 +103,24 @@ private fun Hud() {
                 val left = if (S.alertMaxSec.intValue > 0 && lit0 > 0) max(0, S.alertMaxSec.intValue - ((now - lit0) / 1000).toInt()) else -1
                 (if (ak == 1) "ĐÈN BÁO RẼ TRÁI" else "ĐÈN BÁO RẼ PHẢI") + (if (left >= 0) " · còn $left giây" else "")
             }
-            ak == 3 -> "QUÁ TỐC ĐỘ · ĐÈN NHÁY ĐỎ"
-            ak == 4 -> "CAMERA PHÍA TRƯỚC · ĐÈN NHÁY CAM"
-            ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY ĐỎ"
-            ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY VÀNG"
-            ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY VÀNG"
+            ak == 3 -> "QUÁ TỐC ĐỘ · ĐÈN NHÁY"
+            ak == 4 -> "CAMERA PHÍA TRƯỚC · ĐÈN NHÁY"
+            ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY"
+            ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY"
+            ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY"
             k == 3 || k >= 4 -> "Đang chạy trong giới hạn"
             Sim.turn.floatValue > 0f -> "Đã qua chỗ rẽ · đèn về như cũ"
             Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
             else -> "Đèn báo đã hết thời gian chạy"
         }
-        val col = when { ak == 3 -> Color(0xFFE53935); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
+        val col = when { ak in 3..7 -> Color(0xFF000000 or AlertBridge.colorOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
         Box(Modifier.align(Alignment.BottomCenter).clip(RoundedCornerShape(20.dp)).background(col).padding(horizontal = 14.dp, vertical = 6.dp)) { T(txt, 12, FontWeight.ExtraBold, color = Color.White) }
     }
 }
 
-private fun f(z: Float) = CAM / (z + CAM)
+private fun rnd(i: Int): Float { val x = sin(i * 127.1) * 43758.5; return (x - kotlin.math.floor(x)).toFloat() }
 
+/** Cảnh mô phỏng kiểu Isometric: nhìn chéo từ trên cao, xe chạy lên phía trên bên phải. Khoảng cách được nén lại cho vừa khung. */
 @Composable
 private fun Scene(modifier: Modifier) {
     val ak = S.alertKind.intValue
@@ -130,172 +131,89 @@ private fun Scene(modifier: Modifier) {
     val dist = Sim.dist.floatValue
     val kind = Sim.kind.intValue
     val run = Sim.running.value
-    val turn = Sim.turn.floatValue
     Canvas(modifier) {
-        val w = size.width; val h = size.height
-        val hy = h * 0.36f; val by = h * 1.02f
-        val side = if (kind == 1) -1f else 1f
-        val ease = turn * turn * (3 - 2 * turn)
-        val cx = w / 2f - side * ease * w * 0.95f
-        fun sy(z: Float) = hy + (by - hy) * f(z)
-        fun px(z: Float, m: Float) = m * (w * 0.40f / 3.5f) * f(z)
-        // trời + đất
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF7FB6EE), Color(0xFFE3F2FF)), 0f, hy), size = Size(w, hy))
-        drawRect(Brush.verticalGradient(listOf(Color(0xFF8DBB6B), Color(0xFF5E9548)), hy, h), topLeft = Offset(0f, hy), size = Size(w, h - hy))
-        // nhà và cây hai bên đường, từ xa tới gần
-        var z = ((trav % 22f) * -1f) + 22f * 12
-        val wob = if (run) trav else 0f
-        var idx = (trav / 22f).toInt() + 12
-        while (z > 0.8f) {
-            val y = sy(z); val sc = f(z)
-            for (sd in listOf(-1f, 1f)) {
-                val gx = cx + sd * px(z, 6.5f + ((idx + (if (sd > 0) 1 else 0)) % 3) * 1.5f)
-                val bw = px(z, 5f); val bh = px(z, 4.5f + ((idx * 7 + (if (sd > 0) 3 else 0)) % 4))
-                val c = listOf(Color(0xFFE8D9C2), Color(0xFFD9E4EE), Color(0xFFF1C6B4), Color(0xFFCFE0C8))[(idx + (if (sd > 0) 2 else 0)) % 4]
-                if ((idx + (if (sd > 0) 1 else 0)) % 2 == 0) {
-                    drawRect(c, Offset(gx - bw / 2, y - bh), Size(bw, bh))
-                    drawRect(Color(0x33000000), Offset(gx - bw / 2, y - bh), Size(bw, bh * 0.12f))
-                    drawRect(Color(0xFF6B7F99), Offset(gx - bw * 0.3f, y - bh * 0.7f), Size(bw * 0.6f, bh * 0.22f))
-                } else {
-                    drawRect(Color(0xFF7A5230), Offset(gx - bw * 0.05f, y - bh * 0.35f), Size(bw * 0.1f, bh * 0.35f))
-                    drawCircle(Color(0xFF3E8E41), bw * 0.42f, Offset(gx, y - bh * 0.6f))
-                    drawCircle(Color(0xFF58A95A), bw * 0.3f, Offset(gx - bw * 0.1f, y - bh * 0.7f))
-                }
-            }
-            z -= 22f; idx -= 1
+        val sc = size.width / 680f
+        val cz = 11.6f; val rw = 7f; val nr = cz - 5f; val far = 240f
+        val isTurn = run && kind in 1..2
+        val tside = if (kind == 1) -1f else 1f
+        val jz = dist + cz
+        fun P(x: Float, z: Float, y: Float = 0f): Offset {
+            val u = x * 0.5f; val w = (z - cz) * 0.12f; val s = 15f * sc
+            return Offset(size.width / 2 - 190f * sc + (w + u) * 0.866f * s, size.height - 150f * sc - (w - u) * 0.5f * s - y * s * 0.8f)
         }
-        // mặt đường
-        val zf = 400f
-        val road = Path().apply {
-            moveTo(cx - px(zf, 3.5f), sy(zf)); lineTo(cx + px(zf, 3.5f), sy(zf)); lineTo(cx + px(0f, 3.5f), by); lineTo(cx - px(0f, 3.5f), by); close()
+        fun poly(pts: List<Offset>, c: Color) {
+            val path = Path(); pts.forEachIndexed { i, o -> if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y) }; path.close()
+            drawPath(path, c)
         }
-        drawPath(road, ASPHALT)
-        // vỉa hè mép đường
-        for (sd in listOf(-1f, 1f)) drawLine(Color(0xFFD9D9D9), Offset(cx + sd * px(zf, 3.5f), sy(zf)), Offset(cx + sd * px(0f, 3.5f), by), strokeWidth = 3f)
-        // ngã rẽ
-        val showJ = kind < 3 && run
-        val jz = dist
-        if (showJ && jz < 380f) {
-            val z1 = max(jz - 3.6f, 0.2f); val z2 = jz + 3.6f
-            if (z2 > 0.4f) {
-                val ya = sy(z2); val yb = sy(z1)
-                drawRect(ASPHALT, Offset(0f, ya), Size(w, yb - ya))
-                drawLine(Color(0xFFD9D9D9), Offset(0f, ya), Offset(w, ya), 2f)
-                // vạch dừng
-                val zs = z2 + 0.01f
-                // vạch sang đường
-                for (i in -6..6) { val xx = cx + px(jz, i * 0.55f); drawRect(Color(0x66FFFFFF), Offset(xx - px(jz, 0.12f), sy(jz - 3f)), Size(px(jz, 0.24f), max(sy(jz - 2.2f) - sy(jz - 3f), 1f)).takeIf { abs(i) <= 5 } ?: Size(0f, 0f)) }
+        fun seg(a: Offset, b: Offset, w: Float, c: Color) = drawLine(c, a, b, w * sc, StrokeCap.Round)
+        fun box(x0: Float, x1: Float, z0: Float, z1: Float, h: Float, top: Color, near: Color, side: Color) {
+            poly(listOf(P(x1, z0), P(x1, z1), P(x1, z1, h), P(x1, z0, h)), side)
+            poly(listOf(P(x0, z0), P(x1, z0), P(x1, z0, h), P(x0, z0, h)), near)
+            poly(listOf(P(x0, z0, h), P(x1, z0, h), P(x1, z1, h), P(x0, z1, h)), top)
+        }
+        drawRect(Color(0xFFE9EFF7))
+        val road = Color(0xFF6B7487)
+        poly(listOf(P(-rw, nr), P(rw, nr), P(rw, far), P(-rw, far)), road)
+        if (isTurn && jz > 0) {
+            val z1 = max(jz - rw, nr); val z2 = jz + rw
+            poly(listOf(P(tside * rw, z1), P(tside * 60f, z1), P(tside * 60f, z2), P(tside * rw, z2)), road)
+        }
+        seg(P(-rw, nr), P(-rw, far), 3f, Color.White); seg(P(rw, nr), P(rw, far), 3f, Color.White)
+        for (n in 0 until 45) {
+            val dz = ((trav / 8f).toInt() + n) * 8f - trav + cz
+            if (dz < nr || dz > far - 4f) continue
+            seg(P(0f, dz), P(0f, dz + 3.5f), 3f, Color.White)
+        }
+        // nhà hai bên, xa tới gần
+        val items = ArrayList<IntArray>()
+        for (n in 0 until 40) {
+            val idx = (trav / 22f).toInt() + n
+            val bz = idx * 22f - trav + cz
+            if (bz < nr + 4f || bz > far) continue
+            for (i in 0..1) {
+                val sd = if (i == 1) 1f else -1f
+                if (isTurn && sd == tside && abs(bz - jz) < rw + 13f) continue
+                items.add(intArrayOf((bz * 100).toInt(), idx, i))
             }
         }
-        // vạch kẻ giữa đường
-        var d = -(trav % 8f)
-        while (d < 120f) {
-            val z0 = max(d, 0.3f); val z1 = d + 3.2f
-            val inJ = showJ && z1 > jz - 3.6f && z0 < jz + 3.6f
-            if (z1 > 0.3f && !inJ) {
-                val p = Path().apply { moveTo(cx - px(z0, 0.09f), sy(z0)); lineTo(cx + px(z0, 0.09f), sy(z0)); lineTo(cx + px(z1, 0.09f), sy(z1)); lineTo(cx - px(z1, 0.09f), sy(z1)); close() }
-                drawPath(p, Color(0xFFF5F5F5))
-            }
-            d += 8f
+        items.sortByDescending { it[0] }
+        for (it in items) {
+            val bz = it[0] / 100f; val idx = it[1]; val i = it[2]; val sd = if (i == 1) 1f else -1f
+            val h = 5f + rnd(idx * 2 + i) * 14f; val w = 9f + rnd(idx + i * 7) * 8f; val gx = rw + 4f + rnd(idx * 3 + i) * 4f
+            val x0 = if (sd < 0) -(gx + w) else gx; val x1 = if (sd < 0) -gx else gx + w
+            box(x0, x1, bz - 14f, bz, h, Color.White, Color(0xFFC8D3E2), Color(0xFFDDE5F0))
         }
-        // mũi tên rẽ sơn trên mặt đường (trước ngã rẽ)
-        if (showJ && jz > 12f && jz < 90f) arrow(kind, cx, jz - 9f, ::sy, ::px)
-        // xe
-        car(w, h, ak, phase, clock, kind, ease, side)
-        // mini xe nhìn từ trên xuống: các khu đèn
-        topCar(Offset(w - 52.dp.toPx(), h - 62.dp.toPx()), ak, phase, clock, kind)
-    }
-}
-
-private fun DrawScope.arrow(kind: Int, cx: Float, z: Float, sy: (Float) -> Float, px: (Float, Float) -> Float) {
-    val dirX = if (kind == 1) -1f else 1f
-    fun pt(x: Float, zz: Float) = Offset(cx + px(zz, x), sy(zz))
-    val p = Path().apply {
-        val a = pt(-0.35f * 1f, z - 3.2f); val b = pt(0.35f, z - 3.2f)
-        moveTo(a.x, a.y); lineTo(b.x, b.y)
-        val c = pt(0.35f, z); lineTo(c.x, c.y)
-        val e = pt(1.1f * dirX.let { if (it > 0) 1f else 1f }, z); lineTo(pt(0.35f + 1.1f, z).x, pt(0.35f + 1.1f, z).y)
-        close()
-    }
-    // mũi tên đơn giản: thân thẳng + đầu mũi nghiêng về phía rẽ
-    val body = Path().apply {
-        val a = pt(-0.3f, z - 4f); val b = pt(0.3f, z - 4f); val c = pt(0.3f, z - 0.8f); val e = pt(-0.3f, z - 0.8f)
-        moveTo(a.x, a.y); lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(e.x, e.y); close()
-    }
-    drawPath(body, Color(0xFFF5F5F5))
-    val tip = Path().apply {
-        val l = pt(-1.3f, z - 0.8f); val r = pt(1.3f, z - 0.8f); val t = pt(dirX * 1.6f, z + 1.6f)
-        moveTo(l.x, l.y); lineTo(r.x, r.y); lineTo(t.x, t.y); close()
-    }
-    drawPath(tip, Color(0xFFF5F5F5))
-}
-
-private fun DrawScope.car(w: Float, h: Float, ak: Int, phase: Boolean, clock: Float, kind: Int, ease: Float, side: Float) {
-    val cw = w * 0.30f; val ch = cw * 0.78f
-    val cx = w / 2f; val bottom = h - 10f
-    val tilt = if (kind < 3) side * 9f * sin(PI.toFloat() * ease) else 0f
-    rotate(tilt, Offset(cx, bottom)) {
-        val left = cx - cw / 2; val top = bottom - ch
-        // bóng
-        drawOval(Color(0x55000000), Offset(left - cw * 0.04f, bottom - ch * 0.08f), Size(cw * 1.08f, ch * 0.16f))
-        // bánh
-        drawRoundRect(Color(0xFF15161C), Offset(left - cw * 0.02f, bottom - ch * 0.30f), Size(cw * 0.12f, ch * 0.30f), CornerRadius(8f))
-        drawRoundRect(Color(0xFF15161C), Offset(left + cw * 0.90f, bottom - ch * 0.30f), Size(cw * 0.12f, ch * 0.30f), CornerRadius(8f))
-        // thân dưới
-        drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFE53935), Color(0xFF8E1515)), top + ch * 0.42f, bottom), Offset(left, top + ch * 0.42f), Size(cw, ch * 0.54f), CornerRadius(cw * 0.1f))
-        // cabin
-        val cab = Path().apply {
-            moveTo(left + cw * 0.14f, top + ch * 0.46f); lineTo(left + cw * 0.22f, top + ch * 0.06f)
-            quadraticBezierTo(cx, top - ch * 0.04f, left + cw * 0.78f, top + ch * 0.06f)
-            lineTo(left + cw * 0.86f, top + ch * 0.46f); close()
+        // tuyến đường xanh
+        val pts = if (isTurn) listOf(2.2f to nr + 2f, 2.2f to jz - 5f, (if (tside > 0) 5f else -5f) to jz, tside * 70f to jz) else listOf(2.2f to nr + 2f, 2.2f to far)
+        val dense = ArrayList<Pair<Float, Float>>()
+        for (i in 0 until pts.size - 1) {
+            val a = pts[i]; val b = pts[i + 1]
+            val len = kotlin.math.hypot(b.first - a.first, b.second - a.second); val m = max(2, kotlin.math.ceil(len / 6f).toInt())
+            for (j in 0 until m) dense.add(a.first + (b.first - a.first) * j / m to a.second + (b.second - a.second) * j / m)
         }
-        drawPath(cab, Brush.verticalGradient(listOf(Color(0xFF23364B), Color(0xFF0E1824)), top, top + ch * 0.46f))
-        drawPath(Path().apply { moveTo(left + cw * 0.26f, top + ch * 0.1f); lineTo(left + cw * 0.46f, top + ch * 0.1f); lineTo(left + cw * 0.38f, top + ch * 0.42f); lineTo(left + cw * 0.2f, top + ch * 0.42f); close() }, Color(0x22FFFFFF))
-        // đèn LED nội thất quanh cửa kính
-        val leftOn = ak >= 3 || (ak == 1)
-        val rightOn = ak >= 3 || (ak == 2)
-        val ledCol = if (ak >= 3) { val c = when (ak) { 4 -> Color(0xFFFFB000); 6, 7 -> Color(0xFFFFE000); else -> Color(0xFFFF1744) }; if (phase) c else c.copy(alpha = 0.2f) } else AMBER
-        fun glow(x0: Float, y0: Float, x1: Float, y1: Float, flow: Boolean) {
-            val seg = 8
-            for (i in 0 until seg) {
-                val t0 = i / seg.toFloat(); val t1 = (i + 1) / seg.toFloat()
-                val a = if (flow) { val head = (clock * 1.6f) % 1f; val dd = ((t0 - head) + 1f) % 1f; 0.25f + 0.75f * (1f - min(dd * 2.2f, 1f)) } else 1f
-                val c = ledCol.copy(alpha = ledCol.alpha * a)
-                val p0 = Offset(x0 + (x1 - x0) * t0, y0 + (y1 - y0) * t0); val p1 = Offset(x0 + (x1 - x0) * t1, y0 + (y1 - y0) * t1)
-                drawLine(c.copy(alpha = c.alpha * 0.25f), p0, p1, strokeWidth = 14f, cap = StrokeCap.Round)
-                drawLine(c, p0, p1, strokeWidth = 5f, cap = StrokeCap.Round)
-            }
+        dense.add(pts.last())
+        for (i in 0 until dense.size - 1) seg(P(dense[i].first, dense[i].second), P(dense[i + 1].first, dense[i + 1].second), 12f, Color(0xFF1E6BFF))
+        for (i in 0 until dense.size - 1) seg(P(dense[i].first, dense[i].second), P(dense[i + 1].first, dense[i + 1].second), 4f, Color(0x8CFFFFFF))
+        // biển báo bên lề phải
+        val sz = dist + cz
+        if (run && kind in 4..7 && sz > nr && sz < far) {
+            val a = P(rw + 2.5f, sz); val b = P(rw + 2.5f, sz, 3.6f); val r = 16f * sc
+            seg(a, b, 3f, Color(0xFF8B93A3))
+            drawCircle(Color.White, r, b)
+            drawCircle(if (kind == 4 || kind == 5) Color(0xFF1E6BFF) else Color(0xFFE53935), r, b, style = Stroke(r * 0.3f))
+            val p = android.graphics.Paint().apply { isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER; color = android.graphics.Color.parseColor("#111111"); textSize = r * 0.95f; isFakeBoldText = true }
+            drawContext.canvas.nativeCanvas.drawText(when (kind) { 4 -> "CAM"; 5 -> "ĐỎ"; 6 -> "✕"; else -> if (dist < 60f) "40" else "60" }, b.x, b.y + r * 0.33f, p)
         }
-        val turning = ak == 1 || ak == 2
-        if (leftOn) glow(left + cw * 0.14f, top + ch * 0.46f, left + cw * 0.22f, top + ch * 0.08f, turning)
-        if (rightOn) glow(left + cw * 0.86f, top + ch * 0.46f, left + cw * 0.78f, top + ch * 0.08f, turning)
-        if (ak >= 3) drawRoundRect(ledCol.copy(alpha = 0.18f), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.1f))
-        // đèn hậu + biển số
-        drawRoundRect(Color(0xFFFF5252), Offset(left + cw * 0.04f, top + ch * 0.55f), Size(cw * 0.2f, ch * 0.1f), CornerRadius(6f))
-        drawRoundRect(Color(0xFFFF5252), Offset(left + cw * 0.76f, top + ch * 0.55f), Size(cw * 0.2f, ch * 0.1f), CornerRadius(6f))
-        drawRoundRect(Color(0xFFF5F5F5), Offset(cx - cw * 0.14f, top + ch * 0.66f), Size(cw * 0.28f, ch * 0.13f), CornerRadius(4f))
-        drawRoundRect(Color(0xFF15161C), Offset(left + cw * 0.04f, top + ch * 0.84f), Size(cw * 0.92f, ch * 0.1f), CornerRadius(6f))
+        // xe và đèn báo
+        val kc = if (ak in 3..7) Color(0xFF000000 or AlertBridge.colorOf(ak).toLong()) else Color(0xFFFFC400)
+        val on = ak != 0 && (ak in 1..2 || phase)
+        val pulse = 0.5f + 0.5f * sin(clock * 8.3f)
+        fun lit(sd: Int) = on && (ak > 2 || (if (ak == 1) -1 else 1) == sd)
+        val gp = P(2.2f, cz)
+        if (on) drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = if (ak in 1..2) 0.35f + 0.25f * pulse else 0.6f), Color.Transparent), gp, 110f * sc), 110f * sc, gp)
+        box(1f, 3.4f, cz - 2.2f, cz + 2.2f, 1.5f, Color(0xFFFF5A5F), Color(0xFFFF5A5F), Color(0xFFE04B50))
+        box(1.3f, 3.1f, cz - 0.9f, cz + 1.4f, 2.3f, Color(0xFF2A3142), Color(0xFF2A3142), Color(0xFF2A3142))
+        seg(P(1.3f, cz - 2.2f, 0.95f), P(2.3f, cz - 2.2f, 0.95f), 7f, if (lit(-1)) kc else Color(0xFF8A1F2A))
+        seg(P(3.1f, cz - 2.2f, 0.95f), P(2.1f, cz - 2.2f, 0.95f), 7f, if (lit(1)) kc else Color(0xFF8A1F2A))
     }
-}
-
-/** Xe nhìn từ trên xuống, sáu khu đèn: bốn cửa, táp lô, đồng hồ. */
-private fun DrawScope.topCar(o: Offset, ak: Int, phase: Boolean, clock: Float, kind: Int) {
-    val w = 44.dp.toPx(); val h = 56.dp.toPx()
-    drawRoundRect(Color(0xAA15161C), o - Offset(4.dp.toPx(), 4.dp.toPx()), Size(w + 8.dp.toPx(), h + 8.dp.toPx()), CornerRadius(12.dp.toPx()))
-    drawRoundRect(Color(0xFF5A5F70), o, Size(w, h), CornerRadius(12.dp.toPx()), style = Stroke(2f))
-    val red = Color(0xFFFF1744); val on = if (phase) red else red.copy(alpha = 0.25f)
-    fun seg(x: Float, y: Float, sw: Float, sh: Float, lit: Boolean, col: Color) {
-        drawRoundRect(if (lit) col else Color(0xFF3A3F4B), o + Offset(x, y), Size(sw, sh), CornerRadius(3.dp.toPx()))
-    }
-    val turnL = ak == 1; val turnR = ak == 2; val sp = ak >= 3
-    val head = (clock * 1.6f) % 1f
-    fun fl(t: Float): Boolean { val dd = ((t - head) + 1f) % 1f; return dd < 0.45f }
-    val sw = 5.dp.toPx(); val L = 3.dp.toPx(); val R = w - 3.dp.toPx() - sw
-    // thứ tự chạy: sau -> trước
-    seg(L, h * 0.62f, sw, h * 0.24f, sp && true || (turnL && fl(0.1f)), if (sp) on else AMBER)
-    seg(L, h * 0.30f, sw, h * 0.24f, sp || (turnL && fl(0.45f)), if (sp) on else AMBER)
-    seg(R, h * 0.62f, sw, h * 0.24f, sp || (turnR && fl(0.1f)), if (sp) on else AMBER)
-    seg(R, h * 0.30f, sw, h * 0.24f, sp || (turnR && fl(0.45f)), if (sp) on else AMBER)
-    seg(w * 0.25f, h * 0.12f, w * 0.5f, 4.dp.toPx(), sp || ((turnL || turnR) && fl(0.8f)), if (sp) on else AMBER)
-    seg(w * 0.25f, h * 0.20f, w * 0.5f, 4.dp.toPx(), sp || ((turnL || turnR) && fl(0.9f)), if (sp) on else AMBER)
 }
