@@ -367,6 +367,15 @@ fun LedMain() {
                     T(opts[i], 11, if (on) FontWeight.Bold else FontWeight.Medium, if (on) Txt else Grey)
                 }
             }
+            // tốc độ riêng cho 3 kiểu khu vực 2 do app chạy (thở, chớp, cầu vồng); "Ngược màu khu 1" đứng yên nên không cần
+            if (Auto.z2.intValue in 1..3) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                    T("Tốc độ khu vực 2", 13, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    T("${S.z2Speed.intValue}", 13, FontWeight.ExtraBold, Pink)
+                }
+                SkSlider((S.z2Speed.intValue - 1) / 9f, { S.z2Speed.intValue = 1 + (it * 9).roundToInt(); S.saveSettings() }, Pink, tint(0.2f), Pink,
+                    Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, 10, "${S.z2Speed.intValue}")
+            }
             if (Auto.z2.intValue != 0) { Spacer(Modifier.height(4.dp)); Hint("Kiểu thêm do app điều khiển: được nhớ khi đổi chế độ, đổi màu; chạy khi app còn mở và đang kết nối.", 11) }
         }
     }

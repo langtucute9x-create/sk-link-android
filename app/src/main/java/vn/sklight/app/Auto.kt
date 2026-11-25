@@ -83,6 +83,7 @@ object Auto {
         val el = System.currentTimeMillis() - t0
         val sp = 0.4 + S.speed.intValue * 0.2
         val t = (el * sp).toLong()
+        val t2 = (el * (0.4 + S.z2Speed.intValue * 0.2)).toLong()
         var a = base1(); var b = base2(); var uni = false
         var next = 200L                                    // nhịp gửi kế tiếp (ms)
         val m = main.intValue
@@ -172,9 +173,10 @@ object Auto {
             }
         } else {
             when (z2.intValue) {
-                1 -> b = scale(base2(), 0.06f + 0.94f * wave(t, 3000))
-                2 -> b = if (t % 1000L < 500L) base2() else 0
-                3 -> b = hsv((t / 25.0) % 360, 1.0)
+                // kiểu riêng của khu vực 2 chạy theo thanh "Tốc độ khu vực 2" (S.z2Speed), không theo thanh tốc độ chung
+                1 -> b = scale(base2(), 0.06f + 0.94f * wave(t2, 3000))
+                2 -> b = if (t2 % 1000L < 500L) base2() else 0
+                3 -> b = hsv((t2 / 25.0) % 360, 1.0)
                 4 -> { val x = base1(); b = ((255 - ((x shr 16) and 255)) shl 16) or ((255 - ((x shr 8) and 255)) shl 8) or (255 - (x and 255)) }
             }
         }
