@@ -75,7 +75,11 @@ object AlertBridge {
     private val EV = mapOf(4 to longArrayOf(0, 400, 6000, 20000), 5 to longArrayOf(0, 160, 5000, 20000),
         6 to longArrayOf(0, 300, 2000, 15000), 7 to longArrayOf(0, 300, 2000, 8000))
     /** Bảng màu đèn cảnh báo, người dùng chọn theo chỉ số. */
-    val PAL = intArrayOf(0xFFC400, 0xFF8A00, 0xFF2D2D, 0x22C55E, 0x3B82F6, 0xA855F7, 0xFFFFFF)
+    // PAL = giá trị gửi cho hộp: màu thuần, không pha kênh khác (0xFF2D2D trên đèn ra đỏ hồng, chủ dự án báo 25/11). PAL_SHOW = màu vẽ trên màn hình.
+    // Đỏ, xanh lá, xanh dương, trắng là màu thuần nên chắc; vàng, cam, tím trên đèn thật chưa kiểm chứng.
+    val PAL = intArrayOf(0xFFFF00, 0xFF4000, 0xFF0000, 0x00FF00, 0x0000FF, 0x8C01FC, 0xFFFFFF)
+    val PAL_SHOW = intArrayOf(0xFFC400, 0xFF8A00, 0xFF2D2D, 0x22C55E, 0x3B82F6, 0xA855F7, 0xFFFFFF)
+    fun showOf(k: Int): Int = PAL_SHOW[S.alertCol[k.coerceIn(0, 7)].coerceIn(0, PAL_SHOW.size - 1)]
     val PAL_NAMES = listOf("Vàng", "Cam", "Đỏ", "Xanh lá", "Xanh dương", "Tím", "Trắng")
     fun colorOf(k: Int): Int = PAL[S.alertCol[k.coerceIn(0, 7)].coerceIn(0, PAL.size - 1)]
     private var evKind = 0

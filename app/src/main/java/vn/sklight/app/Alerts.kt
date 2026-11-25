@@ -39,7 +39,7 @@ private fun ColorPick(kind: Int) {
     Spacer(Modifier.height(6.dp))
     val sel = S.alertCol[kind]
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-        AlertBridge.PAL.forEachIndexed { i, c ->
+        AlertBridge.PAL_SHOW.forEachIndexed { i, c ->
             Box(
                 Modifier.weight(1f).aspectRatio(1f).clip(CircleShape).background(Color(0xFF000000 or c.toLong()))
                     .border(if (i == sel) 3.dp else 1.dp, if (i == sel) Txt else Div, CircleShape)

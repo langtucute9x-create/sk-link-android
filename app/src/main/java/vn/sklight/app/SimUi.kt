@@ -122,7 +122,7 @@ private fun Hud() {
             Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
             else -> "Đèn báo đã hết thời gian chạy"
         }
-        val col = when { ak in 3..7 -> Color(0xFF000000 or AlertBridge.colorOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
+        val col = when { ak in 3..7 -> Color(0xFF000000 or AlertBridge.showOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
         Box(Modifier.align(Alignment.BottomCenter).clip(RoundedCornerShape(20.dp)).background(col).padding(horizontal = 14.dp, vertical = 6.dp)) { T(txt, 12, FontWeight.ExtraBold, color = Color.White) }
     }
 }
@@ -307,7 +307,7 @@ private fun Scene(modifier: Modifier) {
 
         val act = ak != 0
         val on = act && (ak in 1..2 || phase)
-        val kc = if (ak in 3..7) rgbColor(AlertBridge.colorOf(ak)) else Color(0xFFFFC400)
+        val kc = if (ak in 3..7) rgbColor(AlertBridge.showOf(ak)) else Color(0xFFFFC400)
         fun amt(u: Float): Float {
             if (!on) return 0f
             if (ak > 2) return 1f
