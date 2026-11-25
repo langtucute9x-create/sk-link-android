@@ -869,3 +869,24 @@ CAMERA PHÍA TRƯỚC · ĐÈN NHÁY CAM	CAMERA AHEAD · LIGHTS ORANGE	前方に
 CAMERA ĐÈN ĐỎ · ĐÈN NHÁY ĐỎ	RED-LIGHT CAMERA · LIGHTS RED	信号無視カメラ・赤点滅	신호위반 카메라 · 빨강 깜박임	กล้องไฟแดง · ไฟสีแดง
 BIỂN CẤM · ĐÈN NHÁY VÀNG	PROHIBITION SIGN · LIGHTS YELLOW	禁止標識・黄色点滅	금지 표지 · 노랑 깜박임	ป้ายห้าม · ไฟสีเหลือง
 GIỚI HẠN GIẢM · ĐÈN NHÁY VÀNG	LIMIT DROP · LIGHTS YELLOW	制限低下・黄色点滅	제한 감소 · 노랑 깜박임	ขีดจำกัดลด · ไฟสีเหลือง
+Cảnh báo	Alerts	警告	경고	การแจ้งเตือน
+Báo rẽ	Turn alert	右左折の警告	회전 알림	แจ้งเตือนเลี้ยว
+Đèn chạy theo hướng rẽ.	Lights run in the turn direction.	曲がる方向にライトが流れます。	회전 방향으로 조명이 흐릅니다.	ไฟวิ่งตามทิศทางเลี้ยว
+Màu đèn báo rẽ là màu của hiệu ứng đã chọn.	The turn-light colour is the colour of the chosen effect.	ウインカーの色は選んだエフェクトの色です。	회전 조명 색은 선택한 효과의 색입니다.	สีไฟเลี้ยวคือสีของเอฟเฟกต์ที่เลือก
+Màu đèn	Light colour	ライトの色	조명 색	สีไฟ
+Khu nháy	Flash zone	点滅エリア	깜박임 구역	โซนกะพริบ
+Nháy khi vượt giới hạn tốc độ.	Flashes when over the speed limit.	制限速度を超えると点滅します。	제한속도를 넘으면 깜박입니다.	กะพริบเมื่อเกินขีดจำกัดความเร็ว
+Báo khi biển camera còn gần.	Warns when a camera sign is near.	カメラ標識が近いと警告します。	카메라 표지가 가까우면 알립니다.	เตือนเมื่อใกล้ป้ายกล้อง
+Nháy nhanh.	Flashes fast.	速く点滅します。	빠르게 깜박입니다.	กะพริบเร็ว
+Nháy 2 giây.	Flashes for 2 seconds.	2秒間点滅します。	2초간 깜박입니다.	กะพริบ 2 วินาที
+Nháy khi giới hạn tụt từ 10 km/h trở lên.	Flashes when the limit drops by 10 km/h or more.	制限が10km/h以上下がると点滅します。	제한이 10km/h 이상 낮아지면 깜박입니다.	กะพริบเมื่อขีดจำกัดลด 10 กม./ชม. ขึ้นไป
+Cảnh báo theo biển đọc từ ảnh màn hình nên có thể nhầm hoặc sót, cần thử trên xe thật.	Sign warnings are read from screenshots and may be wrong or missed; test in a real car.	標識の警告は画面画像から読むため誤認や見落としがあります。実車で確認してください。	표지 경고는 화면 이미지에서 읽어 오인하거나 놓칠 수 있습니다. 실차에서 확인하세요.	คำเตือนตามป้ายอ่านจากภาพหน้าจอ อาจผิดหรือพลาด ควรทดสอบบนรถจริง
+Xe chạy 45 km/h, gặp camera phạt nguội: đèn nháy khoảng 6 giây.	Car drives 45 km/h and meets an enforcement camera: lights flash for about 6 seconds.	時速45kmで取締りカメラに遭遇：約6秒点滅します。	45km/h로 단속 카메라를 만나면 약 6초간 깜박입니다.	รถวิ่ง 45 กม./ชม. พบกล้องจับความเร็ว: ไฟกะพริบประมาณ 6 วินาที
+Xe chạy 45 km/h, gặp camera vượt đèn đỏ: đèn nháy nhanh khoảng 5 giây.	Car drives 45 km/h and meets a red-light camera: lights flash fast for about 5 seconds.	時速45kmで信号無視カメラに遭遇：約5秒速く点滅します。	45km/h로 신호위반 카메라를 만나면 약 5초간 빠르게 깜박입니다.	รถวิ่ง 45 กม./ชม. พบกล้องฝ่าไฟแดง: ไฟกะพริบเร็วประมาณ 5 วินาที
+Xe chạy 45 km/h, gặp biển cấm (cấm vượt...): đèn nháy 2 giây.	Car drives 45 km/h and meets a prohibition sign (no overtaking...): lights flash for 2 seconds.	時速45kmで禁止標識に遭遇：2秒間点滅します。	45km/h로 금지 표지를 만나면 2초간 깜박입니다.	รถวิ่ง 45 กม./ชม. พบป้ายห้าม: ไฟกะพริบ 2 วินาที
+Xe chạy 45 km/h, giới hạn tụt từ 60 xuống 40: đèn nháy 2 giây.	Car drives 45 km/h and the limit drops from 60 to 40: lights flash for 2 seconds.	時速45kmで制限が60から40に低下：2秒間点滅します。	45km/h로 제한이 60에서 40으로 낮아지면 2초간 깜박입니다.	รถวิ่ง 45 กม./ชม. ขีดจำกัดลดจาก 60 เป็น 40: ไฟกะพริบ 2 วินาที
+CAMERA PHÍA TRƯỚC · ĐÈN NHÁY	CAMERA AHEAD · LIGHTS FLASH	前方にカメラ・点滅	전방 카메라 · 깜박임	กล้องข้างหน้า · ไฟกะพริบ
+CAMERA ĐÈN ĐỎ · ĐÈN NHÁY	RED-LIGHT CAMERA · LIGHTS FLASH	信号無視カメラ・点滅	신호위반 카메라 · 깜박임	กล้องไฟแดง · ไฟกะพริบ
+BIỂN CẤM · ĐÈN NHÁY	PROHIBITION SIGN · LIGHTS FLASH	禁止標識・点滅	금지 표지 · 깜박임	ป้ายห้าม · ไฟกะพริบ
+GIỚI HẠN GIẢM · ĐÈN NHÁY	LIMIT DROP · LIGHTS FLASH	制限低下・点滅	제한 감소 · 깜박임	ขีดจำกัดลด · ไฟกะพริบ
+QUÁ TỐC ĐỘ · ĐÈN NHÁY	OVER SPEED · LIGHTS FLASH	速度超過・点滅	과속 · 깜박임	ความเร็วเกิน · ไฟกะพริบ
