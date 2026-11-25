@@ -66,12 +66,16 @@ final class NavParser {
         }
         // Thong bao luc xuat phat ("Huong ve <duong>") chua co khoang cach nhung van la dang chi duong
         // Chi nhan khi chu bat dau bang "Huong ve ..." : thong bao dich vu dinh vi cua app (VD "Dich vu Dinh vi VIETMAP LIVE") khong phai chi duong
-        if (!s.on && s.dir != '?' && NavListener.isMapApp(pkg)) {
+        // Chi nhan khi huong doc duoc tu CHU cua thong bao. Thong bao dich vu cua app ban do ("Dich vu Dinh vi VIETMAP LIVE") khong co chu chi huong,
+        // truoc day bi nhan nham vi bieu tuong cua no giong mui ten di thang.
+        if (!s.on && s.dir != '?' && "chữ".equals(s.dirFrom) && NavListener.isMapApp(pkg)) {
+            s.on = true;
             String st = rest.isEmpty() ? s.big : rest;
             String low = st.toLowerCase(VI);
-            for (String pre : new String[]{"hướng về ", "đi về ", "head toward ", "head to ", "head "}) {
-                if (low.startsWith(pre)) { s.on = true; st = st.substring(pre.length()); s.street = clean(st); break; }
+            for (String pre : new String[]{"hướng về ", "về hướng ", "đi về hướng ", "đi về ", "head toward ", "head to ", "head "}) {
+                if (low.startsWith(pre)) { st = st.substring(pre.length()); break; }
             }
+            s.street = clean(st);
         }
         return s;
     }
@@ -102,7 +106,7 @@ final class NavParser {
         int r = first(low.indexOf("phải"), find(EN_RIGHT, low));
         if (l >= 0 && (r < 0 || l < r)) return 'L';
         if (r >= 0) return 'R';
-        if (low.contains("hướng về") || low.contains("head toward") || low.contains("head to ")) return 'S';
+        if (low.contains("hướng về") || low.contains("về hướng") || low.contains("head toward") || low.contains("head to ")) return 'S';
         if (low.contains("đến nơi") || low.contains("điểm đến") || low.contains("arrive") || low.contains("destination")) return 'A';
         if (low.contains("đi thẳng") || low.contains("tiếp tục") || low.contains("straight") || low.contains("continue")) return 'S';
         return '?';

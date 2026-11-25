@@ -28,7 +28,9 @@ class ScreenReader : AccessibilityService() {
     private class Found {
         var instr = ""; var road = ""; var spd = ""
         var arrow: Rect? = null; var sign: Rect? = null
-        val descs = ArrayList<String>()   // chữ mô tả theo thứ tự (Vietmap Live ghi tốc độ, km/h, giới hạn thành ba dòng liền nhau)
+        val descs = ArrayList<String>()
+        val tops = ArrayList<Int>()        // mép trên (px) của nút chứa dòng mô tả tương ứng
+        var win: Rect? = null             // cửa sổ app bản đồ   // chữ mô tả theo thứ tự (Vietmap Live ghi tốc độ, km/h, giới hạn thành ba dòng liền nhau)
     }
 
     private val h = Handler(Looper.getMainLooper())
@@ -100,7 +102,7 @@ class ScreenReader : AccessibilityService() {
                 if (!test && !isMap) continue
                 if (shown.isEmpty()) shown = p
                 if (isMap && mapPkg.isEmpty()) mapPkg = p
-                if (isMap) { val wb = Rect(); w.getBoundsInScreen(wb); if (!wb.isEmpty) rects.add(wb) }
+                if (isMap) { val wb = Rect(); w.getBoundsInScreen(wb); if (!wb.isEmpty) { rects.add(wb); if (f.win == null) f.win = wb } }
                 if (test) out.add("=== $p ===")
                 walk(r, out, if (isMap) f else null, 0)
             }
@@ -114,7 +116,19 @@ class ScreenReader : AccessibilityService() {
     }
 
     private fun process(pkg: String, f: Found, now: Long) {
-        val dist = NavParser.findDist(f.instr)
+        var dist = NavParser.findDist(f.instr)
+        // Vietmap Live không có mã ô như Gofa: dải chỉ đường phía trên ("50m Lý Sơn") lộ ra thành chữ mô tả. Lấy dòng khoảng cách nằm ở nửa trên
+        // cửa sổ (dòng "3.7km" ở thanh dưới là quãng đường còn lại, không lấy). Hướng rẽ là hình mũi tên, chưa đọc được ở bước này.
+        if (dist < 0 && pkg.contains("vietmap")) {
+            val wn = f.win
+            val re = Regex("^(\\d+(?:[.,]\\d+)?)\\s?(m|km)\\b\\s*(.*)$", RegexOption.IGNORE_CASE)
+            for (i in f.descs.indices) {
+                if (wn != null && f.tops[i] > wn.top + wn.height() * 45 / 100) continue
+                val m = re.find(f.descs[i]) ?: continue
+                dist = NavParser.findDist(m.groupValues[1] + " " + m.groupValues[2])
+                if (dist >= 0) { f.road = m.groupValues[3].trim().ifEmpty { f.descs.getOrNull(i + 1)?.takeIf { f.tops[i + 1] == f.tops[i] } ?: "" }; break }
+            }
+        }
         var sp = f.spd.filter { it.isDigit() }.toIntOrNull()
         // Vietmap Live: ba dòng mô tả liền nhau "tốc độ" / "km/h" / "giới hạn" (giới hạn chỉ có khi đường có biển)
         val ki = f.descs.indexOfFirst { it.equals("km/h", true) }
@@ -377,7 +391,7 @@ class ScreenReader : AccessibilityService() {
         val low = id.lowercase()
         val t = n.text?.toString()?.trim().orEmpty()
         val d = n.contentDescription?.toString()?.trim().orEmpty()
-        if (f != null && d.isNotEmpty() && f.descs.size < 60) for (part in d.split('\n')) { val q = part.trim(); if (q.isNotEmpty()) f.descs.add(q) }   // Vietmap gộp "0 / km/h / 50" thành MỘT mô tả nhiều dòng
+        if (f != null && d.isNotEmpty() && f.descs.size < 60) { val rr = Rect(); n.getBoundsInScreen(rr); for (part in d.split('\n')) { val q = part.trim(); if (q.isNotEmpty()) { f.descs.add(q); f.tops.add(rr.top) } } }   // Vietmap gộp "0 / km/h / 50" thành MỘT mô tả nhiều dòng
         if (f != null) {
             if (t.isNotEmpty()) {
                 if (low.contains("instruction")) f.instr = t
@@ -390,7 +404,7 @@ class ScreenReader : AccessibilityService() {
             }
         }
         if (t.isNotEmpty()) out.add(if (id.isNotEmpty()) "$t  [$id]" else t)
-        else if (d.isNotEmpty()) out.add("mô tả: $d" + if (id.isNotEmpty()) "  [$id]" else "")
+        else if (d.isNotEmpty()) out.add("mô tả: $d" + (if (id.isNotEmpty()) "  [$id]" else "") + (if (f != null) Rect().also { n.getBoundsInScreen(it) }.let { "  @${it.left},${it.top} ${it.width()}x${it.height()}" } else ""))
         else if (id.isNotEmpty() && (n.className?.toString() ?: "").contains("Image")) out.add("hình [$id]")
         for (i in 0 until n.childCount) walk(n.getChild(i), out, f, depth + 1)
     }
