@@ -148,7 +148,7 @@ private fun pt(x: Float, d: Float, y: Float = 0f): Offset { val s = FOC / d; ret
 
 /**
  * Cảnh mô phỏng: góc nhìn người ngồi ghế sau xe mui trần (không kính lái) nhìn lên phía trước.
- * Đường phố phối cảnh thật, nhà 3D hai bên; trong xe có 3 đoạn đèn viền (2 cửa trước, táp lô) đổi theo cảnh báo đang chạy.
+ * Đường phố phối cảnh thật, nhà 3D hai bên; trong xe có đèn khu vực 1 (2 cửa trước, táp lô) và khu vực 2 (gầm chân) đổi theo cảnh báo đang chạy.
  * Vẽ trên khung thiết kế 680 x 760 rồi co theo bề ngang; khung thấp hơn thì cắt bớt trời và chân ghế.
  */
 @Composable
@@ -163,7 +163,13 @@ private fun Scene(modifier: Modifier) {
     val run = Sim.running.value
     val turnP = Sim.turn.floatValue
     val speed = Sim.speed.floatValue
-    val idle: Color? = if (!S.on.value) null else rgbColor(if (S.czone.intValue == 0) S.col[0] else S.col[1])
+    // khu vực 1 = táp lô + cửa, khu vực 2 = gầm chân; mỗi khu có màu thường ngày riêng khi người dùng đặt hai màu
+    val uni = S.czone.intValue == 0
+    val idle1: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[1])
+    val idle2: Color? = if (!S.on.value) null else rgbColor(if (uni) S.col[0] else S.col[2])
+    val spz = S.speedZone.intValue
+    val zl1 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 1))      // khu 1 có tham gia cảnh báo đang chạy không
+    val zl2 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 2))
     val path = remember { Path() }
     val pA = remember { Path() }
     val pB = remember { Path() }
@@ -309,10 +315,10 @@ private fun Scene(modifier: Modifier) {
             val pos = if (ak == 2) -0.2f + 1.4f * ph else 1.2f - 1.4f * ph
             return max(0.18f, 1f - abs(u - pos) / 0.25f)
         }
-        fun led(a: Offset, b: Offset, u: Float, w: Float) {
-            val m = min(1f, amt(u))
+        fun led(a: Offset, b: Offset, u: Float, w: Float, zoneLit: Boolean = zl1, idle: Color? = idle1) {
+            val m = if (zoneLit) min(1f, amt(u)) else 0f
             ln(a, b, w, Color(0xFF2A2F39))
-            if (!act && idle != null) ln(a, b, w, idle.copy(alpha = 0.45f))
+            if ((!act || !zoneLit) && idle != null) ln(a, b, w, idle.copy(alpha = 0.45f))
             if (m > 0f) { ln(a, b, w * 3f, kc.copy(alpha = 0.22f * m)); ln(a, b, w, kc.copy(alpha = m)) }
         }
         fun glow(x: Float, y: Float, r: Float, a: Float) {
@@ -410,6 +416,18 @@ private fun Scene(modifier: Modifier) {
 
             // ---- cửa trước, đèn viền, ánh sáng hắt ----
             door(false); door(true)
+            // ---- đèn gầm chân (khu vực 2): ánh sáng hắt từ sàn sau lưng ghế + dải đèn dưới mép táp lô ----
+            clipRect(0f, 500f, DW, DH + 10f) {
+                for (fi in 0..1) {
+                    val cx = if (fi == 0) 200f else 480f
+                    val a = if (zl2) min(1f, amt(if (fi == 0) 0.3f else 0.7f)) else 0f
+                    val c = Offset(cx, 664f)
+                    if (a > 0f) drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.62f * a), kc.copy(alpha = 0f)), c, 200f), 200f, c)
+                    else if ((!act || !zl2) && idle2 != null) drawCircle(Brush.radialGradient(listOf(idle2.copy(alpha = 0.3f), idle2.copy(alpha = 0f)), c, 180f), 180f, c)
+                }
+            }
+            led(Offset(98f, 613f), Offset(298f, 613f), 0.3f, 5f, zl2, idle2)
+            led(Offset(382f, 613f), Offset(582f, 613f), 0.7f, 5f, zl2, idle2)
             for (i in 0 until 5) {
                 val ta = i / 5f; val tb = (i + 1) / 5f; val tm = (ta + tb) / 2f
                 led(Offset(10f + 56f * ta, 620f - 112f * ta), Offset(10f + 56f * tb, 620f - 112f * tb), 0.25f * tm, 7f)
@@ -417,7 +435,7 @@ private fun Scene(modifier: Modifier) {
             }
             fun bez(t: Float): Offset { val a = (1 - t) * (1 - t); val b = 2 * (1 - t) * t; val c = t * t; return Offset(a * 70f + b * 340f + c * 610f, a * 519f + b * 501f + c * 519f) }
             for (i in 0 until 14) led(bez(i / 14f), bez((i + 1) / 14f), 0.25f + 0.5f * (i + 0.5f) / 14f, 6f)
-            glow(36f, 566f, 120f, amt(0.12f)); glow(200f, 518f, 150f, amt(0.4f)); glow(480f, 518f, 150f, amt(0.6f)); glow(644f, 566f, 120f, amt(0.88f))
+            if (zl1) { glow(36f, 566f, 120f, amt(0.12f)); glow(200f, 518f, 150f, amt(0.4f)); glow(480f, 518f, 150f, amt(0.6f)); glow(644f, 566f, 120f, amt(0.88f)) }
 
             // ---- vô lăng, bệ giữa, ghế ----
             ln(Offset(124f, 598f), Offset(276f, 598f), 9f, Color(0xFF1B1D22)); ln(Offset(128f, 598f), Offset(272f, 598f), 1.5f, Color(0xFFC9CED6))
