@@ -126,7 +126,7 @@ class ScreenReader : AccessibilityService() {
         S.appSpeed.intValue = sp ?: -1
         if (f.sign == null && Build.VERSION.SDK_INT >= 30 && now - lastScan > 2500L) { lastScan = now; scanScreen() }
         Limit.update()
-        if (dist < 0) { AlertBridge.refresh(); return }
+        if (dist < 0) { AlertBridge.refresh(); info(); return }
         val changed = f.road != lastRoad
         lastRoad = f.road
         if (f.road != dirRoad) dirNow = '?'          // sang đường mới: chờ đọc lại mũi tên
@@ -144,7 +144,7 @@ class ScreenReader : AccessibilityService() {
 
     private var lastDist = -1
     private fun info() {
-        S.screenInfo.value = "khoảng cách ${lastDist} m, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ ${S.appSpeed.intValue}"
+        S.screenInfo.value = "khoảng cách ${if (lastDist < 0) "chưa có" else "$lastDist m"}, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ ${S.appSpeed.intValue}"
     }
 
     private fun pushNav(pkg: String, dist: Int, road: String) {

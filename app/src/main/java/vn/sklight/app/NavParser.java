@@ -65,14 +65,13 @@ final class NavParser {
             if (s.dir == '?' && ci != '?') { s.dir = ci; s.dirFrom = "hình"; }
         }
         // Thong bao luc xuat phat ("Huong ve <duong>") chua co khoang cach nhung van la dang chi duong
+        // Chi nhan khi chu bat dau bang "Huong ve ..." : thong bao dich vu dinh vi cua app (VD "Dich vu Dinh vi VIETMAP LIVE") khong phai chi duong
         if (!s.on && s.dir != '?' && NavListener.isMapApp(pkg)) {
-            s.on = true;
             String st = rest.isEmpty() ? s.big : rest;
             String low = st.toLowerCase(VI);
             for (String pre : new String[]{"hướng về ", "đi về ", "head toward ", "head to ", "head "}) {
-                if (low.startsWith(pre)) { st = st.substring(pre.length()); break; }
+                if (low.startsWith(pre)) { s.on = true; st = st.substring(pre.length()); s.street = clean(st); break; }
             }
-            s.street = clean(st);
         }
         return s;
     }
