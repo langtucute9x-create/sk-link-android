@@ -33,9 +33,9 @@ object Effects {
             Effect(104, "Cảnh sát", Icons.Filled.FlashOn, cBlue), Effect(105, "Sét", Icons.Filled.Bolt, cYel),
             Effect(106, "Đại dương", Icons.Filled.Waves, cBlue), Effect(107, "Hoàng hôn", Icons.Filled.WbTwilight, cRed),
             Effect(108, "Nến", Icons.Filled.Whatshot, cOrange), Effect(109, "Nhịp tim", Icons.Filled.Favorite, cRed),
-            Effect(110, "Cực quang", Icons.Filled.AutoAwesome, cGreen), Effect(111, "Disco", Icons.Filled.Celebration, cPurple),
-            Effect(112, "Tết", Icons.Filled.Festival, cRed), Effect(113, "Giáng sinh", Icons.Filled.Park, cGreen),
-            Effect(114, "Thư giãn", Icons.Filled.SelfImprovement, cCyan))),
+            Effect(110, "Cực quang", Icons.Filled.AutoAwesome, cGreen),
+            // Đã bỏ Disco (111, giống Cầu vồng mượt) và Thư giãn (114, giống Thở) theo yêu cầu chủ dự án 25/11; mã chạy trong Auto.kt vẫn giữ cho bối cảnh cũ đã lưu
+            Effect(112, "Tết", Icons.Filled.Festival, cRed), Effect(113, "Giáng sinh", Icons.Filled.Park, cGreen))),
         EffectGroup("CHẾ ĐỘ HIỆU ỨNG", Icons.Filled.AutoAwesome, listOf(
             Effect(7, "Ma thuật", Icons.Filled.AutoAwesome, cRed), Effect(8, "Huyền ảo", Icons.Filled.BlurCircular, cPink),
             Effect(9, "Ma thuật", Icons.Filled.AutoAwesome, cCyan), Effect(11, "Cuộn màn hình", Icons.Outlined.ViewAgenda, cOrange),

@@ -466,7 +466,7 @@ fun PinnedCard(cols: Int) {
     }
 }
 
-const val APP_RUN_NOTE = "Các chế độ do app điều khiển (từ Cầu vồng mượt đến Thư giãn): chạy khi app còn mở và đang kết nối."
+const val APP_RUN_NOTE = "Các chế độ do app điều khiển (từ Cầu vồng mượt đến Giáng sinh): chạy khi app còn mở và đang kết nối."
 
 @Composable
 fun EffectGroupCard(g: EffectGroup, cols: Int = 3, hint: Boolean = false) {
