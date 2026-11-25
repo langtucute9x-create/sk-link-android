@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.67"
+    const val VER = "1.4.68"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -301,9 +301,14 @@ object S {
     fun onEffect(b1: Int, id: Int, param: Int, spd: Int) {
         m1 = b1 and 0x0F
         // kiểu vùng 2 của app không đụng tới chế độ của hộp nên vẫn lấy chế độ từ hộp; chỉ bỏ qua khi app đang chạy chế độ tự tạo cả xe
-        if (System.currentTimeMillis() >= syncUntil || Auto.main.intValue != 0 || alertKind.intValue != 0) return
+        if (Auto.main.intValue != 0 || alertKind.intValue != 0 || Sim.running.value) return
+        // Sau mấy giây đầu lúc kết nối vẫn nhận chế độ hộp báo về (đổi bằng giọng nói của hộp, điều khiển khác): đồng bộ chiều hộp -> app.
+        // Bỏ qua trong 2,5 giây sau khi app tự gửi lệnh màu / hiệu ứng, để không đè thao tác trên app và không bắt nhầm hiệu ứng báo rẽ.
+        val late = System.currentTimeMillis() >= syncUntil
+        if (late && System.currentTimeMillis() - ble.ownFxMs < 2500) return
         val e = Effects.byId(id) ?: return
         if (id >= 100) return
+        if (late && mode.intValue != id) sceneSel.intValue = -1
         mode.intValue = id
         if (e.subs.isNotEmpty()) sub[id] = (param - e.base).coerceIn(0, e.subs.size - 1)
         if (spd in 1..10) speed.intValue = spd
@@ -369,11 +374,20 @@ object S {
         // chế độ tự tạo cả xe không dùng màu gốc (cầu vồng, lửa…): chọn màu là rời chế độ đó. Kiểu vùng 2 của app thì chạy tiếp.
         if (Auto.main.intValue != 0 && !Auto.usesBase()) { Auto.leave(); if (mode.intValue >= 100) mode.intValue = 0 }
         // chế độ chạy đuổi của hộp: chọn màu là về Đơn sắc, cả xe một màu đã chọn
-        if (mode.intValue in intArrayOf(52, 6, 10, 12, 13)) { mode.intValue = 0; czone.intValue = 0; sendEffect() }
+        var wasFx = false
+        if (mode.intValue in intArrayOf(52, 6, 10, 12, 13)) { mode.intValue = 0; czone.intValue = 0; sendEffect(); wasFx = true }
         col[czone.intValue] = rgb
         on.value = true; sceneSel.intValue = -1
         saveColSoon()
         if (!Auto.running()) ble.send(colorFrame(), 2, true)      // đang có chế độ / kiểu vùng 2 của app thì nhịp kế tiếp tự gửi màu mới
+        if (wasFx) resendColorSoon()
+    }
+
+    /** Gửi lại màu đang đặt sau 0,35 và 0,9 giây: vừa đổi hộp về Đơn sắc mà gửi màu ngay thì hộp có thể bỏ qua khung màu đầu (phỏng đoán, chưa kiểm chứng). */
+    fun resendColorSoon() {
+        for (d in longArrayOf(350, 900)) main.postDelayed({
+            try { if (connected.value && mode.intValue == 0 && !Auto.running() && alertKind.intValue == 0) ble.send(colorFrame(), 2, true) } catch (_: Exception) {}
+        }, d)
     }
 
     private val saveCol = Runnable { try { sp.edit().putString("col", col.joinToString(",")).putInt("czone", czone.intValue).apply() } catch (e: Exception) {} }

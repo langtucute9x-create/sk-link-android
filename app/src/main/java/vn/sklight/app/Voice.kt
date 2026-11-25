@@ -269,6 +269,7 @@ object Voice {
                 S.czone.intValue = z
             }
             S.setColor(c.second)
+            S.resendColorSoon()
             return "Em đã đổi${zn(z)} sang màu ${c.third} rồi"
         }
         return null

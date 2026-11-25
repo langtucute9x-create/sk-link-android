@@ -29,6 +29,22 @@ class BleLed(private val ctx: Context) {
     private var scanning = false
     private var disc = false                      // đã gọi dò dịch vụ cho kết nối hiện tại chưa
     @Volatile var lastSetMs = 0L
+    @Volatile var ownFxMs = 0L                      // lần gần nhất app tự ghi lệnh màu (01), hiệu ứng (02) hoặc hướng chạy (07) xuống hộp
+
+    /**
+     * Đồng bộ chiều hộp -> app cho chế độ đèn: 4 giây hỏi lại hộp một lần bằng lệnh đọc 7C 02 (lệnh app vẫn dùng lúc kết nối).
+     * Không hỏi khi app vừa tự gửi lệnh, đang cảnh báo, đang chạy chế độ do app điều khiển hoặc hàng đợi còn lệnh.
+     */
+    private val modePoll = object : Runnable {
+        override fun run() {
+            try {
+                val now = System.currentTimeMillis()
+                if (S.connected.value && !paused && !X.snapOn && Auto.main.intValue == 0 && S.alertKind.intValue == 0 && !Sim.running.value &&
+                    now >= S.syncUntil && now - ownFxMs > 2500 && q.isEmpty()) put(Protocol.query(0x02), 41)
+            } catch (_: Exception) {}
+            main.postDelayed(this, 4000)
+        }
+    }
     /** Gói quảng bá Bluetooth gần nhất của từng hộp (để tìm số seri). */
     val adv = HashMap<String, ByteArray>()
     @Volatile private var paused = false            // đang đọc thông tin hộp: tạm dừng hàng đợi ghi
@@ -404,6 +420,7 @@ class BleLed(private val ctx: Context) {
                 put(init[0])
                 if (S.on.value) S.sendBright()          // kết nối lại không bao giờ tự tắt đèn của hộp
                 main.postDelayed({ S.restoreP07(); S.syncUntil = System.currentTimeMillis() + 4000; send(Protocol.query(0x01)); for (f in init.drop(1)) put(f) }, 700)
+                main.removeCallbacks(modePoll); main.postDelayed(modePoll, 7000)
             }, 800)
         }
     }
@@ -577,6 +594,7 @@ class BleLed(private val ctx: Context) {
 
     private fun put(data: ByteArray, key: Int = -1, isSet: Boolean = false) {
         if (isSet) lastSetMs = System.currentTimeMillis()
+        if (data.size > 3 && (data[1].toInt() and 0xFF) == Protocol.T_WRITE) { val sb = data[3].toInt() and 0xFF; if (sb == 0x01 || sb == 0x02 || sb == 0x07) ownFxMs = System.currentTimeMillis() }
         if (key >= 0) q.removeIf { it.key == key }
         q.add(Item(key, data))
         if (!pumping) { pumping = true; main.post(pump) }
