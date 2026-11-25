@@ -144,13 +144,12 @@ fun Root() {
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
     LaunchedEffect(S.pickNow.value) { if (S.pickNow.value) { S.pickNow.value = false; pick() } }
     // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
-    val lock = S.connected.value && !Act.ok.value
+    val lock = S.connected.value && !Act.ok.value && !S.dev.value
     // chưa nối hộp đèn: chỉ còn Cài đặt cơ bản, để người ngoài không xem được tính năng của app
-    val gated = !S.connected.value || !Act.ok.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
-    val unplugged = !S.connected.value
+    val gated = (!S.connected.value || !Act.ok.value) && !S.dev.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
+    val unplugged = !S.connected.value && !S.dev.value   // chế độ nghiên cứu mở hết, kể cả khi chưa nối hộp
     LaunchedEffect(S.subPage.intValue) { if (S.subPage.intValue == 13 && tab < 3) tab = 3 }
-    LaunchedEffect(unplugged) { if (unplugged && S.dev.value) S.dev.value = false }   // chưa nối hộp thì tắt chế độ nghiên cứu
-    LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13) && !(S.dev.value && S.connected.value && S.subPage.intValue == 11)) S.subPage.intValue = 0 }
+    LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13) && !(S.dev.value && S.subPage.intValue == 11)) S.subPage.intValue = 0 }
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
@@ -185,7 +184,7 @@ fun Root() {
                     else if (S.subPage.intValue == 3) WideSub { CustomTestPage() }
                     else if (S.subPage.intValue == 2) WideSub { LanguagePage() }
                     else if (S.subPage.intValue == 1) TwoCol(leftW.dp, { AppearanceTheme() }, { AppearanceIdle() })
-                    else TwoCol(leftW.dp, { SettingsDevice(pick); if (S.connected.value) WarrantyCard(); if (!gated) DriveCard() }, { SettingsFeatures() })
+                    else TwoCol(leftW.dp, { SettingsDevice(pick); if (S.connected.value || S.dev.value) WarrantyCard(); if (!gated) DriveCard() }, { SettingsFeatures() })
                 }
               }
             }
@@ -1014,7 +1013,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
 
 // ===================== TRANG CÀI ĐẶT =====================
 @Composable
-fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); if (S.connected.value) WarrantyCard(); if (S.connected.value && Act.ok.value) DriveCard(); SettingsFeatures() }
+fun SettingsPage(onPick: () -> Unit) { SettingsDevice(onPick); if (S.connected.value || S.dev.value) WarrantyCard(); if ((S.connected.value && Act.ok.value) || S.dev.value) DriveCard(); SettingsFeatures() }
 
 @Composable
 fun SettingsDevice(onPick: () -> Unit) {
@@ -1048,7 +1047,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "") { S.subPage.intValue = 12 }
         RunModeRow()
     }
-    if (S.connected.value && Act.ok.value) Card {
+    if ((S.connected.value && Act.ok.value) || S.dev.value) Card {
         SetTitle(Icons.Filled.Build, "Lắp đặt")
         // Chức năng gốc xe chưa kiểm chứng xong trên xe thật nhưng chủ dự án yêu cầu luôn hiện (sẽ hoàn thiện sau)
         if (!S.commonBox()) Feature(Icons.Filled.DirectionsCar, "Chức năng gốc xe", "") { S.subPage.intValue = 9 }
@@ -1056,11 +1055,11 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.ArrowForward, "Hướng ánh sáng chạy", "") { S.subPage.intValue = 6 }
         Feature(Icons.Filled.Build, "Cài đặt nhà máy", "") { S.subPage.intValue = 8 }
     }
-    if (S.connected.value && !Act.ok.value && S.dev.value) Card {
+    if (!Act.ok.value && S.dev.value) Card {
         SetTitle(Icons.Filled.Science, "Nghiên cứu")
         Feature(Icons.Filled.DirectionsCar, "Chọn loại xe", "") { S.subPage.intValue = 11 }
     }
-    if (S.connected.value && Act.ok.value && S.dev.value) Card {
+    if (S.dev.value) Card {
         SetTitle(Icons.Filled.Science, "Kiểm tra")
         Feature(Icons.Filled.PhotoCamera, "Chụp trạng thái hộp", "") { S.subPage.intValue = 15 }
         Feature(Icons.Filled.Fingerprint, "Tìm số seri hộp", "") { S.subPage.intValue = 14 }
@@ -1078,7 +1077,6 @@ fun SettingsFeatures() {
     T(if (S.dev.value) "SK Light ${S.VER} · chế độ nghiên cứu" else "SK Light ${S.VER}", 12, color = Grey, align = TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable(
         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null
     ) {
-        if (!S.connected.value) { Notice.show(ctx, L.tr("Hãy kết nối hộp trước.")); return@clickable }
         taps++
         if (taps >= 7) {
             taps = 0
@@ -1108,7 +1106,7 @@ fun SettingsFeatures() {
         },
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = {
-                if (pw == "00000" && S.connected.value) { S.dev.value = true; askPw = false; Notice.show(ctx, L.tr("Đã bật chế độ nghiên cứu.")) } else pwErr = true
+                if (pw == "00000") { S.dev.value = true; askPw = false; Notice.show(ctx, L.tr("Đã bật chế độ nghiên cứu.")) } else pwErr = true
             }) { T("Mở", 14, FontWeight.Bold, color = Pink) }
         },
         dismissButton = { androidx.compose.material3.TextButton(onClick = { askPw = false }) { T("Hủy", 14, color = Grey) } }
