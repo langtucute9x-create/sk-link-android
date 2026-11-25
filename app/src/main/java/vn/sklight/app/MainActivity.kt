@@ -1005,6 +1005,25 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit) {
         }
     }
 
+    // ---- cảnh báo theo biển trên màn hình app bản đồ (thử nghiệm, đọc từ ảnh màn hình) ----
+    Card {
+        GroupTitle(Icons.Filled.Warning, "Cảnh báo theo biển", 16)
+        Spacer(Modifier.height(4.dp))
+        SwitchRow("Camera phạt nguội / AI / đo tốc độ", "Đèn nháy cam khi biển camera còn gần.", S.camWarn.value) { S.camWarn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Camera vượt đèn đỏ", "Đèn nháy đỏ nhanh.", S.redCamWarn.value) { S.redCamWarn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Biển cấm (cấm vượt...)", "Đèn nháy vàng 2 giây.", S.banWarn.value) { S.banWarn.value = it; S.saveSettings(); S.syncService() }
+        SwitchRow("Giới hạn tốc độ giảm", "Đèn nháy vàng khi giới hạn tụt từ 10 km/h trở lên.", S.limitChgWarn.value) { S.limitChgWarn.value = it; S.saveSettings(); S.syncService() }
+        Spacer(Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            T("Báo camera khi còn", 14, FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            T("${S.camDist.intValue} m", 14, FontWeight.ExtraBold, Pink)
+        }
+        SkSlider((S.camDist.intValue - 100) / 400f, { S.camDist.intValue = 100 + (it * 8).roundToInt() * 50; S.saveSettings() }, Pink, tint(0.2f), Pink,
+            Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp), 8.dp, 21.dp, label = "${S.camDist.intValue} m")
+        Spacer(Modifier.height(4.dp))
+        T("Đọc biển từ ảnh màn hình nên có thể nhầm hoặc sót, cần thử trên xe thật.", 12, color = Grey)
+    }
+
     // ---- tra giới hạn tốc độ theo vị trí (cách 2), luôn ở cuối màn hình dẫn đường ----
     Card {
         SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); if (!it) Limit.clearOsm() }

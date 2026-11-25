@@ -13,7 +13,7 @@ import androidx.compose.runtime.mutableStateOf
  */
 object Sim {
     val running = mutableStateOf(false)
-    val kind = mutableIntStateOf(0)            // 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ
+    val kind = mutableIntStateOf(0)            // 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ, 4 camera, 5 camera đèn đỏ, 6 biển cấm, 7 giới hạn giảm
     val dist = mutableFloatStateOf(0f)         // mét tới chỗ rẽ
     val speed = mutableFloatStateOf(0f)        // km/h
     val travelled = mutableFloatStateOf(0f)    // mét đã đi (cho vạch kẻ đường chạy)
@@ -35,7 +35,7 @@ object Sim {
             val now = System.currentTimeMillis()
             val dt = ((now - last) / 1000f).coerceIn(0f, 0.2f); last = now
             sec.floatValue = (now - t0) / 1000f
-            if (kind.intValue == 3) speedTick(dt) else turnTick(dt)
+            when (kind.intValue) { 3 -> speedTick(dt); in 4..7 -> signTick(dt); else -> turnTick(dt) }
             h.postDelayed(this, 40)
         }
     }
@@ -60,6 +60,15 @@ object Sim {
         }
     }
 
+    private var fired = false
+    /** Xe chạy đều 45 km/h, sau 2 giây gặp biển: cho đúng sự kiện đó đi qua bộ cảnh báo thật. */
+    private fun signTick(dt: Float) {
+        move(dt, 45f)
+        S.appSpeed.intValue = 45
+        if (!fired && sec.floatValue >= 2f) { fired = true; AlertBridge.event(kind.intValue) }
+        if (sec.floatValue > 10f) stop()
+    }
+
     private fun speedTick(dt: Float) {
         // 45 km/h -> vượt lên 68 km/h trong 6 giây -> giữ 6 giây -> giảm về 45 km/h trong 4 giây
         val t = sec.floatValue
@@ -79,6 +88,7 @@ object Sim {
     fun start(k: Int) {
         stop()
         kind.intValue = k
+        fired = false; AlertBridge.evClear()
         running.value = true
         turn.floatValue = 0f; turnAt = -1f; sec.floatValue = 0f; travelled.floatValue = 0f
         startDist = (S.alertDist.intValue + 90).toFloat()
@@ -95,7 +105,7 @@ object Sim {
         val k = kind.intValue
         running.value = false
         if (k == 3) { S.speedLimit.intValue = savedLimit; S.appSpeed.intValue = savedApp }
-        AlertBridge.simOff()
+        AlertBridge.simOff(); AlertBridge.evClear()
         Limit.update()
         AlertBridge.refresh()
     }

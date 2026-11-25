@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.56"
+    const val VER = "1.4.57"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -87,8 +87,13 @@ object S {
     val navApp = mutableStateOf("")
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
     val speedZone = mutableIntStateOf(0)                  // quá tốc độ: khu nào nháy đỏ (0 = cả xe, 1, 2). Mặc định cả xe.
+    val camWarn = mutableStateOf(false)                   // báo camera phạt nguội / AI / đo tốc độ
+    val redCamWarn = mutableStateOf(false)                // báo camera vượt đèn đỏ
+    val banWarn = mutableStateOf(false)                   // báo biển cấm (cấm vượt...)
+    val limitChgWarn = mutableStateOf(false)              // báo giới hạn tốc độ giảm mạnh
+    val camDist = mutableIntStateOf(300)                  // báo camera khi còn tới (m)
     val speedWarn = mutableStateOf(false)                 // nháy đỏ khi quá tốc độ
-    val floatSize = mutableIntStateOf(100)                // kích thước nút nổi, % (50–250)
+    val floatSize = mutableIntStateOf(150)                // kích thước nút nổi, % (50–250)
     val idleDelay = mutableIntStateOf(10)                 // số giây không chạm trước khi vào màn hình chờ
     val limitOsm = mutableStateOf(true)                   // tra giới hạn tốc độ theo vị trí (dữ liệu OpenStreetMap, cần mạng)
     val speedLimit = mutableIntStateOf(0)                 // giới hạn tốc độ đọc được (km/h), 0 = chưa biết
@@ -128,7 +133,7 @@ object S {
     val idleStyle = mutableIntStateOf(0)                  // 0 đồng hồ + tốc độ, 1 chỉ đồng hồ, 2 tốc độ lớn, 3 ảnh của tôi
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
-    val floatMascot = mutableIntStateOf(0)                // nhân vật trên nút nổi: 0 = logo SK, 1..5 = Mascot.IDS
+    val floatMascot = mutableIntStateOf(4)                // nhân vật trên nút nổi: 0 = logo SK, 1..5 = Mascot.IDS
     val floatStyle = mutableIntStateOf(5)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
     val pickNow = mutableStateOf(false)                  // yêu cầu mở hộp chọn hộp đèn (từ thẻ mất kết nối)
     val menuTop = mutableStateOf(true)                    // màn ngang: menu nằm trên (true) hay cột bên trái (false)
@@ -173,6 +178,8 @@ object S {
         alertDist.intValue = sp.getInt("alertDist", 150)
         alertMaxSec.intValue = sp.getInt("alertMaxSec", 0)
         speedWarn.value = sp.getBoolean("speedWarn", false)
+        camWarn.value = sp.getBoolean("camWarn", false); redCamWarn.value = sp.getBoolean("redCamWarn", false); banWarn.value = sp.getBoolean("banWarn", false); limitChgWarn.value = sp.getBoolean("limitChgWarn", false)
+        camDist.intValue = sp.getInt("camDist", 300).coerceIn(100, 500)
         speedZone.intValue = sp.getInt("speedZoneB", 0)       // khóa mới từ 0.5.23: mặc định đổi sang cả xe
         screenAuto.value = sp.getBoolean("screenAuto2", true)      // mặc định TỰ ĐỌC app dẫn đường không có thông báo (Gofa); khóa mới từ 1.0.0
         dev.value = false                                   // chế độ nghiên cứu không lưu qua lần mở sau
@@ -188,11 +195,15 @@ object S {
         nightTo.intValue = sp.getInt("nightTo", 6 * 60)
         nightBri.intValue = sp.getInt("nightBri", 30)
         idleOn.value = sp.getBoolean("idleOn", false)
-        floatSize.intValue = sp.getInt("floatSize", 100).coerceIn(50, 250); floatMascot.intValue = sp.getInt("floatMascot", 0).coerceIn(0, 5); idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
+        floatSize.intValue = sp.getInt("floatSize", 150).coerceIn(50, 250); floatMascot.intValue = sp.getInt("floatMascot", 4).coerceIn(0, 5); idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
         floatStyle.intValue = sp.getInt("floatStyle2", 5).coerceIn(1, 5)     // bỏ Kiểu gốc (24/11), mặc định Cột neon
         menuTop.value = sp.getBoolean("menuTop2", true)
+        if (!sp.getBoolean("floatDef2", false)) {      // một lần: mặc định mới của nút nổi (25/11) = Robo SK tròn, 150%, Cột neon
+            floatMascot.intValue = 4; floatSize.intValue = 150; floatStyle.intValue = 5
+            sp.edit().putBoolean("floatDef2", true).putInt("floatMascot", 4).putInt("floatSize", 150).putInt("floatStyle2", 5).apply()
+        }
         voiceReply.value = sp.getBoolean("voiceReply", true)
         voiceQuiet.value = true
         lat = (sp.getString("lat", "") ?: "").toDoubleOrNull() ?: Double.NaN
@@ -221,7 +232,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("camWarn", camWarn.value).putBoolean("redCamWarn", redCamWarn.value).putBoolean("banWarn", banWarn.value).putBoolean("limitChgWarn", limitChgWarn.value).putInt("camDist", camDist.intValue).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)

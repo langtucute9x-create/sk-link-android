@@ -846,3 +846,26 @@ Biểu tượng nút nổi	Floating button icon	フローティングボタン�
 Mô phỏng	Simulation	シミュレーション	시뮬레이션	จำลอง	ក្លែងធ្វើ	ຈຳລອງ
 Chưa kết nối hộp: chỉ mô phỏng trên màn hình, đèn thật không sáng.	Box not connected: on-screen simulation only, real lights stay off.	ボックス未接続：画面上のシミュレーションのみで、実際のライトは点灯しません。	박스 미연결: 화면 시뮬레이션만 되며 실제 조명은 켜지지 않습니다.	ยังไม่ได้เชื่อมต่อกล่อง: จำลองบนหน้าจอเท่านั้น ไฟจริงไม่ติด	មិនទាន់ភ្ជាប់ប្រអប់៖ ក្លែងធ្វើលើអេក្រង់ប៉ុណ្ណោះ ភ្លើងពិតមិនភ្លឺ។	ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ກ່ອງ: ຈຳລອງເທິງໜ້າຈໍເທົ່ານັ້ນ ໄຟຈິງບໍ່ຕິດ
 Dừng mô phỏng	Stop simulation	シミュレーションを停止	시뮬레이션 중지	หยุดการจำลอง	បញ្ឈប់ការក្លែងធ្វើ	ຢຸດການຈຳລອງ
+Cảnh báo theo biển	Sign warnings	標識の警告	표지 경고	คำเตือนตามป้าย
+Camera phạt nguội / AI / đo tốc độ	Enforcement / AI / speed cameras	取締り・AI・速度カメラ	단속·AI·속도 카메라	กล้องจับความเร็ว / AI
+Đèn nháy cam khi biển camera còn gần.	Lights flash orange when a camera sign is near.	カメラ標識が近づくとオレンジで点滅します。	카메라 표지가 가까워지면 주황색으로 깜박입니다.	ไฟกะพริบสีส้มเมื่อใกล้ป้ายกล้อง
+Camera vượt đèn đỏ	Red-light cameras	信号無視カメラ	신호위반 카메라	กล้องจับฝ่าไฟแดง
+Đèn nháy đỏ nhanh.	Lights flash red quickly.	赤で速く点滅します。	빨간색으로 빠르게 깜박입니다.	ไฟกะพริบสีแดงเร็ว
+Biển cấm (cấm vượt...)	Prohibition signs (no overtaking...)	禁止標識（追い越し禁止など）	금지 표지(추월 금지 등)	ป้ายห้าม (ห้ามแซง ฯลฯ)
+Đèn nháy vàng 2 giây.	Lights flash yellow for 2 seconds.	黄色で2秒間点滅します。	노란색으로 2초간 깜박입니다.	ไฟกะพริบสีเหลือง 2 วินาที
+Giới hạn tốc độ giảm	Speed limit drops	制限速度の低下	제한속도 감소	ขีดจำกัดความเร็วลดลง
+Đèn nháy vàng khi giới hạn tụt từ 10 km/h trở lên.	Lights flash yellow when the limit drops by 10 km/h or more.	制限速度が10km/h以上下がると黄色で点滅します。	제한속도가 10km/h 이상 낮아지면 노란색으로 깜박입니다.	ไฟกะพริบสีเหลืองเมื่อขีดจำกัดลดลง 10 กม./ชม. ขึ้นไป
+Báo camera khi còn	Warn camera at	カメラ警告の距離	카메라 알림 거리	เตือนกล้องเมื่อเหลือ
+Đọc biển từ ảnh màn hình nên có thể nhầm hoặc sót, cần thử trên xe thật.	Signs are read from screenshots, so it may misread or miss; needs a real-car test.	画面の画像から標識を読むため、誤認や見落としがあります。実車での確認が必要です。	화면 이미지에서 표지를 읽어 오인하거나 놓칠 수 있습니다. 실차 테스트가 필요합니다.	อ่านป้ายจากภาพหน้าจอ อาจผิดหรือพลาด ต้องทดสอบบนรถจริง
+Camera	Camera	カメラ	카메라	กล้อง
+Camera đèn đỏ	Red-light camera	信号無視カメラ	신호위반 카메라	กล้องไฟแดง
+Biển cấm	Prohibition	禁止標識	금지 표지	ป้ายห้าม
+Giới hạn giảm	Limit drop	制限低下	제한 감소	ขีดจำกัดลด
+Xe chạy 45 km/h, gặp camera phạt nguội: đèn nháy cam khoảng 6 giây.	Car drives 45 km/h and meets an enforcement camera: lights flash orange for about 6 seconds.	時速45kmで取締りカメラに遭遇：約6秒オレンジで点滅します。	45km/h로 단속 카메라를 만나면 약 6초간 주황색으로 깜박입니다.	รถวิ่ง 45 กม./ชม. พบกล้องจับความเร็ว: ไฟกะพริบสีส้มประมาณ 6 วินาที
+Xe chạy 45 km/h, gặp camera vượt đèn đỏ: đèn nháy đỏ nhanh khoảng 5 giây.	Car drives 45 km/h and meets a red-light camera: lights flash red fast for about 5 seconds.	時速45kmで信号無視カメラに遭遇：約5秒赤で速く点滅します。	45km/h로 신호위반 카메라를 만나면 약 5초간 빨간색으로 빠르게 깜박입니다.	รถวิ่ง 45 กม./ชม. พบกล้องฝ่าไฟแดง: ไฟกะพริบสีแดงเร็วประมาณ 5 วินาที
+Xe chạy 45 km/h, gặp biển cấm (cấm vượt...): đèn nháy vàng 2 giây.	Car drives 45 km/h and meets a prohibition sign (no overtaking...): lights flash yellow for 2 seconds.	時速45kmで禁止標識（追い越し禁止など）に遭遇：黄色で2秒点滅します。	45km/h로 금지 표지(추월 금지 등)를 만나면 노란색으로 2초간 깜박입니다.	รถวิ่ง 45 กม./ชม. พบป้ายห้าม (ห้ามแซง): ไฟกะพริบสีเหลือง 2 วินาที
+Xe chạy 45 km/h, giới hạn tụt từ 60 xuống 40: đèn nháy vàng 2 giây.	Car drives 45 km/h and the limit drops from 60 to 40: lights flash yellow for 2 seconds.	時速45kmで制限が60から40に低下：黄色で2秒点滅します。	45km/h로 제한이 60에서 40으로 낮아지면 노란색으로 2초간 깜박입니다.	รถวิ่ง 45 กม./ชม. ขีดจำกัดลดจาก 60 เป็น 40: ไฟกะพริบสีเหลือง 2 วินาที
+CAMERA PHÍA TRƯỚC · ĐÈN NHÁY CAM	CAMERA AHEAD · LIGHTS ORANGE	前方にカメラ・オレンジ点滅	전방 카메라 · 주황 깜박임	กล้องข้างหน้า · ไฟสีส้ม
+CAMERA ĐÈN ĐỎ · ĐÈN NHÁY ĐỎ	RED-LIGHT CAMERA · LIGHTS RED	信号無視カメラ・赤点滅	신호위반 카메라 · 빨강 깜박임	กล้องไฟแดง · ไฟสีแดง
+BIỂN CẤM · ĐÈN NHÁY VÀNG	PROHIBITION SIGN · LIGHTS YELLOW	禁止標識・黄色点滅	금지 표지 · 노랑 깜박임	ป้ายห้าม · ไฟสีเหลือง
+GIỚI HẠN GIẢM · ĐÈN NHÁY VÀNG	LIMIT DROP · LIGHTS YELLOW	制限低下・黄色点滅	제한 감소 · 노랑 깜박임	ขีดจำกัดลด · ไฟสีเหลือง

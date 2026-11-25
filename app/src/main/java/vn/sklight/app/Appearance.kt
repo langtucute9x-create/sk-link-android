@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FormatSize
@@ -172,7 +173,25 @@ fun AppearanceIdle() {
         Spacer(Modifier.height(12.dp))
         T("Kích thước nút nổi", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        Grid(listOf(60, 80, 100, 125, 150, 200, 250), 3) { v, m -> Chip("$v%", S.floatSize.intValue == v, m, 40.dp, 12) { S.floatSize.intValue = v; S.saveSettings(); FloatButton.sync(ctx) } }
+        val sizeOpen = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        Box {
+            Row(
+                Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(Theme.r(8))).background(tint(0.2f)).border(1.dp, tint(0.6f), RoundedCornerShape(Theme.r(8)))
+                    .clickable { sizeOpen.value = true }.padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                T("${S.floatSize.intValue}%", 14, FontWeight.ExtraBold, Pink, modifier = Modifier.weight(1f))
+                Icon(androidx.compose.material.icons.Icons.Filled.ArrowDropDown, null, tint = Pink, modifier = Modifier.size(22.dp))
+            }
+            androidx.compose.material3.DropdownMenu(expanded = sizeOpen.value, onDismissRequest = { sizeOpen.value = false }) {
+                listOf(60, 80, 100, 125, 150, 175, 200, 250).forEach { v ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { T("$v%", 14, if (S.floatSize.intValue == v) FontWeight.ExtraBold else FontWeight.Medium, if (S.floatSize.intValue == v) Pink else Txt) },
+                        onClick = { S.floatSize.intValue = v; S.saveSettings(); FloatButton.sync(ctx); sizeOpen.value = false }
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(12.dp))
         Grid(listOf(5, 1, 2, 3, 4), 2) { i, m -> Chip(FloatButton.STYLES[i], S.floatStyle.intValue == i, m, 44.dp, 12) { S.floatStyle.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
     }

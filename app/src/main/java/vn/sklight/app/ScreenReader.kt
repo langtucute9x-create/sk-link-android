@@ -169,6 +169,39 @@ class ScreenReader : AccessibilityService() {
     }
 
 
+    private var banAt = 0L
+    private var banN = 0
+
+    /**
+     * Biển tròn viền đỏ không có số: đọc nhãn "NNN m" ngay dưới biển.
+     * Có nhãn khoảng cách = camera (nhãn hoặc ruột có chữ "đèn đỏ" thì là camera vượt đèn đỏ); không nhãn = biển cấm, phải thấy 2 lần liên tiếp mới báo để đỡ nhiễu.
+     * Đoán theo hình ảnh Vietmap, chưa thử trên xe thật.
+     */
+    private fun classify(bmp: Bitmap, ring: Rect) {
+        if (!(S.camWarn.value || S.redCamWarn.value || S.banWarn.value)) return
+        val w = ring.width(); val hh = ring.height()
+        val lab = Rect(ring.left - w / 2, ring.bottom, ring.right + w / 2, ring.bottom + hh * 7 / 10)
+        val c = crop(bmp, lab)
+        fun ban() {
+            val now = System.currentTimeMillis()
+            banN = if (now - banAt < 6000) banN + 1 else 1
+            banAt = now
+            if (banN >= 2) { banN = 0; AlertBridge.event(6); S.ocrNote.value += " · biển cấm" }
+        }
+        if (c == null) { ban(); return }
+        val k = (120f / c.height).coerceIn(1f, 4f)
+        val big = Bitmap.createScaledBitmap(c, (c.width * k).toInt(), (c.height * k).toInt(), true)
+        recognizer.process(InputImage.fromBitmap(big, 0)).addOnSuccessListener { t ->
+            val txt = t.text.lowercase()
+            val m = Regex("(\\d{2,4})\\s*m\\b").find(txt.replace('\n', ' '))
+            if (m == null) { ban(); return@addOnSuccessListener }
+            val d = m.groupValues[1].toIntOrNull() ?: return@addOnSuccessListener
+            val red = txt.contains("đèn đỏ") || txt.contains("den do")
+            S.ocrNote.value += " · camera $d m"
+            if (d <= S.camDist.intValue || Sim.running.value) AlertBridge.event(if (red) 5 else 4)
+        }.addOnFailureListener { }
+    }
+
     /** App bản đồ không lộ biển qua giao diện (Vietmap, Google Maps...): chụp màn hình, tìm hình tròn viền đỏ rồi đọc số bên trong. */
     private fun scanScreen() {
         if (Build.VERSION.SDK_INT < 30) return
@@ -182,7 +215,7 @@ class ScreenReader : AccessibilityService() {
                     val rcs = findRedRings(bmp)
                     if (rcs.isEmpty()) { S.ocrNote.value = "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }
                     S.ocrNote.value = "quét màn hình: thấy ${rcs.size} biển tròn viền đỏ"
-                    fun tryAt(i: Int) { if (i < rcs.size) readSign(bmp, rcs[i]) { tryAt(i + 1) } }
+                    fun tryAt(i: Int) { if (i < rcs.size) readSign(bmp, rcs[i]) { classify(bmp, rcs[i]); tryAt(i + 1) } }
                     tryAt(0)
                 } catch (t: Throwable) { /* bỏ qua */ }
             }

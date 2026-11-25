@@ -47,13 +47,19 @@ fun SimCard() {
         Spacer(Modifier.height(8.dp))
         val maxS = S.alertMaxSec.intValue
         T(
-            if (k == 3) "Xe chạy 45 km/h rồi vượt giới hạn ${Sim.LIMIT} km/h: khu được chọn nháy đỏ, về dưới giới hạn thì tắt."
+            if (k in 4..7) when (k) {
+                4 -> "Xe chạy 45 km/h, gặp camera phạt nguội: đèn nháy cam khoảng 6 giây."
+                5 -> "Xe chạy 45 km/h, gặp camera vượt đèn đỏ: đèn nháy đỏ nhanh khoảng 5 giây."
+                6 -> "Xe chạy 45 km/h, gặp biển cấm (cấm vượt...): đèn nháy vàng 2 giây."
+                else -> "Xe chạy 45 km/h, giới hạn tụt từ 60 xuống 40: đèn nháy vàng 2 giây."
+            }
+            else if (k == 3) "Xe chạy 45 km/h rồi vượt giới hạn ${Sim.LIMIT} km/h: khu được chọn nháy đỏ, về dưới giới hạn thì tắt."
             else "Xe chạy tới chỗ rẽ. Đèn báo bắt đầu khi còn ${S.alertDist.intValue} m, " + (if (maxS > 0) "chạy tối đa $maxS giây." else "chạy tới khi qua chỗ rẽ."),
             12, color = Grey
         )
         if (!S.connected.value) T("Chưa kết nối hộp: chỉ mô phỏng trên màn hình, đèn thật không sáng.", 12, color = Grey)
         Spacer(Modifier.height(10.dp))
-        Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3), 3) { (label, v), m -> Chip(label, run && k == v, m, 44.dp, 12) { Sim.start(v) } }
+        Grid(listOf("Rẽ trái" to 1, "Rẽ phải" to 2, "Quá tốc độ" to 3, "Camera" to 4, "Camera đèn đỏ" to 5, "Biển cấm" to 6, "Giới hạn giảm" to 7), 3) { (label, v), m -> Chip(label, run && k == v, m, 44.dp, 12) { Sim.start(v) } }
         if (run) { Spacer(Modifier.height(8.dp)); OutlineBtn("Dừng mô phỏng", Modifier.fillMaxWidth()) { Sim.stop() } }
     }
     DisposableEffect(Unit) { onDispose { Sim.stop() } }
@@ -86,7 +92,7 @@ private fun Hud() {
             }
         }
         // khoảng cách tới chỗ rẽ
-        if (k != 3 && run) Column(Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 12.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (k < 3 && run) Column(Modifier.align(Alignment.TopEnd).clip(RoundedCornerShape(12.dp)).background(Color(0xCC15161C)).padding(horizontal = 12.dp, vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             T(if (Sim.turn.floatValue > 0f) "Đang rẽ" else "Còn ${Sim.dist.floatValue.toInt()} m", 18, FontWeight.ExtraBold, color = Color.White)
             T(if (k == 1) "◀ rẽ trái" else "rẽ phải ▶", 11, color = Color(0xFFB8BCC6))
         }
@@ -98,7 +104,11 @@ private fun Hud() {
                 (if (ak == 1) "ĐÈN BÁO RẼ TRÁI" else "ĐÈN BÁO RẼ PHẢI") + (if (left >= 0) " · còn $left giây" else "")
             }
             ak == 3 -> "QUÁ TỐC ĐỘ · ĐÈN NHÁY ĐỎ"
-            k == 3 -> "Đang chạy trong giới hạn"
+            ak == 4 -> "CAMERA PHÍA TRƯỚC · ĐÈN NHÁY CAM"
+            ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY ĐỎ"
+            ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY VÀNG"
+            ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY VÀNG"
+            k == 3 || k >= 4 -> "Đang chạy trong giới hạn"
             Sim.turn.floatValue > 0f -> "Đã qua chỗ rẽ · đèn về như cũ"
             Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
             else -> "Đèn báo đã hết thời gian chạy"
@@ -163,7 +173,7 @@ private fun Scene(modifier: Modifier) {
         // vỉa hè mép đường
         for (sd in listOf(-1f, 1f)) drawLine(Color(0xFFD9D9D9), Offset(cx + sd * px(zf, 3.5f), sy(zf)), Offset(cx + sd * px(0f, 3.5f), by), strokeWidth = 3f)
         // ngã rẽ
-        val showJ = kind != 3 && run
+        val showJ = kind < 3 && run
         val jz = dist
         if (showJ && jz < 380f) {
             val z1 = max(jz - 3.6f, 0.2f); val z2 = jz + 3.6f
@@ -223,7 +233,7 @@ private fun DrawScope.arrow(kind: Int, cx: Float, z: Float, sy: (Float) -> Float
 private fun DrawScope.car(w: Float, h: Float, ak: Int, phase: Boolean, clock: Float, kind: Int, ease: Float, side: Float) {
     val cw = w * 0.30f; val ch = cw * 0.78f
     val cx = w / 2f; val bottom = h - 10f
-    val tilt = if (kind != 3) side * 9f * sin(PI.toFloat() * ease) else 0f
+    val tilt = if (kind < 3) side * 9f * sin(PI.toFloat() * ease) else 0f
     rotate(tilt, Offset(cx, bottom)) {
         val left = cx - cw / 2; val top = bottom - ch
         // bóng
@@ -242,9 +252,9 @@ private fun DrawScope.car(w: Float, h: Float, ak: Int, phase: Boolean, clock: Fl
         drawPath(cab, Brush.verticalGradient(listOf(Color(0xFF23364B), Color(0xFF0E1824)), top, top + ch * 0.46f))
         drawPath(Path().apply { moveTo(left + cw * 0.26f, top + ch * 0.1f); lineTo(left + cw * 0.46f, top + ch * 0.1f); lineTo(left + cw * 0.38f, top + ch * 0.42f); lineTo(left + cw * 0.2f, top + ch * 0.42f); close() }, Color(0x22FFFFFF))
         // đèn LED nội thất quanh cửa kính
-        val leftOn = ak == 3 || (ak == 1)
-        val rightOn = ak == 3 || (ak == 2)
-        val ledCol = if (ak == 3) (if (phase) Color(0xFFFF1744) else Color(0x33FF1744)) else AMBER
+        val leftOn = ak >= 3 || (ak == 1)
+        val rightOn = ak >= 3 || (ak == 2)
+        val ledCol = if (ak >= 3) { val c = when (ak) { 4 -> Color(0xFFFFB000); 6, 7 -> Color(0xFFFFE000); else -> Color(0xFFFF1744) }; if (phase) c else c.copy(alpha = 0.2f) } else AMBER
         fun glow(x0: Float, y0: Float, x1: Float, y1: Float, flow: Boolean) {
             val seg = 8
             for (i in 0 until seg) {
@@ -259,7 +269,7 @@ private fun DrawScope.car(w: Float, h: Float, ak: Int, phase: Boolean, clock: Fl
         val turning = ak == 1 || ak == 2
         if (leftOn) glow(left + cw * 0.14f, top + ch * 0.46f, left + cw * 0.22f, top + ch * 0.08f, turning)
         if (rightOn) glow(left + cw * 0.86f, top + ch * 0.46f, left + cw * 0.78f, top + ch * 0.08f, turning)
-        if (ak == 3) drawRoundRect(ledCol.copy(alpha = 0.18f), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.1f))
+        if (ak >= 3) drawRoundRect(ledCol.copy(alpha = 0.18f), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.1f))
         // đèn hậu + biển số
         drawRoundRect(Color(0xFFFF5252), Offset(left + cw * 0.04f, top + ch * 0.55f), Size(cw * 0.2f, ch * 0.1f), CornerRadius(6f))
         drawRoundRect(Color(0xFFFF5252), Offset(left + cw * 0.76f, top + ch * 0.55f), Size(cw * 0.2f, ch * 0.1f), CornerRadius(6f))
@@ -277,7 +287,7 @@ private fun DrawScope.topCar(o: Offset, ak: Int, phase: Boolean, clock: Float, k
     fun seg(x: Float, y: Float, sw: Float, sh: Float, lit: Boolean, col: Color) {
         drawRoundRect(if (lit) col else Color(0xFF3A3F4B), o + Offset(x, y), Size(sw, sh), CornerRadius(3.dp.toPx()))
     }
-    val turnL = ak == 1; val turnR = ak == 2; val sp = ak == 3
+    val turnL = ak == 1; val turnR = ak == 2; val sp = ak >= 3
     val head = (clock * 1.6f) % 1f
     fun fl(t: Float): Boolean { val dd = ((t - head) + 1f) % 1f; return dd < 0.45f }
     val sw = 5.dp.toPx(); val L = 3.dp.toPx(); val R = w - 3.dp.toPx() - sw

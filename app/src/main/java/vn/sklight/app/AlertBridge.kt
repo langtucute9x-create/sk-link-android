@@ -8,7 +8,7 @@ import java.util.regex.Pattern
 /**
  * Cảnh báo bằng đèn, chỉ dùng lệnh màu (01).
  * Sắp rẽ trái / phải: hiệu ứng vàng của hộp (Trôi đa sắc kiểu 3) chạy theo hướng rẽ. Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
- * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ.
+ * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ, 4 camera, 5 camera đèn đỏ, 6 biển cấm, 7 giới hạn tốc độ giảm.
  */
 object AlertBridge {
     private val h = Handler(Looper.getMainLooper())
@@ -66,9 +66,32 @@ object AlertBridge {
     /** Khu [zone] (1 hoặc 2) có đang nháy trong cảnh báo hiện tại không. */
     fun lit(zone: Int): Boolean = when (S.alertKind.intValue) {
         1, 2 -> true
-        3 -> S.speedZone.intValue == 0 || S.speedZone.intValue == zone
+        3, 4, 5, 6, 7 -> S.speedZone.intValue == 0 || S.speedZone.intValue == zone
         else -> false
     }
+
+    // ---- cảnh báo biển (4-7): nháy theo thời gian ngắn, mỗi loại có thời gian nghỉ riêng ----
+    // màu, nhịp nháy (ms), thời lượng (ms), nghỉ giữa hai lần (ms)
+    private val EV = mapOf(4 to longArrayOf(0xFFB000, 400, 6000, 20000), 5 to longArrayOf(0xFF0000, 160, 5000, 20000),
+        6 to longArrayOf(0xFFE000, 300, 2000, 15000), 7 to longArrayOf(0xFFE000, 300, 2000, 8000))
+    private var evKind = 0
+    private var evUntil = 0L
+    private val evLast = LongArray(8)
+    private fun evOn(k: Int) = Sim.running.value && Sim.kind.intValue == k || when (k) {
+        4 -> S.camWarn.value; 5 -> S.redCamWarn.value; 6 -> S.banWarn.value; 7 -> S.limitChgWarn.value; else -> false }
+    /** Một biển cảnh báo vừa thấy. Bật công tắc tương ứng thì nháy đèn ngắn. */
+    @JvmStatic fun event(k: Int) {
+        val e = EV[k] ?: return
+        h.post {
+            val now = System.currentTimeMillis()
+            if (!evOn(k) || now - evLast[k] < e[2] + e[3] || now < evUntil) return@post
+            evLast[k] = now; evKind = k; evUntil = now + e[2]
+            h.postDelayed({ evaluate() }, e[2] + 60)
+            evaluate()
+        }
+    }
+    /** Dừng mô phỏng: xoá cảnh báo biển đang chạy và thời gian nghỉ. */
+    fun evClear() { h.post { evUntil = 0; evKind = 0; evLast.fill(0); evaluate() } }
 
     private var expiredKind = 0                   // bên rẽ đã hết thời gian báo, không báo lại cho tới khi qua chỗ rẽ
     private val expire = Runnable {
@@ -85,6 +108,7 @@ object AlertBridge {
         }
         if (turn == 0) expiredKind = 0
         if (turn != 0 && turn != expiredKind) return turn
+        if (System.currentTimeMillis() < evUntil) return evKind
         // Quá tốc độ: vượt giới hạn quá 3 km/h thì báo, xuống bằng giới hạn thì tắt
         val lim = S.speedLimit.intValue
         if ((S.speedWarn.value || (Sim.running.value && Sim.kind.intValue == 3)) && lim > 0) {
@@ -172,19 +196,20 @@ object AlertBridge {
 
     private val tick = object : Runnable {
         override fun run() {
-            if (kind != 3) return                      // chỉ quá tốc độ mới nháy bằng lệnh màu
+            if (kind < 3) return                       // rẽ chạy bằng hiệu ứng hộp; còn lại nháy bằng lệnh màu
             val on = !S.alertPhase.value
             S.alertPhase.value = on
             // Quá tốc độ: khu được chọn nháy đỏ
-            val v = if (on) 0xFF0000 else 0x000000
+            val ev = EV[kind]
+            val v = if (on) (ev?.get(0)?.toInt() ?: 0xFF0000) else 0x000000
             val uni = S.czone.intValue == 0
             val b1 = if (uni) S.col[0] else S.col[1]
             val b2 = if (uni) S.col[0] else S.col[2]
-            val z = if (kind == 3) S.speedZone.intValue else 0
+            val z = S.speedZone.intValue
             val c1 = if (z == 0 || z == 1) v else b1
             val c2 = if (z == 0 || z == 2) v else b2
             S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
-            h.postDelayed(this, if (kind == 3) 250L else 450L)
+            h.postDelayed(this, EV[kind]?.get(1) ?: 250L)
         }
     }
 
