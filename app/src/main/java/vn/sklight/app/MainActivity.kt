@@ -909,6 +909,20 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit, sim: Boolean = true) {
             for (line in S.screenLines.take(80)) {
                 Box(Modifier.padding(bottom = 4.dp).fillMaxWidth().clip(RoundedCornerShape(Theme.r(6))).background(ChipBg).padding(horizontal = 9.dp, vertical = 5.dp)) { T(line, 11, color = SubTxt) }
             }
+            Divider()
+            LaunchedEffect(Unit) { Samples.refresh(ctx) }
+            SwitchRow("Chụp mẫu màn hình bản đồ", "Mỗi khi thấy biển hoặc dải chỉ đường, lưu ảnh cửa sổ app bản đồ kèm kết quả app đọc được, để gửi cho người sửa. Ảnh chỉ nằm trong máy.", Samples.on.value) { Samples.on.value = it }
+            Kv("Số ảnh mẫu đã chụp", "${Samples.count.intValue}")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlineBtn("Gửi mẫu", Modifier.weight(1f)) { if (Samples.count.intValue == 0) Notice.show(ctx, L.tr("Chưa có ảnh mẫu nào.")) else if (!Samples.share(ctx)) Notice.show(ctx, L.tr("Máy này không mở được bảng chia sẻ. Hãy dùng Lưu vào thư viện ảnh.")) }
+                OutlineBtn("Lưu vào thư viện ảnh", Modifier.weight(1.3f)) { val n = Samples.toGallery(ctx); Notice.show(ctx, if (n > 0) "Đã lưu $n ảnh vào Pictures/SKLight" else L.tr("Chưa lưu được ảnh nào.")) }
+                OutlineBtn("Xóa", Modifier.weight(0.6f)) { Samples.clear(ctx) }
+            }
+            OutlineBtn("Sao chép ghi chú mẫu", Modifier.fillMaxWidth()) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", Samples.notes(ctx)))
+                Notice.show(ctx, L.tr("Đã sao chép"))
+            }
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlineBtn(if (S.screenOn.value) "Dừng đọc" else "Bắt đầu đọc", Modifier.weight(1f)) {

@@ -114,7 +114,10 @@ class ScreenReader : AccessibilityService() {
                 S.screenLines.clear()
                 S.screenLines.addAll(out.take(80))
             }
-            if (mapPkg.isNotEmpty()) { mapRects = rects; process(mapPkg, f, now) }
+            if (mapPkg.isNotEmpty()) {
+                if (Samples.on.value) lastDescs = f.descs.indices.joinToString(" ; ") { i -> val q = f.rcs[i]; "${f.descs[i]} @${q.left},${q.top} ${q.width()}x${q.height()}" }.take(1500)
+                mapRects = rects; process(mapPkg, f, now)
+            }
         } catch (t: Throwable) { /* bỏ qua một lần đọc lỗi */ }
     }
 
@@ -180,6 +183,8 @@ class ScreenReader : AccessibilityService() {
     }
 
     private var lastDist = -1
+    @Volatile private var lastDescs = ""          // chữ mô tả + vị trí của app bản đồ ở lần đọc gần nhất (cho ghi chú mẫu)
+    private fun sampleNote() = "đọc được: ${S.screenInfo.value}\nquét biển: ${S.ocrNote.value}\nchữ: $lastDescs"
     private var budget = 0          // số nút giao diện còn được duyệt trong một lần đọc
     private fun info() {
         S.screenInfo.value = "khoảng cách ${if (lastDist < 0) "chưa có" else "$lastDist m"}, đường \"${lastRoad}\", hướng ${dirNow}, giới hạn ${S.speedLimit.intValue}, tốc độ trên app bản đồ ${S.appSpeed.intValue} (không dùng), GPS ${S.carSpeed()}"
@@ -205,6 +210,7 @@ class ScreenReader : AccessibilityService() {
                     val bmp = Bitmap.wrapHardwareBuffer(hb, r.colorSpace)?.copy(Bitmap.Config.ARGB_8888, false)
                     hb.close()
                     if (bmp == null) return
+                    if (seek) Samples.offer(this@ScreenReader, bmp, mapRects.firstOrNull(), "rẽ $road ${dist / 100}") { sampleNote() + "\nvùng tìm mũi tên: $arrow ; $arrow2" }
                     if (arrow != null) (if (seek) (whiteArrow(bmp, arrow) ?: arrow2?.let { whiteArrow(bmp, it) }) else crop(bmp, arrow))?.let { c ->
                         val d = NavParser.analyseIcon(Bitmap.createScaledBitmap(c, 64, 64, true), NavState())
                         if (seek && S.dev.value) S.arrowThumb.value = c        // chế độ nghiên cứu: xem app đang cắt hình nào làm mũi tên
@@ -371,6 +377,7 @@ class ScreenReader : AccessibilityService() {
                     val head = if (byText) "giới hạn $txtLim đọc từ chữ của app bản đồ · " else ""
                     if (rcs.isEmpty()) { S.ocrNote.value = head + "quét màn hình ${bmp.width}x${bmp.height}: không thấy biển"; return }
                     S.ocrNote.value = head + "quét màn hình: thấy ${rcs.size} biển tròn viền đỏ"
+                    Samples.offer(this@ScreenReader, bmp, zone.firstOrNull(), "biển ${rcs.size} @" + rcs.joinToString(",") { "${it.left / 40}:${it.top / 40}" }) { sampleNote() }
                     // Xét lần lượt TỪNG biển: có số = biển giới hạn (chỉ lấy biển đầu tiên), không có số = camera / cấm vượt.
                     // Trước 1.4.64 đọc được biển giới hạn là dừng luôn, nên biển camera đứng cạnh không bao giờ được xét.
                     val more = S.camWarn.value || S.redCamWarn.value || S.banWarn.value
