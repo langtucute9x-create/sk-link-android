@@ -526,6 +526,7 @@ fun ExtraPage(sp: Int) {
         15 -> SnapPage()
         16 -> BoxTestPage()
         17 -> UpgradePage()
+        18 -> GreetPage()
         else -> DiagPage()
     }
 }

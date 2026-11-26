@@ -978,6 +978,7 @@ fun SettingsFeatures() {
         Feature(Icons.Outlined.Palette, "Cài đặt giao diện", "") { S.subPage.intValue = 1 }
         Feature(Icons.Filled.Language, "Cài đặt ngôn ngữ", L.NAMES[L.cur.intValue]) { S.subPage.intValue = 2 }
         Feature(Icons.Filled.MenuBook, "Cẩm nang sử dụng", "") { S.subPage.intValue = 12 }
+        Feature(Icons.Filled.RecordVoiceOver, "Lời chào", "") { S.subPage.intValue = 18 }
         RunModeRow()
     }
     if ((S.connected.value && Act.ok.value) || S.dev.value) Card {

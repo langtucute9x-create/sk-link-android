@@ -412,6 +412,7 @@ class BleLed(private val ctx: Context) {
             S.devName.value = g.device.name ?: g.device.address
             S.conn.value = "Đã kết nối"
             Act.onConnected(g.device.address)
+            Greet.onConnected(ctx)
             Notice.show(ctx, L.tr("Đã kết nối với " + S.devName.value))
             if (L.cur.intValue == 0) Speaker.say(ctx, "Đã kết nối với hộp đèn", force = true)      // chủ dự án muốn có giọng nói báo đã kết nối
             S.isCzh.value = (g.device.name ?: "").contains("CZH2")
