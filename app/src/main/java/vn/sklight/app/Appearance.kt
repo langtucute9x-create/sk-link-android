@@ -49,7 +49,6 @@ fun AppearanceTheme() {
         Spacer(Modifier.height(8.dp))
         val w = Night.window()
         T("Tự động: giao diện tối từ ${Night.hm(w.first)} đến ${Night.hm(w.second)}, ngoài giờ đó là giao diện sáng. Giờ lấy theo mục Tự dịu đèn ban đêm.", 11, color = Grey)
-        if (Theme.glass) T("Phong cách Kính neon 3D luôn là giao diện tối.", 11, color = Grey)
     }
     Card {
         SwitchRow("Giảm hiệu ứng", "", !Theme.fx.value) { Theme.fx.value = !it; S.saveSettings() }

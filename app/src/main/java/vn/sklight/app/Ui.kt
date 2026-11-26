@@ -44,7 +44,7 @@ private val LIGHTS = listOf(
     pal(0xFFFBF6EE, 0xFFF5EEE2, 0xFFFFFDF8, 0xFF2B2118, 0xFF5C5046, 0xFF7A6E63, 0xFFF6EFE4, 0xFFE6DCCB, 0xFFEFE7DA, 0xFFEADFCD),      // Kem ấm
     pal(0xFFF1F6FB, 0xFFE8F0F8, 0xFFFFFFFF, 0xFF12202F, 0xFF465669, 0xFF66768A, 0xFFF0F5FA, 0xFFD5E0EC, 0xFFE4ECF4, 0xFFDDE7F1),      // Xanh băng
     pal(0xFFF3F8F3, 0xFFE9F2EA, 0xFFFFFFFF, 0xFF15251A, 0xFF46594C, 0xFF68796D, 0xFFF0F6F1, 0xFFD6E3D8, 0xFFE4EEE6, 0xFFDDE9DF),      // Lá non
-    pal(0xFF241552, 0xFF050814, 0xFF161D40, 0xFFF6F7FF, 0xFFCBD5F5, 0xFFA3B2E6, 0xFF1F2852, 0xFF3D4B86, 0xFF2B3566, 0xFF2B3566)       // Kính neon 3D (luôn là giao diện tối)
+    pal(0xFFF7F0FF, 0xFFE8F1FF, 0xFFFFFFFF, 0xFF1A1B3A, 0xFF4A5078, 0xFF6A7096, 0xFFF3F4FD, 0xFFD9DCF2, 0xFFE8EAF7, 0xFFE3E6F5)       // Kính neon 3D (bản sáng)
 )
 private val DARKS = listOf(
     pal(0xFF0E1118, 0xFF12141C, 0xFF1A1F2B, 0xFFF2F4F8, 0xFFC3C9D6, 0xFF98A1B3, 0xFF242A38, 0xFF343C4D, 0xFF2A3140, 0xFF343C4D),      // Mặc định
@@ -79,7 +79,7 @@ object Theme {
     val SCALES = listOf("Nhỏ" to 0.9f, "Vừa" to 1f, "Lớn" to 1.12f, "Rất lớn" to 1.25f)
     const val GLASS = 5                    // phong cách "Kính neon 3D" (chủ dự án duyệt 27/11): nền tím than, thẻ kính nổi khối, viền neon quanh khung
     val glass: Boolean get() = style.intValue == GLASS
-    val dark: Boolean get() = glass || mode.intValue == 1 || (mode.intValue == 2 && nightNow.value)
+    val dark: Boolean get() = mode.intValue == 1 || (mode.intValue == 2 && nightNow.value)
     val pal: Pal get() = (if (dark) DARKS else LIGHTS)[style.intValue.coerceIn(0, LIGHTS.size - 1)]
     fun palOf(style: Int, dark: Boolean): Pal = (if (dark) DARKS else LIGHTS)[style.coerceIn(0, LIGHTS.size - 1)]
     val scaleF: Float get() = SCALES[scale.intValue.coerceIn(0, SCALES.size - 1)].second
@@ -136,7 +136,7 @@ fun rgbColor(rgb: Int) = Color(0xFF000000 or (rgb.toLong() and 0xFFFFFF))
 @Composable
 fun T(text: String, size: Int = 14, weight: FontWeight = FontWeight.Normal, color: Color = Txt, modifier: Modifier = Modifier, align: TextAlign? = null, maxLines: Int = Int.MAX_VALUE) {
     val k = Theme.scaleF
-    Text(L.tr(text), modifier = modifier, fontSize = (size * k).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align, lineHeight = (size * 1.25f * k).sp, maxLines = maxLines, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+    Text(L.tr(text), modifier = modifier, fontSize = (size * k).sp, fontWeight = weight, color = color, fontFamily = Inter, letterSpacing = 0.sp, textAlign = align, lineHeight = (size * 1.25f * k).sp, maxLines = maxLines, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
 }
 
 @Composable

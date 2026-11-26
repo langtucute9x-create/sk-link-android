@@ -72,12 +72,18 @@ private fun neonPhase(ms: Int): State<Float> {
 
 /** Nền trang: phong cách Kính neon dùng quầng tím ở góc trên trái đổ xuống xanh than; các phong cách khác giữ nền chuyển sắc dọc như cũ. */
 fun Modifier.appBg(): Modifier {
-    if (!Theme.glass) return background(Brush.verticalGradient(listOf(Theme.pal.bgTop, Theme.pal.bgBot)))
+    val p = Theme.pal; val dk = Theme.dark; val glass = Theme.glass; val a = Pink
     return drawBehind {
-        drawRect(Color(0xFF050814))
-        val r = size.maxDimension * 0.95f
-        drawRect(Brush.radialGradient(listOf(Color(0xFF3A1D6E), Color(0xFF0B1230), Color(0xFF050814)), Offset(size.width * 0.18f, size.height * 0.05f), r))
-        drawRect(Brush.radialGradient(listOf(Color(0x3322D3EE), Color.Transparent), Offset(size.width * 0.95f, size.height), size.minDimension * 0.9f))
+        if (glass && dk) {
+            drawRect(Color(0xFF050814))
+            drawRect(Brush.radialGradient(listOf(Color(0xFF3A1D6E), Color(0xFF0B1230), Color(0xFF050814)), Offset(size.width * 0.18f, size.height * 0.05f), size.maxDimension * 0.95f))
+            drawRect(Brush.radialGradient(listOf(Color(0x3322D3EE), Color.Transparent), Offset(size.width * 0.95f, size.height), size.minDimension * 0.9f))
+        } else {
+            // mọi phong cách khác (và Kính neon bản sáng): nền chuyển sắc của phong cách + quầng màu nhấn ở góc trên trái, quầng xanh ngọc ở góc dưới phải
+            drawRect(Brush.verticalGradient(listOf(p.bgTop, p.bgBot)))
+            drawRect(Brush.radialGradient(listOf(a.copy(alpha = if (dk) 0.20f else 0.13f), Color.Transparent), Offset(size.width * 0.15f, 0f), size.maxDimension * 0.6f))
+            drawRect(Brush.radialGradient(listOf(Color(0xFF22D3EE).copy(alpha = if (dk) 0.13f else 0.10f), Color.Transparent), Offset(size.width * 0.95f, size.height), size.minDimension * 0.9f))
+        }
     }
 }
 
@@ -241,10 +247,9 @@ fun Modifier.arc3d(scroll: androidx.compose.foundation.ScrollState, rowW: () -> 
         if (w > 0f) {
             val d = (((cx - scroll.value) - w / 2f) / (w / 2f)).coerceIn(-1.2f, 1.2f)
             val a = kotlin.math.abs(d)
-            rotationY = -d * 42f
-            val s = 1.06f - a * 0.20f
+            rotationY = -d * 16f
+            val s = 1.03f - a * 0.09f
             scaleX = s; scaleY = s
-            alpha = (1f - a * 0.40f).coerceIn(0.35f, 1f)
             cameraDistance = 9f * density
         }
     }

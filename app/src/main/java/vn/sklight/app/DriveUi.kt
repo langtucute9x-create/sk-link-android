@@ -84,7 +84,7 @@ fun SceneRow() {
     var scW by remember { mutableIntStateOf(0) }
     Row(Modifier.fillMaxWidth().onSizeChanged { scW = it.width }.horizontalScroll(scScroll).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
-            Modifier.height(44.dp).arc3d(scScroll) { scW }.clip(RoundedCornerShape(22.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(22.dp))
+            Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(22.dp))
                 .clickable { manage = true }.padding(start = 10.dp, end = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

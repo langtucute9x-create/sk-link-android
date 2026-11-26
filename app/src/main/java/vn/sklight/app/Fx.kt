@@ -78,7 +78,7 @@ fun Modifier.block(on: Boolean, shape: Shape, idle: Color = ChipBg, accent: Colo
     val base = if (on) shadow(5.dp, shape, clip = false, ambientColor = a, spotColor = a) else this
     val fill = if (on) Brush.verticalGradient(listOf(lite(a, 0.30f), a, dim(a, 0.22f)))
     else Brush.verticalGradient(listOf(lite(idle, if (Theme.dark) 0.07f else 0.6f), dim(idle, if (Theme.dark) 0.12f else 0.03f)))
-    return base.clip(shape).background(fill).border(1.dp, if (on) Shine else if (Theme.glass) GlassEdge else SolidColor(Bd), shape)
+    return base.clip(shape).background(fill).border(1.dp, if (on) Shine else if (Theme.dark) GlassEdge else SolidColor(Bd), shape)
 }
 /** Viền "kính": sáng ở mép trên, mờ dần xuống dưới. */
 private val GlassEdge = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.07f)))
@@ -141,11 +141,12 @@ fun Hint(text: String, size: Int = 11, modifier: Modifier = Modifier) {
 fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val sh = RoundedCornerShape(Theme.r(10))
     val c = CardBg
-    val m = if (Fx && Theme.glass) {
-        // thẻ kính nổi khối: bóng đổ sâu, mặt chuyển sắc chéo, mép trên sáng
-        modifier.fillMaxWidth().shadow(12.dp, sh, ambientColor = Color.Black, spotColor = Color.Black)
-            .background(Brush.linearGradient(listOf(lite(c, 0.13f), c, dim(c, 0.18f))), sh)
-            .border(1.dp, GlassEdge, sh)
+    val m = if (Fx) {
+        // thẻ kính nổi khối cho MỌI phong cách (1.4.111): bóng đổ sâu, mặt chuyển sắc chéo, mép trên sáng
+        val dk = Theme.dark
+        modifier.fillMaxWidth().shadow(if (dk) 12.dp else 9.dp, sh, ambientColor = if (dk) Color.Black else dim(Bd, 0.5f), spotColor = if (dk) Color.Black else dim(Bd, 0.5f))
+            .background(Brush.linearGradient(if (dk) listOf(lite(c, 0.13f), c, dim(c, 0.18f)) else listOf(Color.White, c, dim(c, 0.045f))), sh)
+            .border(1.dp, if (dk) GlassEdge else Brush.verticalGradient(listOf(Color.White, Bd)), sh)
     } else if (Fx) {
         val dark = Theme.dark
         modifier.fillMaxWidth().shadow(if (dark) 6.dp else 4.dp, sh)
@@ -199,7 +200,7 @@ fun FitT(
     var ok by remember(str, base) { mutableStateOf(false) }
     Text(
         str, modifier = modifier.drawWithContent { if (ok) drawContent() },
-        fontSize = (base * k).sp, lineHeight = (base * k * 1.2f).sp, fontWeight = weight, color = color, fontFamily = Inter, textAlign = align,
+        fontSize = (base * k).sp, lineHeight = (base * k * 1.2f).sp, fontWeight = weight, color = color, fontFamily = Inter, letterSpacing = 0.sp, textAlign = align,
         maxLines = if (wrap) lines else 1, softWrap = wrap, overflow = TextOverflow.Ellipsis,
         onTextLayout = { r ->
             val bad = r.hasVisualOverflow || (wrap && brokenWord(r, str))
