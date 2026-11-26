@@ -354,7 +354,17 @@ fun SkSlider(
         val x = r + w * f
         val top = cy - th / 2f
         val cr = CornerRadius(th / 2f, th / 2f)
-        if (fx) {
+        if (fx && Theme.glass) {
+            // kiểu "Kính neon" (chủ dự án chọn 27/11): rãnh tối, thanh chuyển sắc xanh ngọc sang màu nhấn có quầng sáng, không có núm
+            val gh = th * 1.5f; val gt = cy - gh / 2f; val gr = CornerRadius(gh / 2f, gh / 2f)
+            val x0 = r - gh / 2f; val full = w + gh
+            drawRoundRect(Color(0xFF060A1A), Offset(x0, gt), Size(full, gh), gr)
+            val fw = (gh + w * f)
+            for ((g, al) in listOf(5.dp.toPx() to 0.12f, 3.dp.toPx() to 0.22f, 1.5.dp.toPx() to 0.35f))
+                drawRoundRect(color.copy(alpha = al), Offset(x0 - g, gt - g), Size(fw + 2f * g, gh + 2f * g), CornerRadius(gh / 2f + g, gh / 2f + g))
+            drawRoundRect(Brush.horizontalGradient(listOf(Color(0xFF22D3EE), color), startX = x0, endX = x0 + maxOf(fw, gh * 3f)), Offset(x0, gt), Size(fw, gh), gr)
+            drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.28f), Color.Transparent), startY = gt, endY = gt + gh * 0.6f), Offset(x0, gt), Size(fw, gh), gr)
+        } else if (fx) {
             drawRoundRect(Brush.verticalGradient(listOf(dim(rest, 0.22f), rest), startY = top, endY = top + th), Offset(r, top), Size(w, th), cr)
             val g = 2.dp.toPx()
             drawRoundRect(color.copy(alpha = 0.28f), Offset(r, top - g), Size(w * f, th + 2f * g), CornerRadius(th / 2f + g, th / 2f + g))
@@ -364,7 +374,8 @@ fun SkSlider(
             drawRoundRect(color, Offset(r, top), Size(w * f, th), cr)
         }
         if (dots > 1) for (i in 0 until dots) drawCircle(Color(0xBFFFFFFF), 2.dp.toPx(), Offset(r + w * i / (dots - 1), cy))
-        if (fx) {
+        if (fx && Theme.glass) {
+        } else if (fx) {
             drawCircle(Color.Black.copy(alpha = 0.28f), r, Offset(x, cy + 2.5.dp.toPx()))
             drawCircle(Brush.radialGradient(listOf(lite(thumb, 0.6f), thumb, dim(thumb, 0.28f)), center = Offset(x - r * 0.3f, cy - r * 0.35f), radius = r * 1.5f), r, Offset(x, cy))
         } else {

@@ -149,7 +149,7 @@ fun Root() {
 
     val cfg = LocalConfiguration.current
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
-    val frame = Modifier.fillMaxSize().appBg().systemBarsPadding().then(if (Theme.glass) Modifier.padding(3.dp) else Modifier)
+    val frame = Modifier.fillMaxSize().appBg().systemBarsPadding()
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
     LaunchedEffect(S.pickNow.value) { if (S.pickNow.value) { S.pickNow.value = false; pick() } }
     // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
@@ -256,7 +256,6 @@ fun Root() {
             }
         }
     }
-    if (!S.idleShow.value) NeonFrame()
     SplitPicker()
     NoticeHost(Modifier.align(Alignment.BottomCenter))
     Splash()

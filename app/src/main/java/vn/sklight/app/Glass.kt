@@ -95,32 +95,19 @@ private fun DrawScope.neonRing(phase: Float, w: Float) {
     drawCircle(b, r - w * 2f, style = Stroke(w))
 }
 
-/** Logo SK nhỏ ở góc các trang (vị trí 4): có quầng sáng màu nhấn thở nhẹ phía sau. */
+/** Logo SK nhỏ ở góc các trang (vị trí 4): chỉ logo, không nền, không quầng (chủ dự án yêu cầu 27/11). */
 @Composable
 fun LogoMark(width: Dp) {
-    val a = Pink
-    val glow = if (Fx) rememberInfiniteTransition(label = "logo").animateFloat(0.35f, 0.8f, infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "logoGlow")
-    else remember { mutableFloatStateOf(0.5f) }
-    Box(contentAlignment = Alignment.Center) {
-        Box(Modifier.matchParentSize().graphicsLayer { alpha = glow.value }.drawBehind {
-            drawCircle(Brush.radialGradient(listOf(a.copy(alpha = 0.75f), Color.Transparent), center, size.maxDimension * 0.75f), size.maxDimension * 0.75f)
-        })
-        Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(width), contentScale = ContentScale.Fit)
-    }
+    Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(width), contentScale = ContentScale.Fit)
 }
 
-/** Logo SK "thở" trên màn hình chờ (vị trí 2). */
+/** Logo SK màu trắng "thở" trên màn hình chờ (vị trí 2), không nền. */
 @Composable
 fun LogoBreath(height: Dp, dimmed: Boolean = false) {
     val k = if (Fx) rememberInfiniteTransition(label = "breath").animateFloat(0.45f, 1f, infiniteRepeatable(tween(2600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "breathA")
     else remember { mutableFloatStateOf(0.9f) }
-    val a = Pink
-    Box(Modifier.graphicsLayer { alpha = k.value * (if (dimmed) 0.5f else 1f) }, contentAlignment = Alignment.Center) {
-        Box(Modifier.matchParentSize().drawBehind {
-            drawOval(Brush.radialGradient(listOf(a.copy(alpha = 0.55f), Color.Transparent), center, size.width * 0.6f), Offset(-size.width * 0.1f, -size.height * 0.4f), Size(size.width * 1.2f, size.height * 1.8f))
-        })
-        Image(painterResource(R.drawable.sk_logo), "SK Ambient Light", Modifier.height(height), contentScale = ContentScale.Fit)
-    }
+    Image(painterResource(R.drawable.sk_logo), "SK Ambient Light", Modifier.height(height).graphicsLayer { alpha = k.value * (if (dimmed) 0.5f else 1f) },
+        contentScale = ContentScale.Fit, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color.White))
 }
 
 /** Màn mở app (vị trí 1): logo SK sáng dần trong vòng neon chạy, tự tắt sau khoảng 1,8 giây hoặc khi chạm. Mỗi lần mở app hiện một lần. */
