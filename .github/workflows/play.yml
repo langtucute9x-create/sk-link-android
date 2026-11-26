@@ -4,7 +4,7 @@ on:
     branches: [sk-light-play]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,11 +27,18 @@ jobs:
         run: |
           sudo apt-get -qq install -y aapt >/dev/null 2>&1 || true
           APK=$(ls app/build/outputs/apk/play/release/*.apk | head -1)
-          aapt dump permissions "$APK" || true
-          aapt dump xmltree "$APK" AndroidManifest.xml | grep -c "ScreenReader" || true
+          { aapt dump badging "$APK" | grep -E "package:|targetSdk|uses-permission|sdkVersion"; echo "ScreenReader=$(aapt dump xmltree "$APK" AndroidManifest.xml | grep -c ScreenReader)"; echo "update-provider=$(aapt dump xmltree "$APK" AndroidManifest.xml | grep -c '.update')"; } > manifest-report.txt || true
+          cat manifest-report.txt
       - uses: actions/upload-artifact@v4
         with:
           name: sk-light-play
           path: |
             app/build/outputs/bundle/playRelease/*.aab
             app/build/outputs/apk/play/release/*.apk
+      - name: Phat hanh ban play (de tai ve kiem tra)
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          cp app/build/outputs/bundle/playRelease/*.aab sk-light-play.aab
+          cp app/build/outputs/apk/play/release/*.apk sk-light-play.apk
+          gh release delete sk-light-play-latest --yes --cleanup-tag || true
+          gh release create sk-light-play-latest sk-light-play.aab sk-light-play.apk manifest-report.txt --target "$GITHUB_SHA" --prerelease --title "SK Light ban CH Play (thu)" --notes "Build tu commit ${GITHUB_SHA::7}"
