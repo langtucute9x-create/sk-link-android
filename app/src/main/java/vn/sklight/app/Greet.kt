@@ -33,12 +33,14 @@ object Greet {
     fun enabled(c: Context) = sp(c).getBoolean("greetOn", true)
     fun setEnabled(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOn", v).apply(); ver.intValue++ }
 
-    fun save(c: Context, k: Int, uri: Uri, display: String): Boolean = try {
+    fun save(c: Context, k: Int, uri: Uri, display: String): Boolean {
+        return try {
         val data = c.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return false
         if (data.isEmpty() || data.size > 8 * 1024 * 1024) return false
         file(c, k).writeBytes(data)
         sp(c).edit().putString(KEYS[k], display).apply(); ver.intValue++; true
-    } catch (e: Exception) { false }
+        } catch (e: Exception) { false }
+    }
 
     fun clear(c: Context, k: Int) { file(c, k).delete(); sp(c).edit().remove(KEYS[k]).apply(); ver.intValue++ }
 
