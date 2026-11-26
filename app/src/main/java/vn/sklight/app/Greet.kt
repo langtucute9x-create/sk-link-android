@@ -26,6 +26,8 @@ object Greet {
     private val h = Handler(Looper.getMainLooper())
     private var mp: MediaPlayer? = null
     private var doneThisSession = false
+    private var openDone = false
+    private var pendingConnect = false
 
     private fun sp(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE)
     private fun file(c: Context, k: Int) = File(c.filesDir, "greet$k.mp3")
@@ -62,7 +64,7 @@ object Greet {
                 val p = MediaPlayer()
                 p.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
                 p.setDataSource(f.absolutePath)
-                p.setOnCompletionListener { it.release(); if (mp === it) mp = null }
+                p.setOnCompletionListener { it.release(); if (mp === it) mp = null; if (pendingConnect) { pendingConnect = false; if (S.connected.value) play(c, 0, true) } }
                 p.setOnErrorListener { m, _, _ -> m.release(); if (mp === m) mp = null; Speaker.say(c, DEF[k], force = true); true }
                 p.prepare(); p.start(); mp = p
                 return
@@ -71,11 +73,18 @@ object Greet {
         Speaker.say(c, DEF[k], force = true)
     }
 
+    /** Gọi khi mở app: phát "Lên xe" một lần mỗi lần mở app. */
+    fun onAppOpen(c: Context) {
+        if (openDone || !enabled(c)) return
+        openDone = true
+        h.postDelayed({ play(c, 1, false) }, 800)
+    }
+
     /** Gọi khi vừa nối xong hộp: chỉ một lần mỗi lần mở app. */
     fun onConnected(c: Context) {
         if (doneThisSession || !enabled(c)) return
         doneThisSession = true
-        h.postDelayed({ if (S.connected.value) play(c, 0, true) }, 1500)
+        h.postDelayed({ if (!S.connected.value) return@postDelayed; if (mp?.isPlaying == true) pendingConnect = true else play(c, 0, true) }, 1500)
     }
 
     /** Đèn chào: nháy độ sáng 2 lần rồi trả về mức đang để (dùng lại lệnh độ sáng đã có, không gửi lệnh mới). */
@@ -127,5 +136,5 @@ fun GreetPage() {
             if (n.isNotEmpty()) OutlineBtn("Xóa", Modifier.weight(1f)) { Greet.clear(ctx, k) }
         }
     }
-    Card { T("Lời chào \"Mở máy\" tự phát một lần mỗi lần mở app, ngay sau khi nối được hộp đèn, kèm đèn nháy chào. \"Lên xe\" và \"Xuống xe\" hiện chỉ phát khi bấm Phát thử.", 13) }
+    Card { T("Mỗi lần mở app: \"Lên xe\" phát ngay; \"Mở máy\" phát khi nối được hộp đèn (kèm đèn nháy chào), nếu \"Lên xe\" còn đang phát thì chờ phát xong. \"Xuống xe\" hiện chỉ phát khi bấm Phát thử.", 13) }
 }

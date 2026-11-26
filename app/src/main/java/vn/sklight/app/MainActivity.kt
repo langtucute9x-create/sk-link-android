@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
         if (report != null) { crashShown = true; Crash.show(this, report); return }
         crashShown = false
         S.init(this)
+        Greet.onAppOpen(applicationContext)
         setContent {
             val scheme = if (Theme.dark) darkColorScheme(primary = Pink, surface = CardBg, surfaceContainerHigh = CardBg, onSurface = Txt, onSurfaceVariant = SubTxt)
             else lightColorScheme(primary = Pink)
