@@ -28,7 +28,7 @@ object Greet {
     private var doneThisSession = false
     private var openDone = false
     private var pendingConnect = false
-    private var downDone = false
+    private var lastDown = 0L
 
     private fun sp(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE)
     private fun file(c: Context, k: Int) = File(c.filesDir, "greet$k.mp3")
@@ -45,7 +45,7 @@ object Greet {
     fun enabled(c: Context) = sp(c).getBoolean("greetOn", true)
     fun openOn(c: Context) = sp(c).getBoolean("greetOpenOn", true)
     fun setOpenOn(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOpenOn", v).apply(); ver.intValue++ }
-    fun downOn(c: Context) = sp(c).getBoolean("greetDownOn", false)
+    fun downOn(c: Context) = sp(c).getBoolean("greetDownOn", true)
     fun setDownOn(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetDownOn", v).apply(); ver.intValue++ }
     fun setEnabled(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOn", v).apply(); ver.intValue++ }
 
@@ -88,17 +88,22 @@ object Greet {
         h.postDelayed({ play(c, 1, false) }, 800)
     }
 
-    /** Màn hình xe: hộp mất điện / mất kết nối sau khi đã nối trong phiên này thì phát "Xuống xe" một lần (nếu bật). */
-    fun onLost(c: Context) {
-        if (!doneThisSession || downDone || !S.isCar.value || !enabled(c) || !downOn(c)) return
-        downDone = true
+    /** Ngắt kết nối hộp (bấm ngắt hoặc hộp mất điện) sau khi đã nối: phát "Xuống xe" nếu bật; lần nối lại sau đó chào "Mở máy" lại. Trả về true nếu đã phát. */
+    fun onLost(c: Context): Boolean {
+        if (!doneThisSession) return false
+        doneThisSession = false; pendingConnect = false
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (!enabled(c) || !downOn(c) || now - lastDown < 10000) return false
+        if (!S.isCar.value && !file(c, 2).exists()) return false
+        lastDown = now
         play(c, 2, false)
+        return true
     }
 
-    /** Gọi khi vừa nối xong hộp: chỉ một lần mỗi lần mở app. */
+    /** Gọi khi vừa nối xong hộp: một lần cho mỗi lần nối (ngắt rồi nối lại thì chào lại). */
     fun onConnected(c: Context) {
         if (doneThisSession || !enabled(c)) return
-        doneThisSession = true; downDone = false
+        doneThisSession = true
         h.postDelayed({ if (!S.connected.value) return@postDelayed; if (mp?.isPlaying == true) pendingConnect = true else play(c, 0, true) }, 1500)
     }
 
@@ -187,7 +192,7 @@ fun GreetPage() {
         fileCard(0)
     }
     Card {
-        T("Lời chào xuống xe (khi hộp mất điện)", 15, FontWeight.Bold)
+        T("Lời chào xuống xe (khi ngắt kết nối hộp)", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             val d = Greet.downOn(ctx)
@@ -197,5 +202,5 @@ fun GreetPage() {
         Spacer(Modifier.height(10.dp))
         fileCard(2)
     }
-    Card { T("Mỗi lần mở app: \"Lên xe\" phát ngay; \"Mở máy\" phát khi nối được hộp đèn (kèm đèn nháy chào), nếu \"Lên xe\" còn đang phát thì chờ phát xong. \"Xuống xe\" chỉ chạy trên màn hình xe: phát một lần khi mất kết nối với hộp sau khi đã nối (xe tắt máy). Chưa thử trên xe thật nên mặc định đang Tắt.", 13) }
+    Card { T("Mỗi lần mở app: \"Lên xe\" phát ngay; \"Mở máy\" phát khi nối được hộp đèn (kèm đèn nháy chào), nếu \"Lên xe\" còn đang phát thì chờ phát xong. \"Xuống xe\" phát khi ngắt kết nối hộp (bấm ngắt hoặc hộp mất điện); nối lại thì chào \"Mở máy\" lại.", 13) }
 }

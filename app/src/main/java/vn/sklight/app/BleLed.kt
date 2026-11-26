@@ -107,7 +107,7 @@ class BleLed(private val ctx: Context) {
     /** Đang nối hoặc đang thử nối lại một hộp. */
     val wants: Boolean get() = wantMac != null
 
-    fun disconnect() { wantMac = null; closeGatt(); S.connected.value = false; S.conn.value = "Chưa kết nối" }
+    fun disconnect() { val was = S.connected.value; wantMac = null; closeGatt(); S.connected.value = false; if (was) Greet.onLost(ctx); S.conn.value = "Chưa kết nối" }
 
     private fun closeGatt() {
         q.clear(); wch = null
@@ -132,8 +132,8 @@ class BleLed(private val ctx: Context) {
                     val wasConn = S.connected.value
                     S.connected.value = false
                     S.conn.value = "Mất kết nối"
-                    if (wasConn && wantMac != null) Greet.onLost(ctx)
-                    if (wantMac != null && !lostSpoken && S.appVisible && !S.userOff) { lostSpoken = true; Speaker.err(ctx, "Mất kết nối với hộp đèn.", 60000L) }
+                    val bye = wasConn && wantMac != null && Greet.onLost(ctx)
+                    if (!bye && wantMac != null && !lostSpoken && S.appVisible && !S.userOff) { lostSpoken = true; Speaker.err(ctx, "Mất kết nối với hộp đèn.", 60000L) }
                     wch = null
                     try { g.close() } catch (_: Exception) {}
                     if (gatt === g) gatt = null
