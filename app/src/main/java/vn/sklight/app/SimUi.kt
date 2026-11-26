@@ -47,13 +47,15 @@ fun SimCard() {
         // khung cảnh: cao theo bề ngang, nhưng không quá 62% chiều cao màn hình (màn hình xe nằm ngang)
         val maxH = (LocalConfiguration.current.screenHeightDp * 0.62f).dp
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val hh = minOf(maxWidth * (760f / 680f), maxH).coerceAtLeast(220.dp)
+            val hh = minOf(maxWidth * (DH / DW), maxH).coerceAtLeast(220.dp)
             Box(Modifier.fillMaxWidth().height(hh).clip(RoundedCornerShape(14.dp)).background(Color(0xFF0B0E14))) {
                 Scene(Modifier.fillMaxSize())
                 Hud()
             }
         }
         Spacer(Modifier.height(8.dp))
+        SimStatus()
+        Spacer(Modifier.height(6.dp))
         val maxS = S.alertMaxSec.intValue
         T(
             if (k in 4..7) when (k) {
@@ -74,8 +76,9 @@ fun SimCard() {
     DisposableEffect(Unit) { onDispose { Sim.stop() } }
 }
 
+/** Dòng trạng thái đèn, đặt ngay dưới hình mô phỏng (trước 1.4.113 nằm đè lên đáy hình). */
 @Composable
-private fun Hud() {
+private fun SimStatus() {
     val run = Sim.running.value
     val k = Sim.kind.intValue
     val ak = S.alertKind.intValue
@@ -84,6 +87,35 @@ private fun Hud() {
     LaunchedEffect(ak, run) { lit0 = if (run && ak != 0) System.currentTimeMillis() else 0L }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(run) { while (run) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(100) } }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        // trạng thái đèn
+        val txt = when {
+            ak == 1 || ak == 2 -> {
+                val left = if (S.alertMaxSec.intValue > 0 && lit0 > 0) max(0, S.alertMaxSec.intValue - ((now - lit0) / 1000).toInt()) else -1
+                (if (ak == 1) "ĐÈN BÁO RẼ TRÁI" else "ĐÈN BÁO RẼ PHẢI") + (if (left >= 0) " · còn $left giây" else "")
+            }
+            ak == 3 -> "QUÁ TỐC ĐỘ · ĐÈN NHÁY"
+            ak == 4 -> "CAMERA PHÍA TRƯỚC · ĐÈN NHÁY"
+            ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY"
+            ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY"
+            ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY"
+            !run && S.navOn.value -> "Đang dẫn đường · ${S.navApp.value}"
+            !run -> "Chọn một tình huống bên dưới"
+            k == 3 || k >= 4 -> "Đang chạy trong giới hạn"
+            Sim.turn.floatValue > 0f -> "Đã qua chỗ rẽ · đèn về như cũ"
+            Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
+            else -> "Đèn báo đã hết thời gian chạy"
+        }
+        val col = when { ak in 3..7 -> Color(0xFF000000 or AlertBridge.showOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
+        Box(Modifier.clip(RoundedCornerShape(20.dp)).background(col).padding(horizontal = 14.dp, vertical = 6.dp)) { T(txt, 12, FontWeight.ExtraBold, color = Color.White) }
+    }
+}
+
+@Composable
+private fun Hud() {
+    val run = Sim.running.value
+    val k = Sim.kind.intValue
+    val ak = S.alertKind.intValue
     // Không chạy mô phỏng thì hình hiện dữ liệu thật: tốc độ, biển giới hạn, hướng rẽ và khoảng cách của app dẫn đường.
     val spd = if (run) Sim.speed.floatValue.toInt() else S.carSpeed()
     val lim = if (run) (if (k == 3) Sim.LIMIT else 0) else S.speedLimit.intValue
@@ -113,40 +145,20 @@ private fun Hud() {
                 T(if (S.navStreet.value.isEmpty()) dt else "$dt · ${S.navStreet.value}", 11, color = Color(0xFFB8BCC6), maxLines = 1)
             }
         }
-        // trạng thái đèn
-        val txt = when {
-            ak == 1 || ak == 2 -> {
-                val left = if (S.alertMaxSec.intValue > 0 && lit0 > 0) max(0, S.alertMaxSec.intValue - ((now - lit0) / 1000).toInt()) else -1
-                (if (ak == 1) "ĐÈN BÁO RẼ TRÁI" else "ĐÈN BÁO RẼ PHẢI") + (if (left >= 0) " · còn $left giây" else "")
-            }
-            ak == 3 -> "QUÁ TỐC ĐỘ · ĐÈN NHÁY"
-            ak == 4 -> "CAMERA PHÍA TRƯỚC · ĐÈN NHÁY"
-            ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY"
-            ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY"
-            ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY"
-            !run && S.navOn.value -> "Đang dẫn đường · ${S.navApp.value}"
-            !run -> "Chọn một tình huống bên dưới"
-            k == 3 || k >= 4 -> "Đang chạy trong giới hạn"
-            Sim.turn.floatValue > 0f -> "Đã qua chỗ rẽ · đèn về như cũ"
-            Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
-            else -> "Đèn báo đã hết thời gian chạy"
-        }
-        val col = when { ak in 3..7 -> Color(0xFF000000 or AlertBridge.showOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
-        Box(Modifier.align(Alignment.BottomCenter).clip(RoundedCornerShape(20.dp)).background(col).padding(horizontal = 14.dp, vertical = 6.dp)) { T(txt, 12, FontWeight.ExtraBold, color = Color.White) }
     }
 }
 
 private fun rnd(i: Int): Float { val x = sin(i * 127.1) * 43758.5; return (x - kotlin.math.floor(x)).toFloat() }
 
 private const val DW = 680f
-private const val DH = 760f
+private const val DH = 716f          // 1.4.113: cắt dải ghế sau ở đáy hình (chủ dự án yêu cầu), cảnh sát hơn
 private const val HOR = 240f
 private const val FOC = 640f
 private const val HC = 2.4f          // mắt cao 2,4 m: góc nhìn từ trên cao phía sau xe (1.4.112)
 private const val RW = 5.25f
 private const val NR = 3f
 private const val FAR = 420f
-private val FAC = intArrayOf(0xECE0C8, 0xDECCAC, 0xD2DCE8, 0xE8D2C6, 0xD8E0CE, 0xF4ECDC, 0xCCBAA0, 0xE2D6E2)
+private val FAC = intArrayOf(0xB8704F, 0xD9C7A3, 0xB9BDC4, 0xE6DCC8, 0x9A5444, 0xCFC8BC, 0xC98F6A, 0xAEB9C6, 0xE9D2B8, 0x8E6A55)      // gạch đỏ, đá be, bê tông xám, kem (kiểu phố trong game lái xe)
 private val AWN = listOf(Color(0xFFC0392B), Color(0xFF2E7D5B), Color(0xFF2C6FB3), Color(0xFFD9822B))
 private fun shade(rgb: Int, k: Float): Color {
     val r = min(255, (((rgb shr 16) and 255) * k).toInt()); val g = min(255, (((rgb shr 8) and 255) * k).toInt()); val b = min(255, ((rgb and 255) * k).toInt())
@@ -190,7 +202,7 @@ private fun Scene(modifier: Modifier) {
     Canvas(modifier) {
         val sc = size.width / DW
         val vh = size.height / sc
-        val oy = if (vh < DH) -(DH - vh) * 0.5f else 0f
+        val oy = if (vh < DH) -(DH - vh) * 0.85f else 0f      // khung thấp: cắt chủ yếu phần trời, giữ nội thất
         val nc = drawContext.canvas.nativeCanvas
         fun addQuad(p: Path, a: Offset, b: Offset, c: Offset, d: Offset) { p.moveTo(a.x, a.y); p.lineTo(b.x, b.y); p.lineTo(c.x, c.y); p.lineTo(d.x, d.y); p.close() }
         fun quad(a: Offset, b: Offset, c: Offset, d: Offset, col: Color) { path.reset(); addQuad(path, a, b, c, d); drawPath(path, col) }
@@ -202,45 +214,69 @@ private fun Scene(modifier: Modifier) {
         }
         val tsd = if (kind == 1) -1f else 1f
 
+        /** Một ngôi nhà phố (dựng lại 1.4.113): 3 đến 8 tầng, gờ mái, bồn nước, cửa hàng kính có biển hiệu, cửa sổ có khung. */
         fun bld(sd: Float, bz: Float, idx: Int) {
             val i = if (sd > 0) 1 else 0
-            val fl = 3 + (rnd(idx * 2 + i) * 4).toInt()
-            val h = fl * 3.4f + 0.6f
+            val fl = 3 + (rnd(idx * 2 + i) * 6).toInt()
+            val h = fl * 3.3f + 1.2f
             val col = FAC[(rnd(idx * 5 + i + 3) * FAC.size).toInt().coerceIn(0, FAC.size - 1)]
             val x = sd * 8.25f; val z0 = max(bz, NR); val z1 = bz + 14f
             if (z1 <= NR + 1f) return
-            if (bz > NR) quad(pt(x, bz), pt(sd * 19f, bz), pt(sd * 19f, bz, h), pt(x, bz, h), shade(col, if (sd < 0) 0.74f else 0.9f))
-            quad(pt(x, z0), pt(x, z1), pt(x, z1, h), pt(x, z0, h), shade(col, if (sd < 0) 1f else 0.8f))
-            quad(pt(x, z0, h - 0.5f), pt(x, z1, h - 0.5f), pt(x, z1, h), pt(x, z0, h), shade(col, 0.62f))
+            val lit = if (sd < 0) 1f else 0.84f                     // dãy bên trái đón nắng
+            if (bz > NR) quad(pt(x, bz), pt(sd * 19f, bz), pt(sd * 19f, bz, h), pt(x, bz, h), shade(col, lit * 0.7f))
+            quad(pt(x, z0), pt(x, z1), pt(x, z1, h), pt(x, z0, h), shade(col, lit))
+            quad(pt(x, z0, h - 0.45f), pt(x, z1, h - 0.45f), pt(x, z1, h), pt(x, z0, h), shade(col, lit * 0.6f))
+            quad(pt(x, z0, h), pt(x, z1, h), pt(x, z1, h + 0.28f), pt(x, z0, h + 0.28f), shade(col, lit * 1.14f))
+            if (bz > NR && bz < 130f && rnd(idx * 13 + i) > 0.45f) {
+                val za = bz + 3f + rnd(idx * 17 + i) * 5f; val xr = x + sd * 1.2f
+                quad(pt(xr, za, h + 0.28f), pt(xr, za + 2.2f, h + 0.28f), pt(xr, za + 2.2f, h + 1.9f), pt(xr, za, h + 1.9f), Color(0xFF8E959F))
+                quad(pt(xr, za, h + 1.9f), pt(xr, za + 2.2f, h + 1.9f), pt(xr, za + 2.2f, h + 2.1f), pt(xr, za, h + 2.1f), Color(0xFF6C737D))
+            }
             if (bz < 150f) {
-                val a = max(bz + 0.8f, NR); val b = bz + 13.2f
+                val a = max(bz + 0.6f, NR); val b = bz + 13.4f
                 if (b > a + 0.5f) {
-                    quad(pt(x, a), pt(x, b), pt(x, b, 2.9f), pt(x, a, 2.9f), Color(0xFF2A2E36))
-                    quad(pt(x, a, 2.9f), pt(x, b, 2.9f), pt(x, b, 3.5f), pt(x, a, 3.5f), AWN[(((idx + i) % 4) + 4) % 4])
+                    quad(pt(x, a), pt(x, b), pt(x, b, 3.0f), pt(x, a, 3.0f), Color(0xFF1F2A3A))
+                    quad(pt(x, a, 1.1f), pt(x, b, 1.1f), pt(x, b, 2.7f), pt(x, a, 2.7f), Color(0xFF3B5270))
+                    pA.reset()
+                    for (j in 1..3) { val zz = bz + 0.6f + j * 3.2f; if (zz > NR) addQuad(pA, pt(x, zz), pt(x, zz + 0.2f), pt(x, zz + 0.2f, 3.0f), pt(x, zz, 3.0f)) }
+                    drawPath(pA, shade(col, lit * 0.5f))
+                    quad(pt(x, a, 3.0f), pt(x, b, 3.0f), pt(x, b, 3.45f), pt(x, a, 3.45f), AWN[(((idx + i) % 4) + 4) % 4])
+                    val sa = max(bz + 3f, NR); val sb = bz + 11f
+                    if (sb > sa + 1f) quad(pt(x, sa, 3.6f), pt(x, sb, 3.6f), pt(x, sb, 4.5f), pt(x, sa, 4.5f), Color(0xFFF4F1E8))
                 }
             }
-            if (bz < 90f) {
-                pA.reset(); pB.reset()
+            if (bz < 110f) {
+                pA.reset(); pB.reset(); pS.reset()
                 for (f in 1 until fl) for (j in 0..3) {
-                    val za = bz + 1.2f + j * 3.2f; val zb = za + 1.9f
-                    if (za < NR) continue
-                    val ya = f * 3.4f + 1f; val yb = ya + 1.8f
-                    addQuad(if (rnd(idx * 31 + f * 7 + j + i * 3) > 0.75f) pB else pA, pt(x, za, ya), pt(x, zb, ya), pt(x, zb, yb), pt(x, za, yb))
+                    val za = bz + 1.1f + j * 3.2f; val zb = za + 2.0f
+                    if (za < NR + 0.2f) continue
+                    val ya = f * 3.3f + 1.9f; val yb = ya + 1.9f
+                    addQuad(pS, pt(x, za - 0.2f, ya - 0.2f), pt(x, zb + 0.2f, ya - 0.2f), pt(x, zb + 0.2f, yb + 0.16f), pt(x, za - 0.2f, yb + 0.16f))
+                    addQuad(if (rnd(idx * 31 + f * 7 + j + i * 3) > 0.7f) pB else pA, pt(x, za, ya), pt(x, zb, ya), pt(x, zb, yb), pt(x, za, yb))
                 }
-                if (bz > NR && bz < 60f) for (f in 1 until fl) for (j in 0..2) {
-                    val xa = sd * (9.6f + j * 3f); val xb = xa + sd * 1.8f; val y1 = f * 3.4f + 1f; val y2 = y1 + 1.8f
+                if (bz > NR && bz < 70f) for (f in 1 until fl) for (j in 0..2) {
+                    val xa = sd * (9.6f + j * 3f); val xb = xa + sd * 1.8f; val y1 = f * 3.3f + 1.9f; val y2 = y1 + 1.9f
+                    addQuad(pS, pt(xa - sd * 0.18f, bz, y1 - 0.2f), pt(xb + sd * 0.18f, bz, y1 - 0.2f), pt(xb + sd * 0.18f, bz, y2 + 0.16f), pt(xa - sd * 0.18f, bz, y2 + 0.16f))
                     addQuad(pA, pt(xa, bz, y1), pt(xb, bz, y1), pt(xb, bz, y2), pt(xa, bz, y2))
                 }
-                drawPath(pA, Color(0xFF3F4D60)); drawPath(pB, Color(0xFF8AA0BA))
+                drawPath(pS, shade(col, lit * 1.2f)); drawPath(pA, Color(0xFF34435C)); drawPath(pB, Color(0xFF86A3C8))
             }
         }
-        fun tree(sd: Float, d: Float) {
+        /** Một cây bên đường (dựng lại 1.4.113): bóng đổ, thân thon, cành, tán nhiều cụm lá sáng tối; mỗi cây một cỡ. */
+        fun tree(sd: Float, d: Float, idx: Int) {
             if (d < 6f) return
             val s = FOC / d; val x = sd * 6.7f
-            ln(pt(x, d), pt(x, d, 3f), max(1.5f, 0.3f * s), Color(0xFF5D4630))
-            val c = pt(x, d, 4.4f); val r = 1.9f * s
-            drawCircle(Color(0xFF2F6A34), r, c)
-            drawCircle(Color(0xFF5A9A4A), r * 0.62f, Offset(c.x - r * 0.25f, c.y - r * 0.25f))
+            val k = 0.85f + rnd(idx * 7 + (if (sd > 0) 3 else 1)) * 0.5f
+            val foot = pt(x, d)
+            drawOval(Color(0x38000000), Offset(foot.x - 1.9f * k * s, foot.y - 0.22f * s), Size(3.8f * k * s, 0.5f * s))
+            quad(pt(x - 0.45f, d), pt(x + 0.45f, d), pt(x + 0.45f, d, 0.12f), pt(x - 0.45f, d, 0.12f), Color(0xFF8D8A82))
+            quad(pt(x - 0.17f, d), pt(x + 0.17f, d), pt(x + 0.09f, d, 2.8f * k), pt(x - 0.09f, d, 2.8f * k), Color(0xFF6B4E32))
+            val bw = max(1f, 0.1f * s)
+            ln(pt(x, d, 2.2f * k), pt(x - 0.8f * k, d, 3.3f * k), bw, Color(0xFF5D4630)); ln(pt(x, d, 2.4f * k), pt(x + 0.7f * k, d, 3.4f * k), bw, Color(0xFF5D4630))
+            val cy = 4.3f * k
+            fun leaf(dx: Float, dy: Float, r: Float, col: Long) = drawCircle(Color(col), r * k * s, pt(x + dx * k, d, cy + dy * k))
+            leaf(0f, -0.35f, 1.55f, 0xFF28552B); leaf(-0.95f, 0.05f, 1.15f, 0xFF2F6A34); leaf(0.95f, 0f, 1.2f, 0xFF357438)
+            leaf(-0.3f, 0.8f, 1.2f, 0xFF4C8F45); leaf(0.55f, 0.9f, 1f, 0xFF63A856); leaf(-0.5f, 1.35f, 0.55f, 0xCC8ACB70)
         }
         fun lamp(sd: Float, d: Float) {
             if (d < 6f) return
@@ -315,11 +351,11 @@ private fun Scene(modifier: Modifier) {
                 for (ei in 0..1) {
                     val e = if (ei == 0) -1f else 1f
                     if (junc && e == tsd && bz < jd + 7f && bz + 16f > jd - 7f) continue
-                    if (((idx % 2) + 2) % 2 == 0) tree(e, bz + 15f) else lamp(e, bz + 15f)
+                    if (((idx % 2) + 2) % 2 == 0) tree(e, bz + 15f, idx) else lamp(e, bz + 15f)
                     bld(e, bz, idx + seed)
                 }
             }
-            drawRect(Brush.verticalGradient(0f to Color(0x00DCECFA), 0.72f to Color(0x99DCECFA), 1f to Color(0x00DCECFA), startY = HOR - 70f, endY = HOR + 26f), Offset(0f, HOR - 70f), Size(DW, 96f))
+            drawRect(Brush.verticalGradient(0f to Color(0x00DCECFA), 0.75f to Color(0x47DCECFA), 1f to Color(0x00DCECFA), startY = HOR - 40f, endY = HOR + 14f), Offset(0f, HOR - 40f), Size(DW, 54f))
             val sz = dist + 3f
             // hai xe chạy phía trước (kiểu game lái xe): bán tải đỏ cùng làn, xe trắng làn trái; lúc gần lúc xa
             val d1 = 24f + 5f * sin(clock * 0.5f); val d2 = 46f + 10f * sin(clock * 0.3f + 1f)
@@ -418,7 +454,7 @@ private fun Scene(modifier: Modifier) {
             // dải đèn viền quanh ốp cửa (khu vực 1), chạy từ đầu xe ra sau
             ledLine(5f, zl1, idle1, bf1, { _, y -> val k = 0.2f * (1f - ((y - 364f) / 344f).coerceIn(0f, 1f)); if (m) 1f - k else k }, X(160f), 364f, X(202f), 364f, X(244f), 440f, X(178f), 708f)
         }
-        /** Ghế trước nhìn từ sau, đèn gầm ghế, tựa đầu ghế sau. */
+        /** Ghế trước nhìn từ sau, đèn gầm ghế. */
         fun seat(m: Boolean) {
             fun X(x: Float) = if (m) 1280f - x else x
             pS.reset(); pS.moveTo(X(292f), 566f); pS.quadraticBezierTo(X(296f), 542f, X(346f), 540f); pS.lineTo(X(494f), 540f); pS.quadraticBezierTo(X(544f), 542f, X(548f), 566f)
@@ -431,8 +467,6 @@ private fun Scene(modifier: Modifier) {
             path.reset(); path.moveTo(X(366f), 508f); path.quadraticBezierTo(X(420f), 498f, X(474f), 508f)
             drawPath(path, Color(0x2EFFFFFF), style = Stroke(2f))
             ledLine(5f, zl2, idle2, bf2, { x, _ -> x / 1280f }, X(290f), 664f, X(550f), 664f)
-            val rx = if (m) 1280f - 150f - 330f else 150f
-            drawRoundRect(Brush.verticalGradient(lea, 682f, 772f), Offset(rx, 682f), Size(330f, 90f), CornerRadius(40f))
         }
         /** Nội thất xe mui trần nhìn từ trên cao phía sau, vẽ trên khung 1280 x 720 (theo bản demo chủ dự án duyệt 27/11). */
         fun cabin() {
@@ -445,6 +479,9 @@ private fun Scene(modifier: Modifier) {
             drawPath(path, dark, style = Stroke(11f, cap = StrokeCap.Round)); drawPath(path, Color(0xCC8D93A6), style = Stroke(1.5f))
             ln(Offset(250f, 262f), Offset(205f, 332f), 12f, dark); ln(Offset(1030f, 262f), Offset(1075f, 332f), 12f, dark)
             rrect(596f, 246f, 88f, 24f, 8f, Color(0xFF0D0E13))
+            // sàn xe kín bên dưới mọi chi tiết (bản 1.4.112 hở các khe nên thấy vạch đường xanh xuyên qua sàn)
+            poly(205f, 330f, 1075f, 330f, 1152f, 348f, 1280f, 560f, 1280f, 720f, 0f, 720f, 0f, 560f, 128f, 348f)
+            drawPath(path, Color(0xFF140A10))
             // mặt trên táp lô + dải đèn sát kính
             path.reset(); path.moveTo(205f, 330f); path.quadraticBezierTo(640f, 300f, 1075f, 330f); path.lineTo(1060f, 372f); path.quadraticBezierTo(640f, 345f, 220f, 372f); path.close()
             drawPath(path, Color(0xFF14151C))
