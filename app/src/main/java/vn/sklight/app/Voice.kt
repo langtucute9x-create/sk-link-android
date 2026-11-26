@@ -231,6 +231,7 @@ object Voice {
         if (has(t, "đổi giọng nói") || has(t, "đổi giọng") || has(t, "thay giọng nói")) { after = 3; return "Em đổi giọng rồi ạ" }
         val called = has(t, "xin chào") || has(t, "này đèn viền") || has(t, "đèn viền ơi")
         if (called && t.split(" ").size <= 5) { after = 1; return "Em nghe đây ạ" }
+        appCmd(t)?.let { return it }
         if (!S.connected.value) return "Em chưa kết nối với hộp đèn"
 
         // khu vực nêu trong câu: "khu vực 2 màu đỏ", "vùng 1 sáng hơn", "cả xe màu trắng". z: -1 không nêu, 0 cả xe, 1, 2
@@ -300,6 +301,117 @@ object Voice {
             S.setColor(c.second)
             S.resendColorSoon()
             return "Em đã đổi${zn(zd)} sang màu ${c.third} rồi"
+        }
+        return null
+    }
+
+    /** Số đầu tiên đứng sau một trong các từ [keys]: "chế độ số 5", "tốc độ đèn chào mừng để hai". */
+    private fun numAfter(t: String, vararg keys: String): Int? {
+        for (k in keys) {
+            val i = t.indexOf(k); if (i < 0) continue
+            val w = t.substring(i + k.length).trim().split(' ').filter { it.isNotEmpty() }
+            for (j in w.indices) viNum(w.subList(j, w.size))?.let { return it }
+        }
+        return null
+    }
+
+    private fun openApp() {
+        if (S.appVisible) return
+        try { S.app.packageManager.getLaunchIntentForPackage(S.app.packageName)?.let { S.app.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) } } catch (e: Exception) {}
+    }
+
+    /**
+     * Lệnh cài đặt của app (1.4.104): chào mừng, mở trang, màn hình chờ, cảnh báo khi lái, dịu đèn ban đêm, nút nổi, lời chào.
+     * Tên mục so KHÔNG DẤU (máy hay nghe sai dấu: "nút nổ", "bảo rẽ"); chữ bật / tắt so có dấu. Chưa thử trên máy thật.
+     * Trả về null nếu câu không thuộc nhóm này. Lệnh chào mừng ghi vào hộp bằng đúng các lệnh mà trang Chào mừng đang dùng.
+     */
+    private fun appCmd(t: String): String? {
+        val f = " " + fold(t) + " "
+        fun fc(vararg w: String) = w.any { f.contains(it) }
+        val onW = has(t, "bật") || has(t, "mở") || has(t, "kích hoạt") || has(t, "cho phép")
+        val offW = has(t, "tắt") || has(t, "đóng") || has(t, "hủy") || has(t, "huỷ") || has(t, "bỏ") || has(t, "ngừng") || has(t, "dừng") || has(t, "ẩn")
+        val sw: Boolean? = if (offW) false else if (onW) true else null
+        fun st(b: Boolean) = if (b) "bật" else "tắt"
+
+        // ----- lời chào (mp3) -----
+        if (fc("loi chao") && (has(t, "bật") || has(t, "tắt"))) {      // "mở lời chào" là mở trang, xem bên dưới
+            val c = S.app; val g = !has(t, "tắt")
+            return when {
+                fc("len xe") -> { Greet.setOpenOn(c, g); "Em đã ${st(g)} lời chào lên xe rồi" }
+                fc("xuong xe") -> { Greet.setDownOn(c, g); "Em đã ${st(g)} lời chào xuống xe rồi" }
+                else -> { Greet.setEnabled(c, g); "Em đã ${st(g)} lời chào rồi" }
+            }
+        }
+        // ----- hiệu ứng chào mừng của hộp -----
+        if (fc("chao mung") && !fc("trang chao mung")) {
+            if (!S.connected.value) return "Em chưa kết nối với hộp đèn"
+            fun need(): String { S.refreshBlocks(); return "Em chưa đọc được cài đặt chào mừng từ hộp đèn" }
+            if (fc("toc do")) {
+                val n = numAfter(t, "tốc độ") ?: return "Tốc độ chào mừng có từ 1 đến 4 ạ"
+                if (n !in 1..4) return "Tốc độ chào mừng có từ 1 đến 4 ạ"
+                S.setWSpeed(n - 1); return "Em đã chỉnh tốc độ chào mừng $n rồi"
+            }
+            if (fc("tuy chinh")) return if (S.setBlk(3, 0x07, 7)) "Em đã chuyển chào mừng sang tùy chỉnh rồi" else need()
+            if (fc("che do", "hieu ung", "kieu")) numAfter(t, "chế độ", "kiểu", "hiệu ứng chào mừng", "chào mừng")?.let { n ->
+                if (n !in 1..6) return "Chào mừng có chế độ 1 đến 6 ạ"
+                return if (S.setBlk(3, 0x07, n - 1)) "Em đã chuyển chào mừng sang chế độ $n rồi" else need()
+            }
+            if (sw != null) {
+                if (fc("xung quanh")) {
+                    if (!S.blkBit(1, 0x04)) return "Cần bật hiệu ứng chào mừng trước ạ"
+                    return if (S.setBlk(3, 0x10, if (sw) 0x10 else 0)) "Em đã ${st(sw)} chào xung quanh xe rồi" else need()
+                }
+                return if (S.setBlk(1, 0x04, if (sw) 0x04 else 0)) "Em đã ${st(sw)} hiệu ứng chào mừng rồi" else need()
+            }
+        }
+        // ----- màn hình chờ -----
+        if (fc("man hinh cho")) {
+            IDLE_CLOCKS.forEachIndexed { i, n -> if (fc("dong ho " + fold(n)) || fc("kieu " + fold(n))) { S.idleClock.intValue = i; S.saveSettings(); return "Em đã đổi đồng hồ màn hình chờ sang kiểu $n rồi" } }
+            IDLE_BGS.forEachIndexed { i, n -> if (fc("nen " + fold(n))) { S.idleBg.intValue = i; S.saveSettings(); return "Em đã đổi hình nền màn hình chờ sang $n rồi" } }
+            if (sw != null) {
+                if (has(t, "tự") || fc("khi xe chay")) { S.idleOn.value = sw; S.saveSettings(); return "Em đã ${st(sw)} tự mở màn hình chờ khi xe chạy rồi" }
+                if (sw) openApp()
+                S.idleShow.value = sw; S.lastTouch = System.currentTimeMillis()
+                return if (sw) "Em đã mở màn hình chờ rồi" else "Em đã đóng màn hình chờ rồi"
+            }
+        }
+        // ----- mở trang -----
+        if (has(t, "mở") || has(t, "vào") || has(t, "sang") || has(t, "chuyển") || fc(" trang ")) {
+            fun go(tab: Int, sub: Int, name: String): String { openApp(); S.idleShow.value = false; S.subPage.intValue = sub; S.goTab.intValue = tab; return "Em đã mở trang $name rồi" }
+            if (fc("trang den")) return go(0, 0, "Đèn")
+            if (fc("trang chao mung")) return go(1, 0, "Chào mừng")
+            if (fc("dan duong") && !fc("bao")) return go(2, 0, "Dẫn đường")
+            if (fc("loi chao")) return go(3, 18, "Lời chào")
+            if (fc("giao dien")) return go(3, 1, "Cài đặt giao diện")
+            if (fc("cam nang", "huong dan")) return go(3, 12, "Cẩm nang sử dụng")
+            if (fc("tro ly", "giong noi") && !fc("doi giong")) return go(3, 4, "Trợ lý")
+            if (fc("cai dat")) return go(3, 0, "Cài đặt")
+        }
+        // ----- độ sáng ban đêm + tự dịu đèn ban đêm -----
+        if (fc("ban dem")) {
+            if (fc("do sang", "muc sang")) numAfter(t, "ban đêm")?.let { n ->
+                val v = ((n.coerceIn(5, 100) + 2) / 5) * 5
+                Night.setLevel(v); return "Em đã đặt độ sáng ban đêm $v% rồi"
+            }
+            if (sw != null && (fc("diu", "giu den", "giam den") || has(t, "tự"))) { S.nightOn.value = sw; S.saveSettings(); Night.tick(); return "Em đã ${st(sw)} tự dịu đèn ban đêm rồi" }
+        }
+        if (sw == null) return null
+        // ----- cảnh báo khi lái -----
+        fun alert(name: String, set: (Boolean) -> Unit): String { set(sw); S.saveSettings(); S.syncService(); return "Em đã ${st(sw)} $name rồi" }
+        if (fc("canh bao") && fc("het", "tat ca", "toan bo", "moi canh bao")) return alert("tất cả cảnh báo") {
+            S.warnOn.value = it; S.speedWarn.value = it; S.camWarn.value = it; S.redCamWarn.value = it; S.banWarn.value = it; S.limitChgWarn.value = it
+        }
+        if (fc("bao re", "bao queo", "canh bao re")) return alert("báo rẽ") { S.warnOn.value = it }
+        if (fc("qua toc do", "vuot toc do")) return alert("báo quá tốc độ") { S.speedWarn.value = it }
+        if (fc("den do") && fc("camera", "ca me ra", "vuot", "bao")) return alert("báo camera vượt đèn đỏ") { S.redCamWarn.value = it }
+        if (fc("camera", "ca me ra", "phat nguoi")) return alert("báo camera") { S.camWarn.value = it }
+        if (fc("bien cam", "cam vuot")) return alert("báo biển cấm") { S.banWarn.value = it }
+        if (fc("gioi han") && fc("bao", "giam")) return alert("báo giới hạn tốc độ giảm") { S.limitChgWarn.value = it }
+        // ----- nút nổi -----
+        if (fc("nut noi", "nut no ", "nut loi")) {
+            if (sw && !(try { android.provider.Settings.canDrawOverlays(S.app) } catch (e: Exception) { false })) return "Cần cấp quyền hiện trên ứng dụng khác trong Cài đặt trước ạ"
+            S.floatOn.value = sw; S.saveSettings(); S.syncService(); FloatButton.sync(S.app)
+            return "Em đã ${st(sw)} nút nổi rồi"
         }
         return null
     }
@@ -668,6 +780,13 @@ fun CmdListApp() {
     CmdLine("Bối cảnh", "gọi theo tên: “thư giãn”, “thể thao”, “ban đêm”, “đón khách” và tên bạn tự đặt")
     CmdLine("Tốc độ", "“tốc độ 8”")
     CmdLine("Chế độ", "gọi theo tên chế độ trên màn hình")
+    T("Lệnh cài đặt (bản 1.4.104)", 14, FontWeight.Bold)
+    CmdLine("Chào mừng", "“bật / tắt hiệu ứng chào mừng”, “chào mừng chế độ 5”, “tốc độ chào mừng 2”, “bật chào xung quanh xe”")
+    CmdLine("Mở trang", "“mở trang đèn”, “mở trang chào mừng”, “mở trang dẫn đường”, “mở cài đặt”, “mở lời chào”, “mở cài đặt giao diện”")
+    CmdLine("Màn chờ", "“mở màn hình chờ”, “đóng màn hình chờ”, “bật tự mở màn hình chờ”, “màn hình chờ đồng hồ neon”, “màn hình chờ nền đêm sao”")
+    CmdLine("Cảnh báo", "“tắt báo rẽ”, “tắt báo quá tốc độ”, “tắt báo camera”, “tắt báo camera vượt đèn đỏ”, “tắt báo biển cấm”, “tắt hết cảnh báo” (đổi “tắt” thành “bật” để bật)")
+    CmdLine("Ban đêm", "“bật tự dịu đèn ban đêm”, “độ sáng ban đêm 40”")
+    CmdLine("Khác", "“tắt nút nổi”, “tắt lời chào”, “bật lời chào xuống xe”")
 }
 
 /** Trang "Trợ lý SK Light (AI)": cài đặt mô-đun giọng nói của hộp, câu lệnh, rồi tới phần nút mic của app. */

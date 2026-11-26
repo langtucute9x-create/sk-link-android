@@ -122,7 +122,6 @@ fun GreetPage() {
     val ctx = LocalContext.current
     Greet.ver.intValue
     var target by remember { mutableIntStateOf(0) }
-    var dm by remember { mutableIntStateOf(S.devMode(ctx)) }
     fun got(uri: Uri?) {
         if (uri == null) return
         val nm = try {
@@ -146,24 +145,12 @@ fun GreetPage() {
     Card {
         GroupTitle(Icons.Filled.RecordVoiceOver, "Lời chào", 16)
         Spacer(Modifier.height(6.dp))
-        T("Loại máy đang dùng: " + (if (S.isCar.value) "màn hình xe / Android box" else "điện thoại") + (if (dm == 0) " (tự nhận)" else ""), 13, FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            Chip("Tự nhận", dm == 0, Modifier.weight(1f), 44.dp, 13) { dm = 0; S.setDevMode(ctx, 0) }
-            Chip("Màn hình xe", dm == 1, Modifier.weight(1f), 44.dp, 13) { dm = 1; S.setDevMode(ctx, 1) }
-            Chip("Điện thoại", dm == 2, Modifier.weight(1f), 44.dp, 13) { dm = 2; S.setDevMode(ctx, 2) }
-        }
+        T("Loại máy: " + (if (S.isCar.value) "màn hình xe / Android box" else "điện thoại") + " (app tự nhận theo pin của máy)", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         T(if (S.isCar.value) "Màn hình xe: chưa chọn file thì dùng nhạc có sẵn hoặc giọng máy; không đọc \"đã kết nối\"." else "Điện thoại: chỉ phát file mp3 anh chọn; có giọng báo \"đã kết nối\" khi nối hộp.", 12)
     }
     Card {
-        T("Lời chào khi nối hộp đèn", 15, FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            val on = Greet.enabled(ctx)
-            Chip("Bật", on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, true) }
-            Chip("Tắt", !on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, false) }
-        }
+        PowerRow("Lời chào khi nối hộp đèn", Greet.enabled(ctx)) { Greet.setEnabled(ctx, it) }
     }
     @Composable fun fileCard(k: Int) {
         val n = Greet.name(ctx, k)
@@ -176,13 +163,7 @@ fun GreetPage() {
         }
     }
     Card {
-        T("Lời chào lên xe (khi mở app)", 15, FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            val o = Greet.openOn(ctx)
-            Chip("Bật", o, Modifier.weight(1f), 44.dp, 13) { Greet.setOpenOn(ctx, true) }
-            Chip("Tắt", !o, Modifier.weight(1f), 44.dp, 13) { Greet.setOpenOn(ctx, false) }
-        }
+        PowerRow("Lời chào lên xe (khi mở app)", Greet.openOn(ctx)) { Greet.setOpenOn(ctx, it) }
         Spacer(Modifier.height(10.dp))
         fileCard(1)
     }
@@ -192,13 +173,7 @@ fun GreetPage() {
         fileCard(0)
     }
     Card {
-        T("Lời chào xuống xe (khi ngắt kết nối hộp)", 15, FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            val d = Greet.downOn(ctx)
-            Chip("Bật", d, Modifier.weight(1f), 44.dp, 13) { Greet.setDownOn(ctx, true) }
-            Chip("Tắt", !d, Modifier.weight(1f), 44.dp, 13) { Greet.setDownOn(ctx, false) }
-        }
+        PowerRow("Lời chào xuống xe (khi ngắt kết nối hộp)", Greet.downOn(ctx)) { Greet.setDownOn(ctx, it) }
         Spacer(Modifier.height(10.dp))
         fileCard(2)
     }

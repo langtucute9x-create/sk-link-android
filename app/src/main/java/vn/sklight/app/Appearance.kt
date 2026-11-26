@@ -49,6 +49,7 @@ fun AppearanceTheme() {
         Spacer(Modifier.height(8.dp))
         val w = Night.window()
         T("Tự động: giao diện tối từ ${Night.hm(w.first)} đến ${Night.hm(w.second)}, ngoài giờ đó là giao diện sáng. Giờ lấy theo mục Tự dịu đèn ban đêm.", 11, color = Grey)
+        if (Theme.glass) T("Phong cách Kính neon 3D luôn là giao diện tối.", 11, color = Grey)
     }
     Card {
         SwitchRow("Giảm hiệu ứng", "", !Theme.fx.value) { Theme.fx.value = !it; S.saveSettings() }
@@ -56,7 +57,7 @@ fun AppearanceTheme() {
     Card {
         GroupTitle(Icons.Filled.Style, "Phong cách", 16)
         Spacer(Modifier.height(12.dp))
-        Grid(listOf(3, 0, 1, 2, 4), 3) { i, m ->
+        Grid(listOf(5, 3, 0, 1, 2, 4), 3) { i, m ->
             val on = Theme.style.intValue == i
             val p = Theme.palOf(i, Theme.dark)
             Column(
@@ -126,7 +127,7 @@ fun AppearanceIdle() {
             try {
                 ctx.contentResolver.openInputStream(uri)?.use { inp -> photoFile(ctx).outputStream().use { inp.copyTo(it) } }
                 S.idlePhotoVer.intValue++
-                S.idleStyle.intValue = 3; S.saveSettings()
+                S.idleBg.intValue = 6; S.saveSettings()
                 Notice.show(ctx, L.tr("Đã đặt ảnh làm màn hình chờ."))
             } catch (e: Exception) { Notice.show(ctx, L.tr("Không đọc được ảnh này.")) }
         }
@@ -144,13 +145,28 @@ fun AppearanceIdle() {
             Box(Modifier.requiredSize(sw.dp, sh.dp).graphicsLayer(scaleX = k, scaleY = k, transformOrigin = TransformOrigin(0.5f, 0.5f))) { IdleScreen(wideScr, true) }
         }
         Spacer(Modifier.height(12.dp))
-        Grid(IDLE_STYLES.indices.toList(), 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
+        T("Bố cục", 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Grid(IDLE_LAYOUTS, 2) { i, m -> Chip(IDLE_STYLES[i], S.idleStyle.intValue == i, m, 44.dp, 12) { S.idleStyle.intValue = i; S.saveSettings() } }
+        Spacer(Modifier.height(12.dp))
+        T("Kiểu đồng hồ", 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Grid(IDLE_CLOCKS.indices.toList(), 3) { i, m -> Chip(IDLE_CLOCKS[i], S.idleClock.intValue == i, m, 44.dp, 12) { S.idleClock.intValue = i; S.saveSettings() } }
+        Hint("Kiểu đồng hồ dùng cho các bố cục có đồng hồ số. Bố cục Đồng hồ kim, Đồng hồ 2,5D và Số lật giữ kiểu riêng.", 11)
+        Spacer(Modifier.height(12.dp))
+        T("Hình nền", 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        val hasPhoto = remember(S.idlePhotoVer.intValue) { photoFile(ctx).exists() }
+        Grid(IDLE_BGS.indices.toList(), 3) { i, m -> Chip(IDLE_BGS[i], S.idleBg.intValue == i, m, 44.dp, 12) {
+            if (i == 6 && !hasPhoto) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
+            else { S.idleBg.intValue = i; S.saveSettings() }
+        } }
         Spacer(Modifier.height(12.dp))
         T("Vào màn hình chờ sau", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         Grid(listOf(5, 10, 15, 20, 30, 60), 3) { v, m -> Chip("$v " + L.tr("giây"), S.idleDelay.intValue == v, m, 40.dp, 12) { S.idleDelay.intValue = v; S.saveSettings() } }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
-            OutlineBtn("Chọn ảnh của tôi", Modifier.fillMaxWidth()) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
+            OutlineBtn("Đổi ảnh của tôi", Modifier.fillMaxWidth()) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
         }
     }
     Card {

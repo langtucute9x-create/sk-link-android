@@ -43,14 +43,16 @@ private val LIGHTS = listOf(
     pal(0xFFFFFFFF, 0xFFF7F8FA, 0xFFFFFFFF, 0xFF111827, 0xFF4B5563, 0xFF6B7280, 0xFFF3F4F6, 0xFFE5E7EB, 0xFFEEF0F3, 0xFFE5E7EB),      // Tinh khôi
     pal(0xFFFBF6EE, 0xFFF5EEE2, 0xFFFFFDF8, 0xFF2B2118, 0xFF5C5046, 0xFF7A6E63, 0xFFF6EFE4, 0xFFE6DCCB, 0xFFEFE7DA, 0xFFEADFCD),      // Kem ấm
     pal(0xFFF1F6FB, 0xFFE8F0F8, 0xFFFFFFFF, 0xFF12202F, 0xFF465669, 0xFF66768A, 0xFFF0F5FA, 0xFFD5E0EC, 0xFFE4ECF4, 0xFFDDE7F1),      // Xanh băng
-    pal(0xFFF3F8F3, 0xFFE9F2EA, 0xFFFFFFFF, 0xFF15251A, 0xFF46594C, 0xFF68796D, 0xFFF0F6F1, 0xFFD6E3D8, 0xFFE4EEE6, 0xFFDDE9DF)       // Lá non
+    pal(0xFFF3F8F3, 0xFFE9F2EA, 0xFFFFFFFF, 0xFF15251A, 0xFF46594C, 0xFF68796D, 0xFFF0F6F1, 0xFFD6E3D8, 0xFFE4EEE6, 0xFFDDE9DF),      // Lá non
+    pal(0xFF241552, 0xFF050814, 0xFF161D40, 0xFFF6F7FF, 0xFFCBD5F5, 0xFFA3B2E6, 0xFF1F2852, 0xFF3D4B86, 0xFF2B3566, 0xFF2B3566)       // Kính neon 3D (luôn là giao diện tối)
 )
 private val DARKS = listOf(
     pal(0xFF0E1118, 0xFF12141C, 0xFF1A1F2B, 0xFFF2F4F8, 0xFFC3C9D6, 0xFF98A1B3, 0xFF242A38, 0xFF343C4D, 0xFF2A3140, 0xFF343C4D),      // Mặc định
     pal(0xFF000000, 0xFF000000, 0xFF0E0F12, 0xFFF4F5F7, 0xFFC5C9D2, 0xFF9AA1AE, 0xFF17191E, 0xFF2A2D35, 0xFF1F2228, 0xFF2A2D35),      // Đen tuyền
     pal(0xFF14100C, 0xFF18130E, 0xFF211A14, 0xFFF6EFE6, 0xFFD2C6B8, 0xFFA99C8D, 0xFF2B231B, 0xFF40352A, 0xFF332A21, 0xFF40352A),      // Nâu ấm
     pal(0xFF0A1220, 0xFF0C1626, 0xFF131E31, 0xFFEEF3FA, 0xFFBECADB, 0xFF93A2B8, 0xFF1B2940, 0xFF2C3D58, 0xFF233349, 0xFF2C3D58),      // Xanh đêm
-    pal(0xFF0B1410, 0xFF0D1813, 0xFF14211A, 0xFFEEF6F0, 0xFFBDD0C3, 0xFF93A89A, 0xFF1C2C23, 0xFF2D4236, 0xFF24362C, 0xFF2D4236)       // Rừng đêm
+    pal(0xFF0B1410, 0xFF0D1813, 0xFF14211A, 0xFFEEF6F0, 0xFFBDD0C3, 0xFF93A89A, 0xFF1C2C23, 0xFF2D4236, 0xFF24362C, 0xFF2D4236),      // Rừng đêm
+    pal(0xFF241552, 0xFF050814, 0xFF161D40, 0xFFF6F7FF, 0xFFCBD5F5, 0xFFA3B2E6, 0xFF1F2852, 0xFF3D4B86, 0xFF2B3566, 0xFF2B3566)       // Kính neon 3D
 )
 
 /** Cài đặt giao diện: chế độ sáng / tối / tự động, phong cách nền, màu nhấn, bo góc, kiểu chữ, cỡ chữ. Mặc định = giao diện gốc (sáng, hồng SK, Inter). */
@@ -65,7 +67,7 @@ object Theme {
     val nightNow = mutableStateOf(false)   // đang là ban đêm (cho chế độ tự động)
     val MODES = listOf("Sáng", "Tối", "Tự động")
     /** Tên phong cách: (khi sáng, khi tối). */
-    val STYLES = listOf("Cổ điển" to "Cổ điển", "Tinh khôi" to "Đen tuyền", "Kem ấm" to "Nâu ấm", "Xanh băng" to "Xanh đêm", "Lá non" to "Rừng đêm")
+    val STYLES = listOf("Cổ điển" to "Cổ điển", "Tinh khôi" to "Đen tuyền", "Kem ấm" to "Nâu ấm", "Xanh băng" to "Xanh đêm", "Lá non" to "Rừng đêm", "Kính neon 3D" to "Kính neon 3D")
     // 6 màu đầu giữ nguyên thứ tự cũ (số thứ tự đã lưu trong máy người dùng)
     val ACCENTS = listOf(
         "Hồng SK" to 0xFE2CAA, "Cam" to 0xE8590C, "Đỏ" to 0xE5334B, "Tím" to 0x7C4DFF, "Xanh dương" to 0x2F6BFF, "Xanh ngọc" to 0x0E9488,
@@ -75,13 +77,15 @@ object Theme {
     // 3 kiểu đầu giữ nguyên thứ tự cũ. Các kiểu sau là phông có đủ dấu tiếng Việt, đóng sẵn trong app (giấy phép OFL, xem assets/font-licenses.txt).
     val FONTS = listOf("Inter", "Chữ hệ thống", "Chữ có chân", "Be Vietnam Pro", "Nunito", "Montserrat", "Quicksand", "Lexend", "Oswald", "Lora", "Baloo 2")
     val SCALES = listOf("Nhỏ" to 0.9f, "Vừa" to 1f, "Lớn" to 1.12f, "Rất lớn" to 1.25f)
-    val dark: Boolean get() = mode.intValue == 1 || (mode.intValue == 2 && nightNow.value)
+    const val GLASS = 5                    // phong cách "Kính neon 3D" (chủ dự án duyệt 27/11): nền tím than, thẻ kính nổi khối, viền neon quanh khung
+    val glass: Boolean get() = style.intValue == GLASS
+    val dark: Boolean get() = glass || mode.intValue == 1 || (mode.intValue == 2 && nightNow.value)
     val pal: Pal get() = (if (dark) DARKS else LIGHTS)[style.intValue.coerceIn(0, LIGHTS.size - 1)]
     fun palOf(style: Int, dark: Boolean): Pal = (if (dark) DARKS else LIGHTS)[style.coerceIn(0, LIGHTS.size - 1)]
     val scaleF: Float get() = SCALES[scale.intValue.coerceIn(0, SCALES.size - 1)].second
     /** Bán kính bo góc theo kiểu đang chọn; [base] là bán kính của giao diện gốc. */
     fun r(base: Int): Dp = when (corner.intValue) { 0 -> minOf(base, 3).dp; 2 -> (base * 1.8f).dp; else -> base.dp }
-    fun reset() { mode.intValue = 2; style.intValue = 3; accent.intValue = 0; corner.intValue = 1; font.intValue = 3; scale.intValue = 1 }
+    fun reset() { mode.intValue = 2; style.intValue = GLASS; accent.intValue = 0; corner.intValue = 1; font.intValue = 3; scale.intValue = 1 }
 }
 
 /** Màu nhấn (tên biến giữ là Pink vì mặc định là hồng SK). */

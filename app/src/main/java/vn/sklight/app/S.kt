@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.103"
+    const val VER = "1.4.104"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -133,15 +133,9 @@ object S {
         try {
             val b = c.registerReceiver(null, android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             val noBattery = b != null && !b.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, true)
-            val um = c.getSystemService(Context.UI_MODE_SERVICE) as? android.app.UiModeManager
-            val carUi = um?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_CAR || c.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
-            val m = c.getSharedPreferences("sklight", Context.MODE_PRIVATE).getInt("devMode", 0)
-            isCar.value = when (m) { 1 -> true; 2 -> false; else -> noBattery || carUi }
+            isCar.value = noBattery                          // chủ dự án chốt 27/11: chỉ nhận theo pin (máy không có pin = màn hình xe / Android box), không chọn tay
         } catch (_: Exception) {}
     }
-    /** Chọn loại máy: 0 tự nhận, 1 màn hình xe / Android box, 2 điện thoại. */
-    fun devMode(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE).getInt("devMode", 0)
-    fun setDevMode(c: Context, m: Int) { c.getSharedPreferences("sklight", Context.MODE_PRIVATE).edit().putInt("devMode", m).apply(); detectCar(c.applicationContext) }
     val z2Speed = mutableIntStateOf(5)                      // tốc độ riêng của kiểu khu vực 2 do app chạy (Màu thở, Màu chớp, Màu cầu vồng), 1..10
     val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
@@ -155,6 +149,10 @@ object S {
     val idleStyle = mutableIntStateOf(0)                  // 0 đồng hồ + tốc độ, 1 chỉ đồng hồ, 2 tốc độ lớn, 3 ảnh của tôi
     val idlePhotoVer = mutableIntStateOf(0)
     val idleShow = mutableStateOf(false)
+    val idleClock = mutableIntStateOf(0)                  // kiểu đồng hồ số trên màn hình chờ (IDLE_CLOCKS)
+    val idleBg = mutableIntStateOf(0)                     // hình nền màn hình chờ (IDLE_BGS)
+    val goTab = mutableIntStateOf(-1)                     // yêu cầu chuyển trang từ lệnh giọng nói: 0 Đèn, 1 Chào mừng, 2 Dẫn đường, 3 Cài đặt; -1 = không
+    var splashDone = false                                // màn mở app (logo neon) đã hiện trong lần chạy này
     val floatMascot = mutableIntStateOf(4)                // nhân vật trên nút nổi: 0 = logo SK, 1..5 = Mascot.IDS
     val floatStyle = mutableIntStateOf(5)                 // kiểu nút nổi + màn hình nổi (FloatButton.STYLES)
     val pickNow = mutableStateOf(false)                  // yêu cầu mở hộp chọn hộp đèn (từ thẻ mất kết nối)
@@ -252,6 +250,11 @@ object S {
         Theme.accent.intValue = sp.getInt("themeAccent", 0).coerceIn(0, Theme.ACCENTS.size - 1)
         Theme.font.intValue = sp.getInt("themeFont2", 3).coerceIn(0, Theme.FONTS.size - 1)
         Theme.style.intValue = sp.getInt("themeStyle2", 3).coerceIn(0, Theme.STYLES.size - 1)
+        // 1.4.104: chủ dự án duyệt giao diện "Kính neon 3D"; chuyển sang một lần, sau đó người dùng đổi lại được trong Cài đặt giao diện
+        if (!sp.getBoolean("uiGlass1", false)) { Theme.style.intValue = Theme.GLASS; sp.edit().putBoolean("uiGlass1", true).putInt("themeStyle2", Theme.GLASS).apply() }
+        idleClock.intValue = sp.getInt("idleClock", 0).coerceIn(0, 5)
+        idleBg.intValue = sp.getInt("idleBg", 0).coerceIn(0, 6)
+        if (idleStyle.intValue == 3) { idleStyle.intValue = 1; idleBg.intValue = 6 }      // kiểu cũ "Ảnh của tôi" = bố cục Chỉ đồng hồ + hình nền ảnh
         Theme.corner.intValue = sp.getInt("themeCorner", 1).coerceIn(0, Theme.CORNERS.size - 1)
         Theme.fx.value = sp.getBoolean("themeFx2", true)        // mặc định TẮT "Giảm hiệu ứng" trên mọi máy (khóa mới từ 0.5.59, bỏ giá trị cũ do app tự đặt cho máy yếu)
         Theme.scale.intValue = sp.getInt("themeScale", 1).coerceIn(0, Theme.SCALES.size - 1)
@@ -274,7 +277,7 @@ object S {
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
-            .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
+            .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putInt("idleClock", idleClock.intValue).putInt("idleBg", idleBg.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putInt("z2Speed", z2Speed.intValue).putBoolean("voiceQuiet", voiceQuiet.value)
             .putString("scenes2", Scenes.dump())
             .putInt("lang", L.cur.intValue).putInt("themeMode2", Theme.mode.intValue).putInt("themeAccent", Theme.accent.intValue)

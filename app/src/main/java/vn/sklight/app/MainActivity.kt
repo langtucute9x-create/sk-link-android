@@ -149,7 +149,7 @@ fun Root() {
 
     val cfg = LocalConfiguration.current
     val wide = cfg.screenWidthDp > cfg.screenHeightDp && cfg.screenWidthDp >= 600
-    val frame = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Theme.pal.bgTop, Theme.pal.bgBot))).systemBarsPadding()
+    val frame = Modifier.fillMaxSize().appBg().systemBarsPadding().then(if (Theme.glass) Modifier.padding(3.dp) else Modifier)
     val pick: () -> Unit = { S.ble.scan(); pickDev = true }
     LaunchedEffect(S.pickNow.value) { if (S.pickNow.value) { S.pickNow.value = false; pick() } }
     // đã nối hộp đèn mà máy chưa kích hoạt: ba trang điều khiển nhường chỗ cho trang nhập mã, Cài đặt vẫn mở được
@@ -158,6 +158,8 @@ fun Root() {
     val gated = (!S.connected.value || !Act.ok.value) && !S.dev.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
     val unplugged = !S.connected.value && !S.dev.value   // chế độ nghiên cứu mở hết, kể cả khi chưa nối hộp
     LaunchedEffect(S.subPage.intValue) { if (S.subPage.intValue == 13 && tab < 3) tab = 3 }
+    // lệnh giọng nói "mở trang …": chuyển trang rồi xóa yêu cầu
+    LaunchedEffect(S.goTab.intValue) { val g = S.goTab.intValue; if (g in 0..3) { tab = g; S.goTab.intValue = -1 } }
     LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13) && !(S.dev.value && S.subPage.intValue == 11)) S.subPage.intValue = 0 }
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
@@ -202,7 +204,7 @@ fun Root() {
         if (topMenu) Column(frame.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Menu trên: logo, nguồn, bốn trang (có tên), nút mở màn hình chờ, nút mic to ở góc phải
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (low) 34.dp else 42.dp), contentScale = ContentScale.Fit)
+                LogoMark(if (low) 34.dp else 42.dp)
                 PowerBtn(if (low) 42 else 52)
                 Tabs(tab, Modifier.weight(1f), if (low) 38 else 46, true) { tab = it; S.subPage.intValue = 0 }
                 SplitBtn(if (low) 42 else 52)
@@ -218,7 +220,7 @@ fun Root() {
                 if (roomy || mid) { SplitBtn(if (roomy) 56 else 46); if (!gated) IdleBtn(if (roomy) 56 else 46) }
                 Spacer(Modifier.weight(1f))
                 if (L.cur.intValue == 0 && !gated) MicBtn(if (roomy) 66 else if (mid) 60 else 46)
-                Image(painterResource(R.drawable.sk_mark), "SK Ambient Light", Modifier.width(if (roomy || mid) 40.dp else 48.dp), contentScale = ContentScale.Fit)
+                LogoMark(if (roomy || mid) 40.dp else 48.dp)
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) { body() }
         }
@@ -227,6 +229,8 @@ fun Root() {
             // menu cố định trên cùng, nội dung cuộn bên dưới
             Box {
             Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                LogoMark(30.dp)
+                Spacer(Modifier.width(6.dp))
                 PowerBtn(36)
                 Spacer(Modifier.width(6.dp))
                 Tabs(tab, Modifier.weight(1f), 30) { tab = it; S.subPage.intValue = 0 }
@@ -252,8 +256,10 @@ fun Root() {
             }
         }
     }
+    if (!S.idleShow.value) NeonFrame()
     SplitPicker()
     NoticeHost(Modifier.align(Alignment.BottomCenter))
+    Splash()
     }
     }
     SetupSheet(Setup.show.value) { Setup.show.value = false; if (Setup.pickAfter) { Setup.pickAfter = false; S.ble.scan(); pickDev = true } }
