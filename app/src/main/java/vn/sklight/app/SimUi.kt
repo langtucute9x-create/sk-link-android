@@ -36,7 +36,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 
-/** Thẻ "Mô phỏng": góc nhìn từ ghế sau xe mui trần, đường phố 3D, báo rẽ trái / phải / quá tốc độ theo đúng cài đặt Báo trước và Thời gian đèn chạy. */
+/** Thẻ "Mô phỏng": góc nhìn từ trên cao phía sau xe mui trần (thấy hai cánh cửa và khu để chân), đường phố 3D, báo rẽ trái / phải / quá tốc độ theo đúng cài đặt Báo trước và Thời gian đèn chạy. */
 @Composable
 fun SimCard() {
     val run = Sim.running.value
@@ -142,7 +142,7 @@ private const val DW = 680f
 private const val DH = 760f
 private const val HOR = 240f
 private const val FOC = 640f
-private const val HC = 1.7f
+private const val HC = 2.4f          // mắt cao 2,4 m: góc nhìn từ trên cao phía sau xe (1.4.112)
 private const val RW = 5.25f
 private const val NR = 3f
 private const val FAR = 420f
@@ -249,6 +249,28 @@ private fun Scene(modifier: Modifier) {
             ln(pt(x, d, 7.5f), pt(sd * 4.3f, d, 7.7f), max(1f, 0.12f * s), Color(0xFF5A5F69))
             drawCircle(Color(0xFFF3EFE0), max(1.5f, 0.2f * s), pt(sd * 4.3f, d, 7.6f))
         }
+        /** Đuôi một xe đang chạy phía trước, cách mắt [d] mét, lệch ngang [x] mét. */
+        fun veh(x: Float, d: Float, pickup: Boolean) {
+            if (d < NR + 3f) return
+            val s = FOC / d
+            val tyre = Color(0xFF16171B)
+            fun R(x0: Float, x1: Float, y0: Float, y1: Float, col: Color, rad: Float = 0.08f) {
+                val a = pt(x + x0, d, y1); val b = pt(x + x1, d, y0)
+                drawRoundRect(col, a, Size(b.x - a.x, b.y - a.y), CornerRadius(rad * s))
+            }
+            drawOval(Color(0x59000000), pt(x - 1.05f, d, 0.12f), Size(2.1f * s, 0.24f * s))
+            if (pickup) {
+                R(-0.95f, -0.62f, 0f, 0.55f, tyre); R(0.62f, 0.95f, 0f, 0.55f, tyre)
+                R(-1f, 1f, 0.42f, 1.22f, Color(0xFFA51C28)); R(-0.86f, 0.86f, 0.62f, 1.12f, Color(0xFF6E0F18), 0.04f)
+                R(-0.8f, 0.8f, 1.2f, 1.92f, Color(0xFFB3202C), 0.14f); R(-0.62f, 0.62f, 1.36f, 1.8f, Color(0xFF263042), 0.08f)
+                R(-0.99f, -0.86f, 0.66f, 1.1f, Color(0xFFFF3340), 0.03f); R(0.86f, 0.99f, 0.66f, 1.1f, Color(0xFFFF3340), 0.03f)
+                R(-0.9f, 0.9f, 0.3f, 0.44f, Color(0xFFC9CED6), 0.04f)
+            } else {
+                R(-0.9f, -0.6f, 0f, 0.5f, tyre); R(0.6f, 0.9f, 0f, 0.5f, tyre)
+                R(-0.92f, 0.92f, 0.3f, 0.98f, Color(0xFFF2F4F7), 0.18f); R(-0.72f, 0.72f, 0.92f, 1.42f, Color(0xFFDDE1E8), 0.2f); R(-0.6f, 0.6f, 1f, 1.34f, Color(0xFF2B3444), 0.1f)
+                R(-0.9f, -0.5f, 0.7f, 0.86f, Color(0xFFD8242E), 0.05f); R(0.5f, 0.9f, 0.7f, 0.86f, Color(0xFFD8242E), 0.05f)
+            }
+        }
         /** Trời, đường, vỉa hè, nhà, cây, biển. [junc] = có ngã rẽ phía trước; [seed] đổi dãy nhà (đường mới sau khi rẽ). */
         fun scenery(junc: Boolean, seed: Int, signs: Boolean) {
             val jd = dist + 3f
@@ -299,6 +321,11 @@ private fun Scene(modifier: Modifier) {
             }
             drawRect(Brush.verticalGradient(0f to Color(0x00DCECFA), 0.72f to Color(0x99DCECFA), 1f to Color(0x00DCECFA), startY = HOR - 70f, endY = HOR + 26f), Offset(0f, HOR - 70f), Size(DW, 96f))
             val sz = dist + 3f
+            // hai xe chạy phía trước (kiểu game lái xe): bán tải đỏ cùng làn, xe trắng làn trái; lúc gần lúc xa
+            val d1 = 24f + 5f * sin(clock * 0.5f); val d2 = 46f + 10f * sin(clock * 0.3f + 1f)
+            val hasSign = signs && kind in 4..7 && sz > NR + 1f
+            if (!hasSign || d2 > sz) veh(-3.5f, d2, false)
+            if (!hasSign || d1 > sz) veh(0f, d1, true)
             if (signs && (kind == 4 || kind == 5) && sz > NR + 1f) {
                 val s1 = FOC / sz; val lw = max(2f, 0.3f * s1)
                 ln(pt(-6f, sz), pt(-6f, sz, 6.6f), lw, Color(0xFF5D6470)); ln(pt(6f, sz), pt(6f, sz, 6.6f), lw, Color(0xFF5D6470))
@@ -315,6 +342,7 @@ private fun Scene(modifier: Modifier) {
                 drawCircle(Color.White, r2, c2); drawCircle(Color(0xFFE53935), r2, c2, style = Stroke(r2 * 0.26f))
                 if (r2 > 7f) text(if (kind == 6) "✕" else if (dist < 60f) "40" else "60", c2.x, c2.y, r2 * 0.9f, android.graphics.Color.parseColor("#111111"))
             }
+            if (hasSign) { if (d2 <= sz) veh(-3.5f, d2, false); if (d1 <= sz) veh(0f, d1, true) }
         }
 
         val act = ak != 0
@@ -330,53 +358,136 @@ private fun Scene(modifier: Modifier) {
         fun led(a: Offset, b: Offset, u: Float, w: Float, zoneLit: Boolean = zl1, idle: Color? = idle1, f: Float = bf1) {
             val m = if (zoneLit) min(1f, amt(u)) * f else 0f
             ln(a, b, w, Color(0xFF2A2F39))
-            if ((!act || !zoneLit) && idle != null) ln(a, b, w, idle.copy(alpha = 0.45f * f))
+            if ((!act || !zoneLit) && idle != null) { ln(a, b, w * 3f, idle.copy(alpha = 0.20f * f)); ln(a, b, w, idle.copy(alpha = 0.95f * f)); ln(a, b, w * 0.3f, Color.White.copy(alpha = 0.55f * f)) }
             if (m > 0f) { ln(a, b, w * 3f, kc.copy(alpha = 0.22f * m)); ln(a, b, w, kc.copy(alpha = m)) }
         }
-        fun glow(x: Float, y: Float, r: Float, a: Float) {
-            if (a <= 0f) return
+        /** Quầng sáng hắt của một khu đèn: màu cảnh báo khi khu đó đang báo, không thì màu thường ngày. */
+        fun halo(x: Float, y: Float, r: Float, u: Float, zoneLit: Boolean, idle: Color?, f: Float, k: Float) {
             val c = Offset(x, y)
-            drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.5f * min(1f, a) * bf1), kc.copy(alpha = 0f)), c, r), r, c)
+            val a = if (zoneLit) min(1f, amt(u)) else 0f
+            if (a > 0f) drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = k * a * f), kc.copy(alpha = 0f)), c, r), r, c)
+            else if ((!act || !zoneLit) && idle != null) drawCircle(Brush.radialGradient(listOf(idle.copy(alpha = k * 0.8f * f), idle.copy(alpha = 0f)), c, r), r, c)
         }
-        fun vent(x: Float, y: Float, r: Float) {
-            val c = Offset(x, y)
-            drawCircle(Color(0xFF0A0B0E), r, c); drawCircle(Color(0xFFC9CED6), r, c, style = Stroke(2.5f))
-            for (a in 0 until 6) drawLine(Color(0xFF4A505B), c, Offset(x + kotlin.math.cos(a * 1.047f) * r * 0.82f, y + sin(a * 1.047f) * r * 0.82f), 1.2f)
-            drawCircle(Color(0xFFC9CED6), r * 0.28f, c)
-        }
-        val leather = Color(0xFFE9DCC2)
-        fun door(m: Boolean) {
-            fun X(x: Float) = if (m) DW - x else x
-            path.reset(); path.moveTo(X(60f), 482f); path.lineTo(X(0f), 594f); path.lineTo(X(0f), 770f); path.lineTo(X(124f), 770f); path.lineTo(X(88f), 550f); path.close()
-            drawPath(path, Brush.horizontalGradient(listOf(Color(0xFF37322D), Color(0xFF191715)), X(0f), X(120f)))
-            quad(Offset(X(6f), 646f), Offset(X(72f), 568f), Offset(X(86f), 606f), Offset(X(10f), 728f), Color(0xFF8A5631))
-            drawLine(Color(0x8CE8D8BC), Offset(X(12f), 650f), Offset(X(70f), 580f), 1.2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 4f)))
-            ln(Offset(X(60f), 482f), Offset(X(0f), 594f), 9f, Color(0xFFE3E6EB)); ln(Offset(X(62f), 488f), Offset(X(4f), 598f), 1.5f, Color.White)
-            ln(Offset(X(8f), 609f), Offset(X(63f), 498f), 5f, Color(0xFF6B4529))
-            ln(Offset(X(40f), 592f), Offset(X(56f), 562f), 3.5f, Color(0xFFD5DAE1))
-            val sp = Offset(X(46f), 694f)
-            drawCircle(Color(0xFF121317), 24f, sp); drawCircle(Color(0xFFC9CED6), 24f, sp, style = Stroke(2f))
-            for (a in 0 until 3) { val cnt = 10 + a * 4; val rd = 7f + a * 6f
-                for (q in 0 until cnt) { val an = q * 6.283f / cnt; drawCircle(Color(0xFF565C67), 1.3f, Offset(sp.x + kotlin.math.cos(an) * rd, sp.y + sin(an) * rd)) } }
-        }
-        fun seat(cx: Float) {
-            ln(Offset(cx - 16f, 632f), Offset(cx - 16f, 618f), 5f, Color(0xFFA9AEB6)); ln(Offset(cx + 16f, 632f), Offset(cx + 16f, 618f), 5f, Color(0xFFA9AEB6))
-            val sg = Brush.horizontalGradient(0f to Color(0xFF7A4829), 0.5f to Color(0xFFB47A4E), 1f to Color(0xFF7A4829), startX = cx - 100f, endX = cx + 100f)
-            drawRoundRect(sg, Offset(cx - 46f, 564f), Size(92f, 58f), CornerRadius(24f))
-            drawRoundRect(leather, Offset(cx - 46f, 564f), Size(92f, 58f), CornerRadius(24f), style = Stroke(2f))
-            drawRoundRect(Color(0x38000000), Offset(cx - 33f, 574f), Size(66f, 38f), CornerRadius(15f), style = Stroke(1.5f))
-            pS.reset(); pS.moveTo(cx - 100f, 772f); pS.lineTo(cx - 94f, 668f); pS.quadraticBezierTo(cx - 92f, 632f, cx - 58f, 628f); pS.lineTo(cx + 58f, 628f)
-            pS.quadraticBezierTo(cx + 92f, 632f, cx + 94f, 668f); pS.lineTo(cx + 100f, 772f); pS.close()
-            drawPath(pS, sg)
-            clipPath(pS) {
-                pA.reset(); var o = -240f
-                while (o <= 240f) { pA.moveTo(cx + o, 628f); pA.lineTo(cx + o + 144f, 772f); pA.moveTo(cx + o, 628f); pA.lineTo(cx + o - 144f, 772f); o += 22f }
-                drawPath(pA, Color(0x4D000000), style = Stroke(1.5f))
-                translate(2f, 0f) { drawPath(pA, Color(0x1FFFFFFF), style = Stroke(1f)) }
-                drawRect(Color(0xFF6B3F23), Offset(cx - 104f, 628f), Size(36f, 150f)); drawRect(Color(0xFF6B3F23), Offset(cx + 68f, 628f), Size(36f, 150f))
-                drawLine(leather, Offset(cx - 68f, 634f), Offset(cx - 68f, 772f), 1.5f); drawLine(leather, Offset(cx + 68f, 634f), Offset(cx + 68f, 772f), 1.5f)
+        fun poly(vararg v: Float) { path.reset(); path.moveTo(v[0], v[1]); var i = 2; while (i < v.size) { path.lineTo(v[i], v[i + 1]); i += 2 }; path.close() }
+        val lea = listOf(Color(0xFF9A4458), Color(0xFF6B2A3A), Color(0xFF3D1420))       // da đỏ nâu
+        val trim = listOf(Color(0xFF2A2C3A), Color(0xFF0C0C11))
+        val dark = Color(0xFF101116)
+        /** Dải đèn chạy theo đường gấp khúc [v] (x, y, x, y…); [uOf] cho vị trí ngang 0..1 của từng đoạn để đèn báo rẽ chạy đuổi. */
+        fun ledLine(w: Float, zoneLit: Boolean, idle: Color?, f: Float, uOf: (Float, Float) -> Float, vararg v: Float) {
+            var i = 0
+            while (i + 3 < v.size) {
+                val a = Offset(v[i], v[i + 1]); val b = Offset(v[i + 2], v[i + 3])
+                val n = max(1, (kotlin.math.hypot(b.x - a.x, b.y - a.y) / 40f).toInt())
+                for (j in 0 until n) {
+                    val p = Offset(a.x + (b.x - a.x) * j / n, a.y + (b.y - a.y) * j / n); val q = Offset(a.x + (b.x - a.x) * (j + 1) / n, a.y + (b.y - a.y) * (j + 1) / n)
+                    led(p, q, uOf((p.x + q.x) / 2f, (p.y + q.y) / 2f), w, zoneLit, idle, f)
+                }
+                i += 2
             }
-            drawPath(pS, leather, style = Stroke(2f))
+        }
+        /** Dải đèn theo đường cong bậc hai. */
+        fun ledQ(x0: Float, y0: Float, cx: Float, cy: Float, x1: Float, y1: Float, w: Float) {
+            fun q(t: Float) = Offset((1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1, (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y1)
+            for (i in 0 until 10) { val a = q(i / 10f); val b = q((i + 1) / 10f); led(a, b, (a.x + b.x) / 2560f, w) }
+        }
+        /** Cửa trước + khu để chân một bên ([m] = bên phải, vẽ đối xứng). */
+        fun side(m: Boolean) {
+            fun X(x: Float) = if (m) 1280f - x else x
+            poly(X(128f), 348f, X(150f), 352f, X(40f), 720f, X(0f), 720f, X(0f), 560f)
+            drawPath(path, Brush.horizontalGradient(listOf(Color(0xFFC9CED8), Color(0xFFF7F8FB)), X(0f), X(150f)))
+            path.reset(); path.moveTo(X(96f), 300f); path.quadraticBezierTo(X(150f), 286f, X(176f), 312f); path.lineTo(X(168f), 336f); path.lineTo(X(104f), 330f); path.close()
+            drawPath(path, dark)
+            poly(X(205f), 332f, X(250f), 432f, X(172f), 720f, X(40f), 720f, X(150f), 352f)
+            drawPath(path, Brush.verticalGradient(trim, 332f, 720f))
+            poly(X(162f), 372f, X(198f), 372f, X(236f), 440f, X(168f), 700f, X(80f), 700f)
+            drawPath(path, Brush.verticalGradient(lea, 372f, 700f))
+            halo(X(150f), 540f, 190f, if (m) 0.9f else 0.1f, zl1, idle1, bf1, 0.5f)
+            poly(X(176f), 470f, X(214f), 470f, X(196f), 560f, X(150f), 560f)
+            drawPath(path, Color(0xD9101116))
+            val sp = Offset(X(172f), 412f)
+            drawCircle(Color(0xFF0C0C11), 17f, sp); drawCircle(Color(0xFF4A4F66), 17f, sp, style = Stroke(2f)); drawCircle(Color(0xFF2C3044), 8f, sp, style = Stroke(2f))
+            // khu để chân: thảm trần trám, sáng theo đèn gầm (khu vực 2)
+            poly(X(250f), 432f, X(586f), 432f, X(578f), 542f, X(268f), 542f)
+            drawPath(path, Brush.verticalGradient(listOf(Color(0xFF1A0A12), Color(0xFF4A1A2C)), 432f, 542f))
+            clipPath(path) {
+                pA.reset(); var o = -200f
+                while (o <= 520f) { pA.moveTo(X(250f + o), 432f); pA.lineTo(X(250f + o + 110f), 542f); pA.moveTo(X(250f + o + 110f), 432f); pA.lineTo(X(250f + o), 542f); o += 22f }
+                drawPath(pA, Color(0x66C96A86), style = Stroke(1.2f))
+                halo(X(420f), 492f, 230f, if (m) 0.67f else 0.33f, zl2, idle2, bf2, 0.85f)
+            }
+            // dải đèn viền quanh ốp cửa (khu vực 1), chạy từ đầu xe ra sau
+            ledLine(5f, zl1, idle1, bf1, { _, y -> val k = 0.2f * (1f - ((y - 364f) / 344f).coerceIn(0f, 1f)); if (m) 1f - k else k }, X(160f), 364f, X(202f), 364f, X(244f), 440f, X(178f), 708f)
+        }
+        /** Ghế trước nhìn từ sau, đèn gầm ghế, tựa đầu ghế sau. */
+        fun seat(m: Boolean) {
+            fun X(x: Float) = if (m) 1280f - x else x
+            pS.reset(); pS.moveTo(X(292f), 566f); pS.quadraticBezierTo(X(296f), 542f, X(346f), 540f); pS.lineTo(X(494f), 540f); pS.quadraticBezierTo(X(544f), 542f, X(548f), 566f)
+            pS.lineTo(X(562f), 668f); pS.lineTo(X(278f), 668f); pS.close()
+            drawPath(pS, Brush.verticalGradient(lea, 540f, 668f))
+            path.reset(); path.moveTo(X(322f), 580f); path.quadraticBezierTo(X(420f), 566f, X(518f), 580f); path.lineTo(X(526f), 650f); path.lineTo(X(314f), 650f); path.close()
+            drawPath(path, Color(0x99C9788A), style = Stroke(1.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 5f))))
+            val hx = if (m) 1280f - 352f - 136f else 352f
+            drawRoundRect(Brush.verticalGradient(lea, 498f, 558f), Offset(hx, 498f), Size(136f, 60f), CornerRadius(24f))
+            path.reset(); path.moveTo(X(366f), 508f); path.quadraticBezierTo(X(420f), 498f, X(474f), 508f)
+            drawPath(path, Color(0x2EFFFFFF), style = Stroke(2f))
+            ledLine(5f, zl2, idle2, bf2, { x, _ -> x / 1280f }, X(290f), 664f, X(550f), 664f)
+            val rx = if (m) 1280f - 150f - 330f else 150f
+            drawRoundRect(Brush.verticalGradient(lea, 682f, 772f), Offset(rx, 682f), Size(330f, 90f), CornerRadius(40f))
+        }
+        /** Nội thất xe mui trần nhìn từ trên cao phía sau, vẽ trên khung 1280 x 720 (theo bản demo chủ dự án duyệt 27/11). */
+        fun cabin() {
+            // nắp ca-pô nhìn qua kính, kính lái, khung kính, cột A, gương trong xe
+            path.reset(); path.moveTo(268f, 288f); path.quadraticBezierTo(640f, 262f, 1012f, 288f); path.lineTo(1055f, 330f); path.quadraticBezierTo(640f, 296f, 225f, 330f); path.close()
+            drawPath(path, Color(0xFFEEF0F5))
+            path.reset(); path.moveTo(250f, 262f); path.quadraticBezierTo(640f, 228f, 1030f, 262f); path.lineTo(1075f, 330f); path.quadraticBezierTo(640f, 300f, 205f, 330f); path.close()
+            drawPath(path, Color(0x389FC4EE))
+            path.reset(); path.moveTo(250f, 262f); path.quadraticBezierTo(640f, 228f, 1030f, 262f)
+            drawPath(path, dark, style = Stroke(11f, cap = StrokeCap.Round)); drawPath(path, Color(0xCC8D93A6), style = Stroke(1.5f))
+            ln(Offset(250f, 262f), Offset(205f, 332f), 12f, dark); ln(Offset(1030f, 262f), Offset(1075f, 332f), 12f, dark)
+            rrect(596f, 246f, 88f, 24f, 8f, Color(0xFF0D0E13))
+            // mặt trên táp lô + dải đèn sát kính
+            path.reset(); path.moveTo(205f, 330f); path.quadraticBezierTo(640f, 300f, 1075f, 330f); path.lineTo(1060f, 372f); path.quadraticBezierTo(640f, 345f, 220f, 372f); path.close()
+            drawPath(path, Color(0xFF14151C))
+            ledQ(640f, 322f, 430f, 322f, 228f, 341f, 4f); ledQ(640f, 322f, 850f, 322f, 1052f, 341f, 4f)
+            // màn hình giữa: bản đồ, đường đi rẽ theo tình huống
+            rrect(632f, 330f, 16f, 16f, 0f, Color(0xFF0A0A0E)); rrect(586f, 292f, 108f, 46f, 6f, Color(0xFF07080C))
+            drawRoundRect(Color(0xFF3A3F55), Offset(586f, 292f), Size(108f, 46f), CornerRadius(6f), style = Stroke(2f))
+            rrect(592f, 298f, 96f, 34f, 3f, Color(0xFF102A5C))
+            ln(Offset(640f, 328f), Offset(640f, 314f), 4f, Color(0xFF7FE0FF))
+            if (run && kind in 1..2 && turnP == 0f) ln(Offset(640f, 314f), Offset(640f + tsd * 34f, 314f), 4f, Color(0xFF7FE0FF)) else ln(Offset(640f, 314f), Offset(640f, 302f), 4f, Color(0xFF7FE0FF))
+            // mặt táp lô, cụm đồng hồ, nẹp carbon, dải đèn ngang táp lô
+            path.reset(); path.moveTo(220f, 372f); path.quadraticBezierTo(640f, 345f, 1060f, 372f); path.lineTo(1045f, 432f); path.quadraticBezierTo(640f, 410f, 235f, 432f); path.close()
+            drawPath(path, Brush.verticalGradient(trim, 350f, 432f))
+            halo(400f, 392f, 300f, 0.3f, zl1, idle1, bf1, 0.28f); halo(880f, 392f, 300f, 0.7f, zl1, idle1, bf1, 0.28f)
+            drawOval(Color(0xFF08090D), Offset(336f, 346f), Size(188f, 56f))
+            for (gx in floatArrayOf(398f, 462f)) { drawCircle(Color(0xFF0D0D12), 17f, Offset(gx, 378f)); drawCircle(Color(0xFFFF7A1A), 17f, Offset(gx, 378f), style = Stroke(2.5f)) }
+            val na = Math.toRadians((150.0 + 240.0 * (speed / 160f).coerceIn(0f, 1f)))
+            ln(Offset(398f, 378f), Offset(398f + (kotlin.math.cos(na) * 13).toFloat(), 378f + (sin(na) * 13).toFloat()), 2.5f, Color(0xFFFF3B30))
+            ln(Offset(462f, 378f), Offset(472f, 366f), 2.5f, Color(0xFFFF3B30))
+            rrect(760f, 372f, 240f, 20f, 6f, Color(0xFF23252E))
+            ledQ(585f, 383f, 410f, 385f, 242f, 402f, 4f); ledQ(695f, 383f, 870f, 385f, 1038f, 402f, 4f)
+            // hai cửa + hai khu để chân
+            side(false); side(true)
+            rrect(500f, 470f, 34f, 50f, 6f, Color(0xFF0C0C10)); rrect(440f, 476f, 30f, 44f, 6f, Color(0xFF0C0C10))
+            drawRoundRect(Color(0xFF555A70), Offset(500f, 470f), Size(34f, 50f), CornerRadius(6f), style = Stroke(1.5f)); drawRoundRect(Color(0xFF555A70), Offset(440f, 476f), Size(30f, 44f), CornerRadius(6f), style = Stroke(1.5f))
+            // sàn sau lưng ghế trước sáng theo đèn gầm
+            halo(640f, 690f, 520f, 0.5f, zl2, idle2, bf2, 0.6f)
+            // bệ giữa
+            poly(585f, 356f, 695f, 356f, 712f, 664f, 568f, 664f)
+            drawPath(path, Brush.verticalGradient(trim, 356f, 664f))
+            clipPath(path) { pA.reset(); var o = 300f; while (o < 1100f) { pA.moveTo(o, 356f); pA.lineTo(o - 320f, 676f); o += 9f }; drawPath(pA, Color(0x24FFFFFF), style = Stroke(1.5f)) }
+            rrect(598f, 364f, 84f, 16f, 4f, Color(0xFF08090D)); rrect(598f, 388f, 84f, 26f, 4f, Color(0xFF08090D))
+            drawCircle(Color(0xFFFF7A1A), 6f, Offset(616f, 401f)); drawCircle(Color(0xFFFF7A1A), 6f, Offset(664f, 401f)); rrect(630f, 395f, 20f, 12f, 2f, Color(0xFF7FE0FF))
+            rrect(622f, 470f, 36f, 52f, 14f, Color(0xFF0B0B10)); drawRoundRect(Color(0xFF8D93A6), Offset(622f, 470f), Size(36f, 52f), CornerRadius(14f), style = Stroke(1.5f)); drawCircle(Color(0xFF2A2D3A), 9f, Offset(640f, 486f))
+            for (cxh in floatArrayOf(618f, 662f)) { drawCircle(Color(0xFF07080B), 15f, Offset(cxh, 570f)); drawCircle(Color(0xFF555A70), 15f, Offset(cxh, 570f), style = Stroke(1.5f)) }
+            drawRoundRect(Brush.verticalGradient(lea, 606f, 654f), Offset(596f, 606f), Size(88f, 48f), CornerRadius(10f))
+            ledLine(4f, zl1, idle1, bf1, { _, _ -> 0.45f }, 585f, 434f, 568f, 662f); ledLine(4f, zl1, idle1, bf1, { _, _ -> 0.55f }, 695f, 434f, 712f, 662f)
+            // vô lăng
+            drawOval(Color(0xFF0B0B0F), Offset(348f, 378f), Size(164f, 120f), style = Stroke(18f))
+            drawOval(Color(0xB35A6078), Offset(348f, 378f), Size(164f, 120f), style = Stroke(1.5f))
+            ln(Offset(352f, 440f), Offset(404f, 442f), 14f, Color(0xFF0B0B0F)); ln(Offset(508f, 440f), Offset(456f, 442f), 14f, Color(0xFF0B0B0F)); ln(Offset(430f, 496f), Offset(430f, 458f), 14f, Color(0xFF0B0B0F))
+            drawOval(dark, Offset(402f, 424f), Size(56f, 40f)); drawOval(Color(0xFF5A6078), Offset(402f, 424f), Size(56f, 40f), style = Stroke(1.5f)); drawCircle(Color(0xFFC9CED8), 7f, Offset(430f, 444f))
+            seat(false); seat(true)
         }
 
         drawRect(Color(0xFF0B0E14))
@@ -391,77 +502,8 @@ private fun Scene(modifier: Modifier) {
                 }
             } else scenery(run && kind in 1..2, 0, run)
 
-            // ---- nắp ca-pô, gương ----
-            path.reset(); path.moveTo(126f, 448f); path.quadraticBezierTo(340f, 434f, 554f, 448f); path.lineTo(598f, 482f); path.lineTo(82f, 482f); path.close()
-            drawPath(path, Brush.verticalGradient(listOf(Color(0xFFFBFCFD), Color(0xFFB6BCC7)), 440f, 482f))
-            drawLine(Color(0x1A000000), Offset(284f, 444f), Offset(258f, 480f), 1.5f); drawLine(Color(0x1A000000), Offset(396f, 444f), Offset(422f, 480f), 1.5f)
-            rrect(10f, 440f, 48f, 26f, 11f, Color(0xFFE3E6EB)); rrect(14f, 444f, 40f, 18f, 8f, Color(0xFF55677D))
-            rrect(622f, 440f, 48f, 26f, 11f, Color(0xFFE3E6EB)); rrect(626f, 444f, 40f, 18f, 8f, Color(0xFF55677D))
-
-            // ---- táp lô: da tối, chỉ khâu, nẹp gỗ, cửa gió ----
-            path.reset(); path.moveTo(0f, 640f); path.lineTo(0f, 524f); path.quadraticBezierTo(18f, 488f, 60f, 482f); path.quadraticBezierTo(340f, 462f, 620f, 482f)
-            path.quadraticBezierTo(662f, 488f, 680f, 524f); path.lineTo(680f, 640f); path.close()
-            drawPath(path, Brush.verticalGradient(0f to Color(0xFF383B44), 0.35f to Color(0xFF22242A), 1f to Color(0xFF101216), startY = 466f, endY = 640f))
-            val dashFx = PathEffect.dashPathEffect(floatArrayOf(6f, 5f))
-            path.reset(); path.moveTo(66f, 491f); path.quadraticBezierTo(340f, 472f, 614f, 491f)
-            drawPath(path, Color(0x99E8D8BC), style = Stroke(1.3f, pathEffect = dashFx))
-            path.reset(); path.moveTo(40f, 540f); path.quadraticBezierTo(340f, 522f, 640f, 540f)
-            drawPath(path, Color(0x99E8D8BC), style = Stroke(1.3f, pathEffect = dashFx))
-            path.reset(); path.moveTo(62f, 499f); path.quadraticBezierTo(340f, 480f, 618f, 499f); path.lineTo(614f, 511f); path.quadraticBezierTo(340f, 492f, 66f, 511f); path.close()
-            drawPath(path, Brush.horizontalGradient(0f to Color(0xFF3D2616), 0.3f to Color(0xFF7D5536), 0.5f to Color(0xFF5A3A22), 0.7f to Color(0xFF84593A), 1f to Color(0xFF3D2616), startX = 62f, endX = 618f))
-            path.reset(); path.moveTo(62f, 499f); path.quadraticBezierTo(340f, 480f, 618f, 499f)
-            drawPath(path, Color(0x8CFFFFFF), style = Stroke(1f))
-            vent(104f, 560f, 13f); vent(576f, 560f, 13f); vent(318f, 566f, 12f); vent(362f, 566f, 12f)
-
-            // ---- màn hình cong: đồng hồ tốc độ + bản đồ ----
-            rrect(146f, 424f, 340f, 62f, 13f, Color(0xFF06070A))
-            drawRoundRect(Color(0x4DFFFFFF), Offset(146f, 424f), Size(340f, 62f), CornerRadius(13f), style = Stroke(1.2f))
-            drawArc(Color(0xFF262B36), 137.5f, 264.7f, false, Offset(175f, 436f), Size(42f, 42f), style = Stroke(4f, cap = StrokeCap.Round))
-            drawArc(if (ak == 3) Color(0xFFFF5A5A) else Color(0xFF5FB0FF), 137.5f, 264.7f * (speed / 120f).coerceIn(0f, 1f), false, Offset(175f, 436f), Size(42f, 42f), style = Stroke(4f, cap = StrokeCap.Round))
-            text(speed.toInt().toString(), 196f, 458f, 17f, android.graphics.Color.WHITE)
-            text("km/h", 254f, 458f, 11f, android.graphics.Color.parseColor("#8F97A6"))
-            rrect(294f, 430f, 186f, 50f, 8f, Color(0xFF10223F))
-            drawLine(Color(0x1FFFFFFF), Offset(300f, 446f), Offset(474f, 446f), 1f); drawLine(Color(0x1FFFFFFF), Offset(330f, 432f), Offset(330f, 478f), 1f); drawLine(Color(0x1FFFFFFF), Offset(440f, 432f), Offset(440f, 478f), 1f)
-            ln(Offset(387f, 474f), Offset(387f, 452f), 4f, Color(0xFF3B8BFF))
-            if (run && kind in 1..2 && turnP == 0f) ln(Offset(387f, 452f), Offset(387f + tsd * 44f, 452f), 4f, Color(0xFF3B8BFF)) else ln(Offset(387f, 452f), Offset(387f, 436f), 4f, Color(0xFF3B8BFF))
-            path.reset(); path.moveTo(387f, 464f); path.lineTo(381f, 476f); path.lineTo(393f, 476f); path.close(); drawPath(path, Color.White)
-
-            // ---- cửa trước, đèn viền, ánh sáng hắt ----
-            door(false); door(true)
-            // ---- đèn gầm chân (khu vực 2): ánh sáng hắt từ sàn sau lưng ghế + dải đèn dưới mép táp lô ----
-            clipRect(0f, 500f, DW, DH + 10f) {
-                for (fi in 0..1) {
-                    val cx = if (fi == 0) 200f else 480f
-                    val a = if (zl2) min(1f, amt(if (fi == 0) 0.3f else 0.7f)) else 0f
-                    val c = Offset(cx, 664f)
-                    if (a > 0f) drawCircle(Brush.radialGradient(listOf(kc.copy(alpha = 0.62f * a * bf2), kc.copy(alpha = 0f)), c, 200f), 200f, c)
-                    else if ((!act || !zl2) && idle2 != null) drawCircle(Brush.radialGradient(listOf(idle2.copy(alpha = 0.3f * bf2), idle2.copy(alpha = 0f)), c, 180f), 180f, c)
-                }
-            }
-            led(Offset(98f, 613f), Offset(298f, 613f), 0.3f, 5f, zl2, idle2, bf2)
-            led(Offset(382f, 613f), Offset(582f, 613f), 0.7f, 5f, zl2, idle2, bf2)
-            for (i in 0 until 5) {
-                val ta = i / 5f; val tb = (i + 1) / 5f; val tm = (ta + tb) / 2f
-                led(Offset(10f + 56f * ta, 620f - 112f * ta), Offset(10f + 56f * tb, 620f - 112f * tb), 0.25f * tm, 7f)
-                led(Offset(670f - 56f * ta, 620f - 112f * ta), Offset(670f - 56f * tb, 620f - 112f * tb), 1f - 0.25f * tm, 7f)
-            }
-            fun bez(t: Float): Offset { val a = (1 - t) * (1 - t); val b = 2 * (1 - t) * t; val c = t * t; return Offset(a * 70f + b * 340f + c * 610f, a * 519f + b * 501f + c * 519f) }
-            for (i in 0 until 14) led(bez(i / 14f), bez((i + 1) / 14f), 0.25f + 0.5f * (i + 0.5f) / 14f, 6f)
-            if (zl1) { glow(36f, 566f, 120f, amt(0.12f)); glow(200f, 518f, 150f, amt(0.4f)); glow(480f, 518f, 150f, amt(0.6f)); glow(644f, 566f, 120f, amt(0.88f)) }
-
-            // ---- vô lăng, bệ giữa, ghế ----
-            ln(Offset(124f, 598f), Offset(276f, 598f), 9f, Color(0xFF1B1D22)); ln(Offset(128f, 598f), Offset(272f, 598f), 1.5f, Color(0xFFC9CED6))
-            drawOval(Color(0xFF15171B), Offset(120f, 526f), Size(160f, 140f), style = Stroke(15f))
-            drawArc(Color(0xFFD8C7A6), -93.5f, 7f, false, Offset(120f, 526f), Size(160f, 140f), style = Stroke(15f))
-            drawArc(Color(0x24FFFFFF), 206f, 126f, false, Offset(114f, 520f), Size(172f, 152f), style = Stroke(2f))
-            rrect(300f, 598f, 80f, 180f, 12f, Color(0xFF0C0D11))
-            drawRoundRect(Color(0xFFAEB4BD), Offset(300f, 598f), Size(80f, 180f), CornerRadius(12f), style = Stroke(1.5f))
-            drawCircle(Brush.radialGradient(listOf(Color.White, Color(0xFF7D848F)), Offset(336f, 628f), 18f), 15f, Offset(340f, 632f))
-            drawCircle(Color(0xFF16181D), 9f, Offset(340f, 632f))
-            drawRoundRect(Brush.horizontalGradient(0f to Color(0xFF7A4829), 0.5f to Color(0xFFB47A4E), 1f to Color(0xFF7A4829), startX = 308f, endX = 372f), Offset(308f, 664f), Size(64f, 116f), CornerRadius(10f))
-            drawRoundRect(leather, Offset(308f, 664f), Size(64f, 116f), CornerRadius(10f), style = Stroke(1.5f))
-            drawLine(Color(0x40000000), Offset(340f, 670f), Offset(340f, 770f), 1f)
-            seat(200f); seat(480f)
+            // ---- nội thất: khung 1280 x 720 của bản demo, ép vào bề ngang 680 và đặt xuống nửa dưới khung hình ----
+            withTransform({ translate(0f, 172f); scale(DW / 1280f, 0.8f, Offset.Zero) }) { cabin() }
         }
     }
 }
