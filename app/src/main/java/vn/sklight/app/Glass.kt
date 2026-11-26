@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.InteractionSource
@@ -223,6 +225,27 @@ fun Modifier.pressSweep(src: InteractionSource): Modifier = composed {
             val bw = size.height * 1.1f
             val x = -bw + (size.width + 2f * bw) * v
             drawRect(Brush.linearGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.55f), Color.Transparent), Offset(x - bw / 2f, 0f), Offset(x + bw / 2f, size.height * 0.4f)), Offset(x - bw, 0f), Size(2f * bw, size.height))
+        }
+    }
+}
+
+/**
+ * Vòng quay 3D cho hàng cuộn ngang (số 2, học từ carousel của Volta Atelier): ô ở giữa hàng đứng thẳng và to nhất,
+ * càng ra hai mép càng xoay nghiêng, nhỏ và mờ dần, nên khi vuốt hàng trông như một vòng tròn đang quay.
+ */
+fun Modifier.arc3d(scroll: androidx.compose.foundation.ScrollState, rowW: () -> Int): Modifier = composed {
+    if (!Fx) return@composed Modifier
+    var cx by remember { mutableFloatStateOf(0f) }
+    onGloballyPositioned { cx = it.positionInParent().x + it.size.width / 2f }.graphicsLayer {
+        val w = rowW().toFloat()
+        if (w > 0f) {
+            val d = (((cx - scroll.value) - w / 2f) / (w / 2f)).coerceIn(-1.2f, 1.2f)
+            val a = kotlin.math.abs(d)
+            rotationY = -d * 42f
+            val s = 1.06f - a * 0.20f
+            scaleX = s; scaleY = s
+            alpha = (1f - a * 0.40f).coerceIn(0.35f, 1f)
+            cameraDistance = 9f * density
         }
     }
 }

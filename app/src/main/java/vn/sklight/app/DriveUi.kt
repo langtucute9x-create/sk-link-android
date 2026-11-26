@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.TextStyle
@@ -79,9 +80,11 @@ fun SceneRow() {
     var manage by remember { mutableStateOf(false) }
     var edit by remember { mutableIntStateOf(-1) }
     val all = Scenes.all()
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val scScroll = rememberScrollState()
+    var scW by remember { mutableIntStateOf(0) }
+    Row(Modifier.fillMaxWidth().onSizeChanged { scW = it.width }.horizontalScroll(scScroll).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
-            Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(22.dp))
+            Modifier.height(44.dp).arc3d(scScroll) { scW }.clip(RoundedCornerShape(22.dp)).background(CardBg).border(1.dp, Pink, RoundedCornerShape(22.dp))
                 .clickable { manage = true }.padding(start = 10.dp, end = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -94,7 +97,7 @@ fun SceneRow() {
             val tap by rememberUpdatedState({ Scenes.apply(i) })
             val hold by rememberUpdatedState({ edit = i })
             Row(
-                Modifier.height(44.dp).tilt3d().clip(RoundedCornerShape(22.dp)).background(if (on) tint(0.12f) else ChipBg)
+                Modifier.height(44.dp).arc3d(scScroll) { scW }.tilt3d().clip(RoundedCornerShape(22.dp)).background(if (on) tint(0.12f) else ChipBg)
                     .border(1.dp, if (on) Pink else Bd, RoundedCornerShape(22.dp))
                     .pointerInput(Unit) { detectTapGestures(onLongPress = { hold() }, onTap = { tap() }) }
                     .padding(start = 10.dp, end = 14.dp),
