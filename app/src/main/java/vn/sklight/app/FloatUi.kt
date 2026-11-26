@@ -61,6 +61,15 @@ private fun PvBubble(st: Int, led: Color) {
         5 -> base.background(Color(0xFF0B0B0E)).border(2.dp, led, CircleShape)
         else -> base.background(Color.White).border(2.dp, led, CircleShape)
     }
+    // có chọn nhân vật: hình xem trước hiện đúng nhân vật đó thay cho vòng tròn SK
+    if (S.floatMascot.intValue > 0) {
+        androidx.compose.ui.viewinterop.AndroidView(
+            factory = { c -> android.widget.FrameLayout(c) },
+            update = { fl -> val k = S.floatMascot.intValue; if (fl.tag != k) { fl.tag = k; Mascot.free(fl.getChildAt(0) as? android.webkit.WebView); fl.removeAllViews(); Mascot.view(fl.context, k)?.let { fl.addView(it, android.widget.FrameLayout.LayoutParams(-1, -1)) } } },
+            modifier = Modifier.size(56.dp)
+        )
+        return
+    }
     Box(m, contentAlignment = Alignment.Center) {
         if (st >= 3) Box(Modifier.size(26.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) { Text("SK", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = led) }
         else Text("SK", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (st == 0) led else Color.White)

@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.105"
+    const val VER = "1.4.106"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -230,7 +230,7 @@ object S {
         nightTo.intValue = sp.getInt("nightTo", 6 * 60)
         nightBri.intValue = sp.getInt("nightBri", 30)
         idleOn.value = sp.getBoolean("idleOn", false)
-        floatSize.intValue = sp.getInt("floatSize", 150).coerceIn(50, 250); floatMascot.intValue = sp.getInt("floatMascot", 4).coerceIn(0, 5); idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
+        floatSize.intValue = sp.getInt("floatSize", 150).coerceIn(50, 250); floatMascot.intValue = sp.getInt("floatMascot", 4).let { if (it == 1 || it == 5) it else 4 };      /* 1.4.106: bỏ Logo SK, Tia Sáng, Mimi */ idleDelay.intValue = sp.getInt("idleDelay", 10).coerceIn(3, 120); limitOsm.value = sp.getBoolean("limitOsm", true)
         idleStyle.intValue = sp.getInt("idleStyle", 0)
         floatOn.value = sp.getBoolean("floatOn", false)
         floatStyle.intValue = sp.getInt("floatStyle2", 5).coerceIn(1, 5)     // bỏ Kiểu gốc (24/11), mặc định Cột neon

@@ -177,15 +177,7 @@ fun AppearanceIdle() {
         Spacer(Modifier.height(12.dp))
         T("Biểu tượng nút nổi", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        if (S.floatMascot.intValue > 0) {
-            androidx.compose.ui.viewinterop.AndroidView(
-                factory = { c -> android.widget.FrameLayout(c) },
-                update = { fl -> val k = S.floatMascot.intValue; if (fl.tag != k) { fl.tag = k; Mascot.free(fl.getChildAt(0) as? android.webkit.WebView); fl.removeAllViews(); Mascot.view(fl.context, k)?.let { fl.addView(it, android.widget.FrameLayout.LayoutParams(-1, -1)) } } },
-                modifier = Modifier.fillMaxWidth().height(120.dp)
-            )
-            Spacer(Modifier.height(6.dp))
-        }
-        Grid(listOf(0, 1, 2, 3, 4, 5), 3) { i, m -> Chip(Mascot.NAMES[i], S.floatMascot.intValue == i, m, 44.dp, 12) { S.floatMascot.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
+        Grid(listOf(1, 4, 5), 3) { i, m -> Chip(Mascot.NAMES[i], S.floatMascot.intValue == i, m, 44.dp, 12) { S.floatMascot.intValue = i; S.saveSettings(); FloatButton.sync(ctx) } }
         Spacer(Modifier.height(12.dp))
         T("Kích thước nút nổi", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
