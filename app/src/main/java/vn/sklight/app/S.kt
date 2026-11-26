@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.101"
+    const val VER = "1.4.102"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -135,9 +135,13 @@ object S {
             val noBattery = b != null && !b.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, true)
             val um = c.getSystemService(Context.UI_MODE_SERVICE) as? android.app.UiModeManager
             val carUi = um?.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_CAR || c.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
-            isCar.value = noBattery || carUi
+            val m = c.getSharedPreferences("sklight", Context.MODE_PRIVATE).getInt("devMode", 0)
+            isCar.value = when (m) { 1 -> true; 2 -> false; else -> noBattery || carUi }
         } catch (_: Exception) {}
     }
+    /** Chọn loại máy: 0 tự nhận, 1 màn hình xe / Android box, 2 điện thoại. */
+    fun devMode(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE).getInt("devMode", 0)
+    fun setDevMode(c: Context, m: Int) { c.getSharedPreferences("sklight", Context.MODE_PRIVATE).edit().putInt("devMode", m).apply(); detectCar(c.applicationContext) }
     val z2Speed = mutableIntStateOf(5)                      // tốc độ riêng của kiểu khu vực 2 do app chạy (Màu thở, Màu chớp, Màu cầu vồng), 1..10
     val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
@@ -374,7 +378,6 @@ object S {
 
     fun setBright(v: Int) {
         bri[zone.intValue] = v; on.value = true; sceneSel.intValue = -1
-        if (Night.active) nightBri.intValue = v.coerceIn(5, 100)      // chỉnh tay ban đêm = đổi mức ban đêm
         sendBright(); saveSettings()
     }
     fun setZoneSel(z: Int) { zone.intValue = z; sendBright() }

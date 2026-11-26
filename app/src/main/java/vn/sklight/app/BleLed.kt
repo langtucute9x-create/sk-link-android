@@ -129,8 +129,10 @@ class BleLed(private val ctx: Context) {
                 }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 main.post {
+                    val wasConn = S.connected.value
                     S.connected.value = false
                     S.conn.value = "Mất kết nối"
+                    if (wasConn && wantMac != null) Greet.onLost(ctx)
                     if (wantMac != null && !lostSpoken && S.appVisible && !S.userOff) { lostSpoken = true; Speaker.err(ctx, "Mất kết nối với hộp đèn.", 60000L) }
                     wch = null
                     try { g.close() } catch (_: Exception) {}

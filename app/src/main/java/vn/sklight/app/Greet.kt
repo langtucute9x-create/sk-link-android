@@ -28,6 +28,7 @@ object Greet {
     private var doneThisSession = false
     private var openDone = false
     private var pendingConnect = false
+    private var downDone = false
 
     private fun sp(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE)
     private fun file(c: Context, k: Int) = File(c.filesDir, "greet$k.mp3")
@@ -44,6 +45,8 @@ object Greet {
     fun enabled(c: Context) = sp(c).getBoolean("greetOn", true)
     fun openOn(c: Context) = sp(c).getBoolean("greetOpenOn", true)
     fun setOpenOn(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOpenOn", v).apply(); ver.intValue++ }
+    fun downOn(c: Context) = sp(c).getBoolean("greetDownOn", false)
+    fun setDownOn(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetDownOn", v).apply(); ver.intValue++ }
     fun setEnabled(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOn", v).apply(); ver.intValue++ }
 
     fun save(c: Context, k: Int, uri: Uri, display: String): Boolean {
@@ -85,10 +88,17 @@ object Greet {
         h.postDelayed({ play(c, 1, false) }, 800)
     }
 
+    /** Màn hình xe: hộp mất điện / mất kết nối sau khi đã nối trong phiên này thì phát "Xuống xe" một lần (nếu bật). */
+    fun onLost(c: Context) {
+        if (!doneThisSession || downDone || !S.isCar.value || !enabled(c) || !downOn(c)) return
+        downDone = true
+        play(c, 2, false)
+    }
+
     /** Gọi khi vừa nối xong hộp: chỉ một lần mỗi lần mở app. */
     fun onConnected(c: Context) {
         if (doneThisSession || !enabled(c)) return
-        doneThisSession = true
+        doneThisSession = true; downDone = false
         h.postDelayed({ if (!S.connected.value) return@postDelayed; if (mp?.isPlaying == true) pendingConnect = true else play(c, 0, true) }, 1500)
     }
 
@@ -107,48 +117,85 @@ fun GreetPage() {
     val ctx = LocalContext.current
     Greet.ver.intValue
     var target by remember { mutableIntStateOf(0) }
-    val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        if (uri != null) {
-            val nm = try {
-                ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
-                    val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
-                    if (c.moveToFirst() && i >= 0) c.getString(i) else uri.lastPathSegment ?: ""
-                } ?: (uri.lastPathSegment ?: "")
-            } catch (e: Exception) { uri.lastPathSegment ?: "" }
-            if (!Greet.save(ctx, target, uri, nm)) Notice.show(ctx, L.tr("Không đọc được file này (tối đa 8 MB)."))
-        }
+    var dm by remember { mutableIntStateOf(S.devMode(ctx)) }
+    fun got(uri: Uri?) {
+        if (uri == null) return
+        val nm = try {
+            ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (c.moveToFirst() && i >= 0) c.getString(i) else uri.lastPathSegment ?: ""
+            } ?: (uri.lastPathSegment ?: "")
+        } catch (e: Exception) { uri.lastPathSegment ?: "" }
+        if (!Greet.save(ctx, target, uri, nm)) Notice.show(ctx, L.tr("Không đọc được file này (tối đa 8 MB)."))
+    }
+    val pick2 = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: Uri? -> got(uri) }
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri: Uri? -> got(uri) }
+    // Màn hình xe Android 10 thường không có trình chọn file kiểu mới: thử lần lượt, không được thì báo chứ không để app đóng.
+    fun choose(k: Int) {
+        target = k
+        try { pick.launch(arrayOf("audio/*")); return } catch (e: Exception) {}
+        try { pick2.launch("audio/*"); return } catch (e: Exception) {}
+        Notice.show(ctx, L.tr("Máy này không có trình chọn file. Cài thêm một app quản lý file rồi thử lại."))
     }
     BackRow(0, "Cài đặt")
     Card {
         GroupTitle(Icons.Filled.RecordVoiceOver, "Lời chào", 16)
         Spacer(Modifier.height(6.dp))
-        T(if (S.isCar.value) "Chưa chọn file thì dùng nhạc có sẵn, hoặc đọc một câu chào bằng giọng của máy." else "Trên điện thoại, chỉ phát khi anh chọn file mp3. Chưa chọn thì không có lời chào.", 13)
+        T("Loại máy đang dùng: " + (if (S.isCar.value) "màn hình xe / Android box" else "điện thoại") + (if (dm == 0) " (tự nhận)" else ""), 13, FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            Chip("Tự nhận", dm == 0, Modifier.weight(1f), 44.dp, 13) { dm = 0; S.setDevMode(ctx, 0) }
+            Chip("Màn hình xe", dm == 1, Modifier.weight(1f), 44.dp, 13) { dm = 1; S.setDevMode(ctx, 1) }
+            Chip("Điện thoại", dm == 2, Modifier.weight(1f), 44.dp, 13) { dm = 2; S.setDevMode(ctx, 2) }
+        }
+        Spacer(Modifier.height(6.dp))
+        T(if (S.isCar.value) "Màn hình xe: chưa chọn file thì dùng nhạc có sẵn hoặc giọng máy; không đọc \"đã kết nối\"." else "Điện thoại: chỉ phát file mp3 anh chọn; có giọng báo \"đã kết nối\" khi nối hộp.", 12)
+    }
+    Card {
+        T("Lời chào khi nối hộp đèn", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             val on = Greet.enabled(ctx)
-            Chip("Bật khi nối hộp", on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, true) }
+            Chip("Bật", on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, true) }
             Chip("Tắt", !on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, false) }
         }
     }
+    fun fileCard(k: Int) {
+        val n = Greet.name(ctx, k)
+        T(if (n.isNotEmpty()) n else if (!S.isCar.value) "Chưa chọn file (không phát)" else if (k <= 1) "Mặc định: nhạc có sẵn trong app" else "Chưa chọn file (dùng giọng máy)", 13, maxLines = 1)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlineBtn("Chọn mp3", Modifier.weight(1f)) { choose(k) }
+            OutlineBtn("Phát thử", Modifier.weight(1f)) { Greet.play(ctx, k, false) }
+            if (n.isNotEmpty()) OutlineBtn("Xóa", Modifier.weight(1f)) { Greet.clear(ctx, k) }
+        }
+    }
     Card {
-        T("Lời chào \"Lên xe\" khi mở app", 15, FontWeight.Bold)
+        T("Lời chào lên xe (khi mở app)", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             val o = Greet.openOn(ctx)
             Chip("Bật", o, Modifier.weight(1f), 44.dp, 13) { Greet.setOpenOn(ctx, true) }
             Chip("Tắt", !o, Modifier.weight(1f), 44.dp, 13) { Greet.setOpenOn(ctx, false) }
         }
+        Spacer(Modifier.height(10.dp))
+        fileCard(1)
     }
-    for (k in 0..2) Card {
-        T("Lời chào " + Greet.KINDS[k].lowercase(), 15, FontWeight.Bold)
-        val n = Greet.name(ctx, k)
-        T(if (n.isNotEmpty()) n else if (!S.isCar.value) "Chưa chọn file (không phát)" else if (k <= 1) "Mặc định: nhạc có sẵn trong app" else "Chưa chọn file (dùng giọng máy)", 13, maxLines = 1)
+    Card {
+        T("Lời chào mở máy (khi nối được hộp)", 15, FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlineBtn("Chọn mp3", Modifier.weight(1f)) { target = k; pick.launch(arrayOf("audio/*")) }
-            OutlineBtn("Phát thử", Modifier.weight(1f)) { Greet.play(ctx, k, false) }
-            if (n.isNotEmpty()) OutlineBtn("Xóa", Modifier.weight(1f)) { Greet.clear(ctx, k) }
-        }
+        fileCard(0)
     }
-    Card { T("Mỗi lần mở app: \"Lên xe\" phát ngay; \"Mở máy\" phát khi nối được hộp đèn (kèm đèn nháy chào), nếu \"Lên xe\" còn đang phát thì chờ phát xong. \"Xuống xe\" hiện chỉ phát khi bấm Phát thử.", 13) }
+    Card {
+        T("Lời chào xuống xe (khi hộp mất điện)", 15, FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            val d = Greet.downOn(ctx)
+            Chip("Bật", d, Modifier.weight(1f), 44.dp, 13) { Greet.setDownOn(ctx, true) }
+            Chip("Tắt", !d, Modifier.weight(1f), 44.dp, 13) { Greet.setDownOn(ctx, false) }
+        }
+        Spacer(Modifier.height(10.dp))
+        fileCard(2)
+    }
+    Card { T("Mỗi lần mở app: \"Lên xe\" phát ngay; \"Mở máy\" phát khi nối được hộp đèn (kèm đèn nháy chào), nếu \"Lên xe\" còn đang phát thì chờ phát xong. \"Xuống xe\" chỉ chạy trên màn hình xe: phát một lần khi mất kết nối với hộp sau khi đã nối (xe tắt máy). Chưa thử trên xe thật nên mặc định đang Tắt.", 13) }
 }

@@ -380,7 +380,7 @@ fun UpgradePage() {
     Card {
         GroupTitle(Icons.Filled.Folder, "Tệp nâng cấp", 16)
         Spacer(Modifier.height(10.dp))
-        FillBtn("Chọn tệp", Icons.Filled.Folder, Pink, Modifier.fillMaxWidth()) { if (!Iap.busy) pick.launch(arrayOf("*/*")) }
+        FillBtn("Chọn tệp", Icons.Filled.Folder, Pink, Modifier.fillMaxWidth()) { if (!Iap.busy) try { pick.launch(arrayOf("*/*")) } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn file.")) } }
         if (Iap.fileName.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Kv("Đã chọn", Iap.fileName) }
         if (can && Iap.fileName.isNotEmpty() && !upg) Hint("Nâng cấp CAN cần tệp đuôi .upg.", 11)
     }
