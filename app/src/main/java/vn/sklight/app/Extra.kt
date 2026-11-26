@@ -337,18 +337,24 @@ fun BoxTestPage() {
 fun UpgradePage() {
     val ctx = LocalContext.current
     var kind by remember { mutableIntStateOf(0) }                 // 0 CAN, 1 RF
-    var file by remember { mutableStateOf("") }
     var logOpen by remember { mutableStateOf(true) }
+    var ask by remember { mutableStateOf(false) }
+    val view = androidx.compose.ui.platform.LocalView.current
+    DisposableEffect(Iap.busy) { view.keepScreenOn = Iap.busy; onDispose { view.keepScreenOn = false } }
     val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri: android.net.Uri? ->
         if (uri != null) {
-            file = try {
+            val name = try {
                 ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
                     val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                     if (c.moveToFirst() && i >= 0) c.getString(i) else uri.lastPathSegment ?: ""
                 } ?: (uri.lastPathSegment ?: "")
             } catch (e: Exception) { uri.lastPathSegment ?: "" }
+            val data = try { ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } } catch (e: Exception) { null }
+            if (data == null || data.size > 4 * 1024 * 1024) { Iap.setFile(name, null); Notice.show(ctx, L.tr("Không đọc được tệp này.")) } else Iap.setFile(name, data)
         }
     }
+    val can = kind == 0 && !S.commonBox()
+    val upg = Iap.fileName.lowercase().endsWith(".upg")
     BackRow(8, "Cài đặt nhà máy")
     Card {
         GroupTitle(Icons.Filled.SystemUpdate, "Nâng cấp phần mềm", 16)
@@ -356,8 +362,8 @@ fun UpgradePage() {
         T("Loại nâng cấp", 13, FontWeight.Bold, SubTxt)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            if (!S.commonBox()) Chip("Nâng cấp CAN", kind == 0, Modifier.weight(1f), 44.dp, 13) { kind = 0 }
-            Chip("Nâng cấp RF", kind == 1 || S.commonBox(), Modifier.weight(1f), 44.dp, 13) { kind = 1 }
+            if (!S.commonBox()) Chip("Nâng cấp CAN", kind == 0, Modifier.weight(1f), 44.dp, 13) { if (!Iap.busy) kind = 0 }
+            Chip("Nâng cấp RF", kind == 1 || S.commonBox(), Modifier.weight(1f), 44.dp, 13) { if (!Iap.busy) kind = 1 }
         }
     }
     Card {
@@ -367,19 +373,41 @@ fun UpgradePage() {
         Kv("Trạng thái kết nối", if (S.connected.value) "Đã kết nối" else "Chưa kết nối")
         if (X.rfModel.isNotEmpty()) Kv("Mã RF", X.rfModel)
         if (!S.commonBox() && X.canModel.isNotEmpty()) Kv("Mã CAN", X.canModel)
+        if (Iap.appVer.isNotEmpty()) Kv("Phiên bản CAN (hộp báo)", Iap.appVer)
+        if (Iap.iapVer.isNotEmpty()) Kv("Phiên bản bộ nạp", Iap.iapVer)
+        if (can) { Spacer(Modifier.height(6.dp)); OutlineBtn("Đọc phiên bản CAN", Modifier.fillMaxWidth()) { if (!Iap.busy) Iap.askVersions() } }
     }
     Card {
         GroupTitle(Icons.Filled.Folder, "Tệp nâng cấp", 16)
         Spacer(Modifier.height(10.dp))
-        FillBtn("Chọn tệp", Icons.Filled.Folder, Pink, Modifier.fillMaxWidth()) { pick.launch(arrayOf("*/*")) }
-        if (file.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Kv("Đã chọn", file) }
+        FillBtn("Chọn tệp", Icons.Filled.Folder, Pink, Modifier.fillMaxWidth()) { if (!Iap.busy) pick.launch(arrayOf("*/*")) }
+        if (Iap.fileName.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Kv("Đã chọn", Iap.fileName) }
+        if (can && Iap.fileName.isNotEmpty() && !upg) Hint("Nâng cấp CAN cần tệp đuôi .upg.", 11)
     }
     Card {
-        Chip("Bắt đầu nâng cấp", false, Modifier.fillMaxWidth(), 48.dp, 14) { Notice.show(ctx, L.tr("Chưa có lệnh nạp phần mềm vào hộp, nên chưa nâng cấp được.")) }
-        Spacer(Modifier.height(6.dp))
-        Hint("Chưa có lệnh nạp phần mềm vào hộp: nạp lỗi có thể làm hỏng hộp. Trang này dựng sẵn để chờ tài liệu của nhà sản xuất.", 11)
-        Spacer(Modifier.height(6.dp))
-        Hint("Theo hướng dẫn của app cũ: khi chạy tới 98–99% thì chờ vài giây rồi thoát ra, sau đó nối lại Bluetooth.", 11)
+        if (can) {
+            if (Iap.busy) OutlineBtn("Dừng", Modifier.fillMaxWidth()) { Iap.cancel() }
+            else Chip("Bắt đầu nâng cấp", S.connected.value && Iap.hasFile() && upg, Modifier.fillMaxWidth(), 48.dp, 14) {
+                if (!S.connected.value) Notice.show(ctx, L.tr("Chưa kết nối hộp đèn."))
+                else if (!Iap.hasFile() || !upg) Notice.show(ctx, L.tr("Hãy chọn tệp .upg trước."))
+                else ask = true
+            }
+            if (Iap.progress.intValue >= 0) {
+                Spacer(Modifier.height(10.dp))
+                Box(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)).background(ChipBg)) {
+                    Box(Modifier.fillMaxWidth(Iap.progress.intValue / 100f).height(10.dp).clip(RoundedCornerShape(5.dp)).background(Pink))
+                }
+            }
+            if (Iap.status.isNotEmpty()) { Spacer(Modifier.height(8.dp)); T(Iap.status, 13, FontWeight.SemiBold) }
+            Spacer(Modifier.height(6.dp))
+            Hint("Trong lúc nạp: giữ app mở, không tắt máy xe, không ngắt Bluetooth. Hộp tự kiểm tra tệp; sai loại hộp thì hộp báo lỗi và không nạp.", 11)
+            Spacer(Modifier.height(6.dp))
+            Hint("Theo hướng dẫn của app cũ: khi chạy tới 98–99% thì chờ vài giây rồi thoát ra, sau đó nối lại Bluetooth.", 11)
+        } else {
+            Chip("Bắt đầu nâng cấp", false, Modifier.fillMaxWidth(), 48.dp, 14) { Notice.show(ctx, L.tr("Chưa làm được nâng cấp RF trong app này.")) }
+            Spacer(Modifier.height(6.dp))
+            Hint("Nâng cấp RF (tệp .ufw của chip Bluetooth) cần bộ thư viện riêng của hãng chip, app này chưa có. Dùng app cũ cho việc này.", 11)
+        }
     }
     Card {
         Row(Modifier.fillMaxWidth().heightIn(min = 46.dp).clickable { logOpen = !logOpen }, verticalAlignment = Alignment.CenterVertically) {
@@ -388,11 +416,32 @@ fun UpgradePage() {
         }
         if (logOpen) {
             Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(Theme.r(8))).background(Color(0xFF202020)).padding(12.dp)) {
-                T("Chưa có nhật ký", 13, color = Color(0xFF6CC070))
+            Column(Modifier.fillMaxWidth().heightIn(min = 140.dp).clip(RoundedCornerShape(Theme.r(8))).background(Color(0xFF202020)).padding(12.dp)) {
+                if (Iap.log.isEmpty()) T("Chưa có nhật ký", 13, color = Color(0xFF6CC070))
+                for (l in Iap.log.take(30)) T(l, 12, color = Color(0xFF6CC070))
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlineBtn("Sao chép nhật ký", Modifier.fillMaxWidth()) {
+                val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText("iap", "SK Light ${S.VER}, nâng cấp CAN (mới nhất ở trên):\n" + Iap.log.joinToString("\n")))
+                Notice.show(ctx, L.tr("Đã sao chép"))
             }
         }
     }
+    if (ask) AlertDialog(
+        onDismissRequest = { ask = false },
+        title = { T("Nạp phần mềm CAN vào hộp?", 16, FontWeight.ExtraBold) },
+        text = {
+            Column {
+                T("Tệp: ${Iap.fileName}", 13, FontWeight.Bold)
+                if (X.canModel.isNotEmpty()) T("Mã CAN của hộp: ${X.canModel}", 13)
+                Spacer(Modifier.height(8.dp))
+                T("Nạp sai tệp hoặc mất điện giữa chừng có thể làm hộp không chạy được. Chỉ nạp khi chắc tệp đúng loại hộp, xe đang cấp điện ổn định và điện thoại ở gần hộp.", 13, color = Grey)
+            }
+        },
+        confirmButton = { TextButton(onClick = { ask = false; Iap.start() }) { T("Nạp", 14, FontWeight.Bold, color = Pink) } },
+        dismissButton = { TextButton(onClick = { ask = false }) { T("Hủy", 14, color = Grey) } }
+    )
 }
 
 @Composable

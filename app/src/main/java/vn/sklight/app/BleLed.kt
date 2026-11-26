@@ -47,6 +47,7 @@ class BleLed(private val ctx: Context) {
     }
     /** Gói quảng bá Bluetooth gần nhất của từng hộp (để tìm số seri). */
     val adv = HashMap<String, ByteArray>()
+    @Volatile var mtu = 23                           // MTU đã thỏa thuận với hộp (mặc định 23)
     @Volatile private var paused = false            // đang đọc thông tin hộp: tạm dừng hàng đợi ghi
     private var readDone: ((ByteArray?) -> Unit)? = null
 
@@ -112,7 +113,7 @@ class BleLed(private val ctx: Context) {
         q.clear(); wch = null
         try { gatt?.disconnect() } catch (_: Exception) {}
         try { gatt?.close() } catch (_: Exception) {}
-        gatt = null
+        gatt = null; mtu = 23
     }
 
     private val cb = object : BluetoothGattCallback() {
@@ -140,7 +141,7 @@ class BleLed(private val ctx: Context) {
             }
         }
 
-        override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) { main.post { discover(g) } }
+        override fun onMtuChanged(g: BluetoothGatt, mtu: Int, status: Int) { if (status == BluetoothGatt.GATT_SUCCESS) this@BleLed.mtu = mtu; main.post { discover(g) } }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
             val svc = g.getService(svcId)
@@ -593,6 +594,8 @@ class BleLed(private val ctx: Context) {
     }
 
     private fun put(data: ByteArray, key: Int = -1, isSet: Boolean = false) {
+        // đang nạp phần mềm CAN: chỉ cho khung nâng cấp (D9) đi, mọi lệnh khác bỏ để không chen vào
+        if (Iap.busy && !(data.size > 1 && (data[1].toInt() and 0xFF) == 0xD9)) return
         if (isSet) lastSetMs = System.currentTimeMillis()
         if (data.size > 3 && (data[1].toInt() and 0xFF) == Protocol.T_WRITE) { val sb = data[3].toInt() and 0xFF; if (sb == 0x01 || sb == 0x02 || sb == 0x07) ownFxMs = System.currentTimeMillis() }
         if (key >= 0) q.removeIf { it.key == key }
@@ -634,6 +637,7 @@ class BleLed(private val ctx: Context) {
         if (X.snapOn) { val c = d.copyOf(); main.post { X.onSnapFrame(c) } }
         if (d.size >= 5 && (d[0].toInt() and 0xFF) == 0x2E) {
             val t = d[1].toInt() and 0xFF
+            if (t == 0xD9) { val c = d.copyOf(); main.post { Iap.onFrame(c) }; return }
             if (t == 0x8C) { main.post { X.onCarFrame(d) }; return }
             if (t == 0xAC) { main.post { X.onDiagFrame(d) }; return }
             if (t == 0x9C && d.size >= 7) { val b1 = d[4].toInt() and 0xFF; val b2 = d[5].toInt() and 0xFF; main.post { X.onSup(b1, b2) }; return }
