@@ -42,6 +42,8 @@ object Greet {
         } catch (e: Exception) { null }
     }
     fun enabled(c: Context) = sp(c).getBoolean("greetOn", true)
+    fun openOn(c: Context) = sp(c).getBoolean("greetOpenOn", true)
+    fun setOpenOn(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOpenOn", v).apply(); ver.intValue++ }
     fun setEnabled(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOn", v).apply(); ver.intValue++ }
 
     fun save(c: Context, k: Int, uri: Uri, display: String): Boolean {
@@ -75,7 +77,7 @@ object Greet {
 
     /** Gọi khi mở app: phát "Lên xe" một lần mỗi lần mở app. */
     fun onAppOpen(c: Context) {
-        if (openDone || !enabled(c)) return
+        if (openDone || !enabled(c) || !openOn(c)) return
         openDone = true
         h.postDelayed({ play(c, 1, false) }, 800)
     }
@@ -123,6 +125,15 @@ fun GreetPage() {
             val on = Greet.enabled(ctx)
             Chip("Bật khi nối hộp", on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, true) }
             Chip("Tắt", !on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, false) }
+        }
+    }
+    Card {
+        T("Lời chào \"Lên xe\" khi mở app", 15, FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            val o = Greet.openOn(ctx)
+            Chip("Bật", o, Modifier.weight(1f), 44.dp, 13) { Greet.setOpenOn(ctx, true) }
+            Chip("Tắt", !o, Modifier.weight(1f), 44.dp, 13) { Greet.setOpenOn(ctx, false) }
         }
     }
     for (k in 0..2) Card {
