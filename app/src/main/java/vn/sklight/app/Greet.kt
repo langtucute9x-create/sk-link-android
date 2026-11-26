@@ -30,6 +30,15 @@ object Greet {
     private fun sp(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE)
     private fun file(c: Context, k: Int) = File(c.filesDir, "greet$k.mp3")
     fun name(c: Context, k: Int): String = if (file(c, k).exists()) sp(c).getString(KEYS[k], "") ?: "" else ""
+    /** Nhạc có sẵn trong app (mặc định) cho Mở máy và Lên xe; Xuống xe chưa có. */
+    private fun builtin(c: Context, k: Int): File? {
+        if (k > 1) return null
+        return try {
+            val out = File(c.cacheDir, "greet_def$k.mp3")
+            if (!out.exists() || out.length() == 0L) c.assets.open("greet_def$k.mp3").use { i -> out.outputStream().use { o -> i.copyTo(o) } }
+            out
+        } catch (e: Exception) { null }
+    }
     fun enabled(c: Context) = sp(c).getBoolean("greetOn", true)
     fun setEnabled(c: Context, v: Boolean) { sp(c).edit().putBoolean("greetOn", v).apply(); ver.intValue++ }
 
@@ -46,8 +55,8 @@ object Greet {
 
     fun play(c: Context, k: Int, light: Boolean) {
         if (light) flash()
-        val f = file(c, k)
-        if (f.exists()) {
+        val f = if (file(c, k).exists()) file(c, k) else builtin(c, k)
+        if (f != null && f.exists()) {
             try {
                 mp?.release()
                 val p = MediaPlayer()
@@ -110,7 +119,7 @@ fun GreetPage() {
     for (k in 0..2) Card {
         T("Lời chào " + Greet.KINDS[k].lowercase(), 15, FontWeight.Bold)
         val n = Greet.name(ctx, k)
-        T(if (n.isEmpty()) "Chưa chọn file (dùng giọng máy)" else n, 13, maxLines = 1)
+        T(if (n.isNotEmpty()) n else if (k <= 1) "Mặc định: nhạc có sẵn trong app" else "Chưa chọn file (dùng giọng máy)", 13, maxLines = 1)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlineBtn("Chọn mp3", Modifier.weight(1f)) { target = k; pick.launch(arrayOf("audio/*")) }
