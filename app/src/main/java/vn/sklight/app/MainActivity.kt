@@ -164,6 +164,19 @@ fun Root() {
     CompositionLocalProvider(LocalCompact provides wide) {
     Box(Modifier.fillMaxSize().pointerInput(Unit) {
         awaitPointerEventScope { while (true) { awaitPointerEvent(PointerEventPass.Initial); S.lastTouch = System.currentTimeMillis() } }
+    }.pointerInput(Unit) {
+        // vuốt trái / phải ở vùng trống để chuyển 4 trang menu (1.4.108). Thanh trượt, hàng bối cảnh, vòng màu tự xử lý thao tác kéo của mình nên không bị ảnh hưởng.
+        var sum = 0f
+        androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+            onDragStart = { sum = 0f }, onDragCancel = { sum = 0f },
+            onDragEnd = {
+                if (!S.idleShow.value && S.subPage.intValue == 0 && kotlin.math.abs(sum) > 70.dp.toPx()) {
+                    val n = (tab + if (sum < 0) 1 else -1).coerceIn(0, 3)
+                    if (n != tab) tab = n
+                }
+                sum = 0f
+            }
+        ) { _, dx -> sum += dx }
     }) {
     if (S.idleShow.value) IdleScreen(wide) else
     if (wide) {
@@ -201,7 +214,7 @@ fun Root() {
               }
             }
         }
-        if (topMenu) Column(frame.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (topMenu) Column(frame.padding(horizontal = 8.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Menu trên: logo, nguồn, bốn trang (có tên), nút mở màn hình chờ, nút mic to ở góc phải
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LogoMark(if (low) 34.dp else 42.dp)
@@ -212,7 +225,7 @@ fun Root() {
                 if (L.cur.intValue == 0 && !gated) MicBtn(if (low) 46 else 60)
             }
             body()
-        } else Row(frame.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        } else Row(frame.padding(horizontal = 8.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // Menu trái: nguồn ở trên cùng, bốn trang, nút mở màn hình chờ; nút mic to ở góc dưới, logo nhỏ dưới cùng
             Column(Modifier.width(sideW.dp).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PowerBtn(if (roomy) 56 else 46)
@@ -228,7 +241,7 @@ fun Root() {
         Column(frame) {
             // menu cố định trên cùng, nội dung cuộn bên dưới
             Box {
-            Row(Modifier.padding(start = 13.dp, end = 13.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.padding(start = 8.dp, end = 8.dp, top = 3.dp, bottom = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                 LogoMark(30.dp)
                 Spacer(Modifier.width(6.dp))
                 PowerBtn(36)
@@ -239,11 +252,11 @@ fun Root() {
             // chấm nhỏ ở góc trên phải: xanh = đã kết nối Bluetooth với hộp đèn, xám = chưa
             Box(Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 4.dp).size(8.dp).clip(CircleShape).background(if (S.connected.value) OkGreen else Color(0xFFB8BCC6)))
             }
-            UpdateBanner(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 4.dp))
-            if (!gated) Strip(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
-            if (!gated) VoicePanel(Modifier.padding(start = 13.dp, end = 13.dp, bottom = 6.dp))
+            UpdateBanner(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 4.dp))
+            if (!gated) Strip(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 6.dp))
+            if (!gated) VoicePanel(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 6.dp))
             Column(
-                Modifier.weight(1f).verticalScroll(if (S.subPage.intValue == 0) ScrollMem.get("p$tab") else remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 13.dp, end = 13.dp, top = 4.dp, bottom = 24.dp),
+                Modifier.weight(1f).verticalScroll(if (S.subPage.intValue == 0) ScrollMem.get("p$tab") else remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 if (unplugged && tab < 3) PlugCard() else if (lock && tab < 3) ActivationPage(true) else when (tab) {
