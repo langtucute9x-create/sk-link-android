@@ -94,7 +94,7 @@ fun SceneRow() {
             val tap by rememberUpdatedState({ Scenes.apply(i) })
             val hold by rememberUpdatedState({ edit = i })
             Row(
-                Modifier.height(44.dp).clip(RoundedCornerShape(22.dp)).background(if (on) tint(0.12f) else ChipBg)
+                Modifier.height(44.dp).tilt3d().clip(RoundedCornerShape(22.dp)).background(if (on) tint(0.12f) else ChipBg)
                     .border(1.dp, if (on) Pink else Bd, RoundedCornerShape(22.dp))
                     .pointerInput(Unit) { detectTapGestures(onLongPress = { hold() }, onTap = { tap() }) }
                     .padding(start = 10.dp, end = 14.dp),

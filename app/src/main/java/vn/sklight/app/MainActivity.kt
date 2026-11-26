@@ -465,7 +465,7 @@ fun EffectTile(e: Effect, m: Modifier) {
     val on = S.mode.intValue == e.id
     val sh = RoundedCornerShape(Theme.r(8))
     Row(
-        m.height(56.dp).glow(on, e.color, sh).clip(sh).background(if (on) mix(e.color, 0.5f) else ChipBg)
+        m.height(56.dp).tilt3d().glow(on, e.color, sh).clip(sh).background(if (on) mix(e.color, 0.5f) else ChipBg)
             .border(if (on) 2.dp else 1.dp, if (on) e.color else Bd, sh)
             .pointerInput(e.id) {
                 detectTapGestures(

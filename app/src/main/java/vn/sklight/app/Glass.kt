@@ -32,6 +32,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 
 // ===================== GIAO DIỆN "KÍNH NEON 3D" (hướng B, chủ dự án duyệt 27/11) =====================
 // Nền tím than, thẻ kính nổi khối (xem Card trong Fx.kt), viền neon chạy quanh khung, logo SK phát sáng.
@@ -165,5 +173,56 @@ fun PowerRow(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
         }
         Spacer(Modifier.width(10.dp))
         SkSwitch(on, onChange)
+    }
+}
+
+// ===================== HIỆU ỨNG HỌC TỪ THREEUI (MIT, github.com/MengTo/threeui), chủ dự án chọn số 1 và 4 ngày 27/11 =====================
+// Chỉ lấy ý tưởng hình thức (Holo Card, Umbra Chrome Button), viết lại bằng Compose. Tắt cùng "Giảm hiệu ứng". Chưa thử trên máy thật.
+
+/** Thẻ nghiêng 3D theo ngón tay, có vệt sáng tại chỗ chạm. Chỉ quan sát thao tác chạm, không giành của nút bên trong. */
+fun Modifier.tilt3d(): Modifier = composed {
+    if (!Fx) return@composed Modifier
+    var tx by remember { mutableFloatStateOf(0f) }       // -1..1 theo chiều ngang
+    var ty by remember { mutableFloatStateOf(0f) }
+    var down by remember { mutableStateOf(false) }
+    var at by remember { mutableStateOf(Offset.Zero) }
+    val ax by animateFloatAsState(if (down) tx else 0f, spring(dampingRatio = 0.6f, stiffness = 380f), label = "tiltX")
+    val ay by animateFloatAsState(if (down) ty else 0f, spring(dampingRatio = 0.6f, stiffness = 380f), label = "tiltY")
+    val glow by animateFloatAsState(if (down) 1f else 0f, tween(180), label = "tiltGlow")
+    pointerInput(Unit) {
+        awaitEachGesture {
+            val d = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            fun set(p: Offset) { at = p; tx = ((p.x / size.width) * 2f - 1f).coerceIn(-1f, 1f); ty = ((p.y / size.height) * 2f - 1f).coerceIn(-1f, 1f) }
+            set(d.position); down = true
+            try {
+                while (true) {
+                    val ev = awaitPointerEvent(PointerEventPass.Initial)
+                    val c = ev.changes.firstOrNull { it.id == d.id } ?: break
+                    if (!c.pressed) break
+                    set(c.position)
+                }
+            } finally { down = false }
+        }
+    }.graphicsLayer { rotationY = ax * 11f; rotationX = -ay * 11f; cameraDistance = 10f * density }
+        .drawWithContent {
+            drawContent()
+            if (glow > 0.01f) drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.30f * glow), Color.Transparent), at, size.minDimension * 0.9f), size.minDimension * 0.9f, at)
+        }
+}
+
+/** Vệt sáng lướt ngang qua nút khi nhấn (đặt SAU clip / nền của nút để vệt sáng nằm gọn trong nút). */
+fun Modifier.pressSweep(src: InteractionSource): Modifier = composed {
+    if (!Fx) return@composed Modifier
+    val pressed by src.collectIsPressedAsState()
+    val k = remember { Animatable(1f) }
+    LaunchedEffect(pressed) { if (pressed) { k.snapTo(0f); k.animateTo(1f, tween(450, easing = LinearEasing)) } }
+    drawWithContent {
+        drawContent()
+        val v = k.value
+        if (v > 0f && v < 1f) {
+            val bw = size.height * 1.1f
+            val x = -bw + (size.width + 2f * bw) * v
+            drawRect(Brush.linearGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.55f), Color.Transparent), Offset(x - bw / 2f, 0f), Offset(x + bw / 2f, size.height * 0.4f)), Offset(x - bw, 0f), Size(2f * bw, size.height))
+        }
     }
 }

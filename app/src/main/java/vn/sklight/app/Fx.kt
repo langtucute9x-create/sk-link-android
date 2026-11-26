@@ -487,7 +487,7 @@ fun ColorOrb(col: Color, on: Boolean, gestures: Modifier, content: @Composable B
 fun OutlineBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     Box(
-        modifier.height(44.dp).then(pressScale(src, 0.96f)).block(false, RoundedCornerShape(Theme.r(8)), CardBg).clickable(src, LocalIndication.current, onClick = onClick),
+        modifier.height(44.dp).then(pressScale(src, 0.96f)).block(false, RoundedCornerShape(Theme.r(8)), CardBg).pressSweep(src).clickable(src, LocalIndication.current, onClick = onClick),
         contentAlignment = Alignment.Center
     ) { T(text, 12, FontWeight.SemiBold) }
 }
@@ -496,7 +496,7 @@ fun OutlineBtn(text: String, modifier: Modifier = Modifier, onClick: () -> Unit)
 fun FillBtn(text: String, icon: ImageVector, bg: Color, modifier: Modifier, onClick: () -> Unit) {
     val src = remember { MutableInteractionSource() }
     Row(
-        modifier.height(43.dp).then(pressScale(src, 0.96f)).block(true, RoundedCornerShape(Theme.r(6)), accent = bg).clickable(src, LocalIndication.current, onClick = onClick),
+        modifier.height(43.dp).then(pressScale(src, 0.96f)).block(true, RoundedCornerShape(Theme.r(6)), accent = bg).pressSweep(src).clickable(src, LocalIndication.current, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
     ) {
         Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
