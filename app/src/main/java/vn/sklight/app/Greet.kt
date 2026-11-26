@@ -160,7 +160,7 @@ fun GreetPage() {
             Chip("Tắt", !on, Modifier.weight(1f), 44.dp, 13) { Greet.setEnabled(ctx, false) }
         }
     }
-    fun fileCard(k: Int) {
+    @Composable fun fileCard(k: Int) {
         val n = Greet.name(ctx, k)
         T(if (n.isNotEmpty()) n else if (!S.isCar.value) "Chưa chọn file (không phát)" else if (k <= 1) "Mặc định: nhạc có sẵn trong app" else "Chưa chọn file (dùng giọng máy)", 13, maxLines = 1)
         Spacer(Modifier.height(8.dp))
