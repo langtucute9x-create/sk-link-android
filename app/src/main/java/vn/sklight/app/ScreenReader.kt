@@ -31,6 +31,7 @@ class ScreenReader : AccessibilityService() {
         val descs = ArrayList<String>()
         val tops = ArrayList<Int>()        // mép trên (px) của nút chứa dòng mô tả tương ứng
         val rcs = ArrayList<Rect>()        // khung của nút đó
+        var arrow2: Rect? = null           // vùng tìm thứ hai (khi chưa biết khung chữ là riêng dòng chữ hay cả dải)
         var seek = false                   // [arrow] mới là vùng tìm, phải dò hình mũi tên trắng trong đó
         var win: Rect? = null             // cửa sổ app bản đồ   // chữ mô tả theo thứ tự (Vietmap Live ghi tốc độ, km/h, giới hạn thành ba dòng liền nhau)
     }
@@ -137,8 +138,9 @@ class ScreenReader : AccessibilityService() {
                         val rowH = minOf(nr.height(), wn.height() * 13 / 100).coerceAtLeast(24)
                         val pad = if (nr.height() <= rowH) rowH * 3 / 10 else 0
                         val y0 = nr.top - pad; val y1 = nr.top + rowH + pad
-                        f.arrow = if (nr.left - wn.left >= rowH * 6 / 10) Rect(maxOf(wn.left, nr.left - rowH * 2), y0, nr.left, y1)
-                                  else Rect(nr.left, y0, nr.left + rowH * 11 / 10, y1)
+                        val inside = Rect(nr.left, y0, nr.left + rowH * 12 / 10, y1)
+                        if (nr.left - wn.left >= rowH * 6 / 10) { f.arrow = Rect(maxOf(wn.left, nr.left - rowH * 2), y0, nr.left, y1); f.arrow2 = inside }
+                        else f.arrow = inside
                         f.seek = true
                     }
                     break
@@ -171,7 +173,7 @@ class ScreenReader : AccessibilityService() {
         if (Build.VERSION.SDK_INT >= 30 && (f.arrow != null || f.sign != null) &&
             now - lastShot > (if (changed || dirNow == '?') 600L else 2500L)) {
             lastShot = now
-            shoot(pkg, f.arrow, f.sign, f.road, dist, f.seek)
+            shoot(pkg, f.arrow, f.sign, f.road, dist, f.seek, f.arrow2)
         }
         lastDist = dist
         info()
@@ -194,7 +196,7 @@ class ScreenReader : AccessibilityService() {
         AlertBridge.onNavOff()
     }
 
-    private fun shoot(pkg: String, arrow: Rect?, sign: Rect?, road: String, dist: Int, seek: Boolean = false) {
+    private fun shoot(pkg: String, arrow: Rect?, sign: Rect?, road: String, dist: Int, seek: Boolean = false, arrow2: Rect? = null) {
         if (Build.VERSION.SDK_INT < 30) return
         takeScreenshot(Display.DEFAULT_DISPLAY, mainExecutor, object : TakeScreenshotCallback {
             override fun onSuccess(r: ScreenshotResult) {
@@ -203,7 +205,7 @@ class ScreenReader : AccessibilityService() {
                     val bmp = Bitmap.wrapHardwareBuffer(hb, r.colorSpace)?.copy(Bitmap.Config.ARGB_8888, false)
                     hb.close()
                     if (bmp == null) return
-                    if (arrow != null) (if (seek) whiteArrow(bmp, arrow) else crop(bmp, arrow))?.let { c ->
+                    if (arrow != null) (if (seek) (whiteArrow(bmp, arrow) ?: arrow2?.let { whiteArrow(bmp, it) }) else crop(bmp, arrow))?.let { c ->
                         val d = NavParser.analyseIcon(Bitmap.createScaledBitmap(c, 64, 64, true), NavState())
                         if (seek && S.dev.value) S.arrowThumb.value = c        // chế độ nghiên cứu: xem app đang cắt hình nào làm mũi tên
                         if (d != '?') { dirNow = d; dirRoad = road; pushNav(pkg, dist, road); info() }
@@ -218,27 +220,41 @@ class ScreenReader : AccessibilityService() {
         })
     }
 
-    /** Tìm hình mũi tên trắng đầu tiên (tính từ trái) trong vùng [r]: gom các cột có điểm trắng liền nhau, gặp khoảng trống thì dừng (sau đó là chữ). */
+    /**
+     * Tìm hình mũi tên rẽ trong vùng [r] của dải chỉ đường Vietmap. Dải này nền tối chữ trắng ban đêm, nền sáng chữ xám đậm ban ngày,
+     * nên lấy "nét" = điểm lệch sáng rõ so với màu nền (màu chiếm nhiều nhất trong vùng). Gom các cột có nét liền nhau thành từng cụm;
+     * chọn cụm to nhất có dáng gần vuông (mũi tên), bỏ cụm hẹp (mép bản đồ, số 1) và cụm dài (chữ).
+     */
     private fun whiteArrow(bmp: Bitmap, r: Rect): Bitmap? {
         val c = crop(bmp, r) ?: return null
         val w = c.width; val hh = c.height
         val px = IntArray(w * hh); c.getPixels(px, 0, w, 0, 0, w, hh)
-        fun white(p: Int): Boolean { val cr = (p shr 16) and 255; val cg = (p shr 8) and 255; val cb = p and 255; return cr > 185 && cg > 185 && cb > 185 && maxOf(cr, cg, cb) - minOf(cr, cg, cb) < 45 }
+        fun lum(p: Int) = (((p shr 16) and 255) * 3 + ((p shr 8) and 255) * 6 + (p and 255)) / 10
+        val hist = IntArray(16); for (p in px) hist[lum(p) shr 4]++
+        val bg = hist.indices.maxByOrNull { hist[it] }!! * 16 + 8
+        fun ink(p: Int) = kotlin.math.abs(lum(p) - bg) > 70
         val col = IntArray(w)
-        for (y in 0 until hh) for (x in 0 until w) if (white(px[y * w + x])) col[x]++
+        for (y in 0 until hh) for (x in 0 until w) if (ink(px[y * w + x])) col[x]++
         val gap = maxOf(4, hh * 6 / 100)
+        var best: IntArray? = null; var bestArea = 0
         var x0 = -1; var x1 = -1; var empty = 0
+        fun close() {
+            if (x0 < 0) return
+            var y0 = hh; var y1 = -1
+            for (y in 0 until hh) for (x in x0..x1) if (ink(px[y * w + x])) { if (y < y0) y0 = y; if (y > y1) y1 = y }
+            val bw = x1 - x0 + 1; val bh = y1 - y0 + 1
+            if (bh >= hh * 28 / 100 && bw >= hh * 28 / 100 && bw <= bh * 2 && bh <= bw * 2 && bw * bh > bestArea) { bestArea = bw * bh; best = intArrayOf(x0, y0, x1, y1) }
+            x0 = -1
+        }
         for (x in 0 until w) {
             if (col[x] >= 2) { if (x0 < 0) x0 = x; x1 = x; empty = 0 }
-            else if (x0 >= 0 && ++empty >= gap) break
+            else if (x0 >= 0 && ++empty >= gap) close()
         }
-        if (x0 < 0 || x1 - x0 < 8) return null
-        var y0 = hh; var y1 = -1
-        for (y in 0 until hh) for (x in x0..x1) if (white(px[y * w + x])) { if (y < y0) y0 = y; if (y > y1) y1 = y }
-        if (y1 - y0 < 8) return null
-        val p = 3          // chừa viền nền tối quanh hình, để bộ nhận hướng lấy đúng màu nền ở góc
-        val ax = maxOf(0, x0 - p); val ay = maxOf(0, y0 - p)
-        return Bitmap.createBitmap(c, ax, ay, minOf(w, x1 + p + 1) - ax, minOf(hh, y1 + p + 1) - ay)
+        close()
+        val k = best ?: return null
+        val p = 3          // chừa viền nền quanh hình, để bộ nhận hướng lấy đúng màu nền ở góc
+        val ax = maxOf(0, k[0] - p); val ay = maxOf(0, k[1] - p)
+        return Bitmap.createBitmap(c, ax, ay, minOf(w, k[2] + p + 1) - ax, minOf(hh, k[3] + p + 1) - ay)
     }
 
     /** Đọc số trên biển: thử vùng bên trong vành đỏ trước, không ra thì thử cả biển. */
