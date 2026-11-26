@@ -38,7 +38,7 @@ object Setup {
     val show = mutableStateOf(false)            // đang hiện bảng xin quyền
     var pickAfter = false                        // đóng bảng xong thì mở hộp chọn hộp đèn (lần đầu mở app)
     fun notifOn(c: Context) = (Settings.Secure.getString(c.contentResolver, "enabled_notification_listeners") ?: "").contains(c.packageName)
-    fun accOn(c: Context) = (Settings.Secure.getString(c.contentResolver, "enabled_accessibility_services") ?: "").contains(c.packageName)
+    fun accOn(c: Context) = BuildConfig.PLAY || (Settings.Secure.getString(c.contentResolver, "enabled_accessibility_services") ?: "").contains(c.packageName)
     private fun sp(c: Context) = c.getSharedPreferences("sklight", Context.MODE_PRIVATE)
     fun asked(c: Context) = sp(c).getBoolean("setupAsked", false)
     fun markAsked(c: Context) = sp(c).edit().putBoolean("setupAsked", true).apply()
@@ -89,7 +89,7 @@ fun SetupSheet(show: Boolean, onClose: () -> Unit) {
             StepRow(1, Icons.Filled.Notifications, "Đọc thông báo", "Đọc hướng rẽ, khoảng cách từ thông báo của Google Maps, Vietmap.", n, "Mở trang Truy cập thông báo") {
                 Setup.open(ctx, Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             }
-            StepRow(2, Icons.Filled.Accessibility, "Hỗ trợ tiếp cận", "Đọc app dẫn đường không có thông báo (Gofa) và tự chia đôi màn hình.", a, "Mở trang Hỗ trợ tiếp cận") {
+            if (!BuildConfig.PLAY) StepRow(2, Icons.Filled.Accessibility, "Hỗ trợ tiếp cận", "Đọc app dẫn đường không có thông báo (Gofa) và tự chia đôi màn hình.", a, "Mở trang Hỗ trợ tiếp cận") {
                 Setup.open(ctx, Settings.ACTION_ACCESSIBILITY_SETTINGS)
             }
             if (!n || !a) {

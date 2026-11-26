@@ -6,14 +6,21 @@ plugins {
 
 android {
     namespace = "vn.sklight.app"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "vn.sklight.app"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 202
         versionName = "1.4.113"
+    }
+
+    // Hai ban: "full" = ban tai ngoai (APK, day du tinh nang); "play" = ban len CH Play (bo Ho tro tiep can, tu cap nhat, thong ke su dung).
+    flavorDimensions += "dist"
+    productFlavors {
+        create("full") { dimension = "dist"; buildConfigField("boolean", "PLAY", "false") }
+        create("play") { dimension = "dist"; buildConfigField("boolean", "PLAY", "true") }
     }
 
     // Co khoa rieng (GitHub Secrets) thi ky bang khoa do, khong thi dung khoa debug.
@@ -41,7 +48,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     lint {
         abortOnError = false
         checkReleaseBuilds = false

@@ -871,7 +871,7 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit, sim: Boolean = true) {
     // ---- quyền còn thiếu: chỉ hiện khi chưa cấp đủ; cấp xong thì thẻ tự ẩn ----
     var accOn by remember { mutableStateOf(true) }
     val openAcc = { try { ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {} }
-    LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
+    if (!BuildConfig.PLAY) LaunchedEffect(Unit) { while (true) { accOn = (Settings.Secure.getString(ctx.contentResolver, "enabled_accessibility_services") ?: "").contains(ctx.packageName); delay(1000) } }
     if (!granted || !accOn) Card {
         GroupTitle(Icons.Filled.Navigation, "Cần cấp quyền", 16)
         Spacer(Modifier.height(6.dp))
@@ -1029,7 +1029,7 @@ fun SettingsFeatures() {
         Feature(Icons.Filled.BluetoothSearching, "Thử hộp phụ", "") { S.subPage.intValue = 16 }
         Feature(Icons.Filled.Science, "Thử chế độ tự tạo", "") { S.subPage.intValue = 3 }
     }
-    Card {
+    if (!BuildConfig.PLAY) Card {
         Feature(Icons.Filled.SystemUpdate, "Kiểm tra cập nhật", if (Updater.checking.value) "Đang kiểm tra…" else if (Updater.info.value != null) "Có bản mới ${Updater.info.value?.name}" else "Đang dùng ${S.VER}") { Updater.check(ctx, true) }
     }
     // chạm 7 lần liên tiếp vào dòng phiên bản để bật / tắt chế độ nghiên cứu (hiện thẻ Kiểm tra và công cụ nghiên cứu)

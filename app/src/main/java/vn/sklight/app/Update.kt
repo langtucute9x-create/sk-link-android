@@ -70,12 +70,14 @@ object Updater {
 
     /** Tự kiểm tra khi mở app, tối đa một lần mỗi ngày. */
     fun auto(c: Context) {
+        if (BuildConfig.PLAY) return
         val last = sp(c).getLong("last", 0L)
         if (System.currentTimeMillis() - last < 24L * 3600 * 1000) return
         check(c, false)
     }
 
     fun check(c: Context, manual: Boolean) {
+        if (BuildConfig.PLAY) return
         if (checking.value) return
         val app = c.applicationContext
         checking.value = true
@@ -181,6 +183,7 @@ object Updater {
 /** Thanh mỏng báo có bản mới. Ẩn khi xe đang chạy hoặc đang có cảnh báo rẽ. */
 @Composable
 fun UpdateBanner(modifier: Modifier = Modifier) {
+    if (BuildConfig.PLAY) return
     val i = Updater.info.value ?: return
     if (S.speedKmh.floatValue >= 10f || S.alertKind.intValue != 0) return
     Row(
@@ -196,6 +199,7 @@ fun UpdateBanner(modifier: Modifier = Modifier) {
 
 @Composable
 fun UpdateDialog() {
+    if (BuildConfig.PLAY) return
     val i = Updater.info.value ?: return
     if (!Updater.showDialog.value) return
     val ctx = LocalContext.current

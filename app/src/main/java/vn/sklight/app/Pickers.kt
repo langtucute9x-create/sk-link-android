@@ -164,6 +164,7 @@ private fun appIcon(pkg: String): ImageBitmap? {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SplitPicker() {
+    if (BuildConfig.PLAY) return
     if (!Split.picking.value) return
     val ctx = LocalContext.current
     var tick by remember { mutableIntStateOf(0) }

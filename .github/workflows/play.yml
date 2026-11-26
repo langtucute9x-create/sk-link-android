@@ -1,0 +1,37 @@
+name: Build Play AAB
+on:
+  push:
+    branches: [sk-light-play]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.11.1' }
+      - name: Khoa upload (neu co)
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/sklink.keystore"; echo "SKL_KEYSTORE=$RUNNER_TEMP/sklink.keystore" >> $GITHUB_ENV; echo "SKL_PASS=${{ secrets.KEYSTORE_PASS }}" >> $GITHUB_ENV; else echo "Khong co khoa -> dung khoa debug"; fi
+      - name: Build AAB
+        run: gradle --no-daemon bundlePlayRelease
+      - name: Build APK ban play de thu
+        run: gradle --no-daemon assemblePlayRelease
+      - name: Kiem tra manifest ban play
+        run: |
+          sudo apt-get -qq install -y aapt >/dev/null 2>&1 || true
+          APK=$(ls app/build/outputs/apk/play/release/*.apk | head -1)
+          aapt dump permissions "$APK" || true
+          aapt dump xmltree "$APK" AndroidManifest.xml | grep -c "ScreenReader" || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sk-light-play
+          path: |
+            app/build/outputs/bundle/playRelease/*.aab
+            app/build/outputs/apk/play/release/*.apk

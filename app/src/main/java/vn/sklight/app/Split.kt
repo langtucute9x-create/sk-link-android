@@ -92,6 +92,7 @@ object Split {
 /** Nút tròn nhỏ ở thanh menu màn ngang. */
 @Composable
 fun SplitBtn(size: Int = 46) {
+    if (BuildConfig.PLAY) return
     val ctx = LocalContext.current
     val src = remember { MutableInteractionSource() }
     val on = Split.inSplit.value
@@ -104,6 +105,7 @@ fun SplitBtn(size: Int = 46) {
 /** Thẻ ở đầu trang Dẫn đường. */
 @Composable
 fun SplitCard() {
+    if (BuildConfig.PLAY) return
     val ctx = LocalContext.current
     Card {
         GroupTitle(Icons.Filled.VerticalSplit, "Chia đôi màn hình", 16)

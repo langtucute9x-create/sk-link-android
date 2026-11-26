@@ -11,17 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17' }
+        with: { distribution: temurin, java-version: "17" }
       - uses: gradle/actions/setup-gradle@v4
-        with: { gradle-version: '8.9' }
+        with: { gradle-version: '8.11.1' }
       - name: Khoa ky (neu co)
         env:
           KS_B64: ${{ secrets.KEYSTORE_B64 }}
         run: |
           if [ -n "$KS_B64" ]; then echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/sklink.keystore"; echo "SKL_KEYSTORE=$RUNNER_TEMP/sklink.keystore" >> $GITHUB_ENV; echo "SKL_PASS=${{ secrets.KEYSTORE_PASS }}" >> $GITHUB_ENV; else echo "Khong co khoa -> dung khoa debug"; fi
       - name: Build
-        run: gradle --no-daemon assembleRelease
-      - run: cp app/build/outputs/apk/release/app-release.apk sk-light.apk
+        run: gradle --no-daemon assembleFullRelease
+      - run: cp app/build/outputs/apk/full/release/app-full-release.apk sk-light.apk
       - uses: actions/upload-artifact@v4
         with: { name: sk-light-apk, path: sk-light.apk }
       - name: Tao version.json cho tinh nang bao cap nhat
