@@ -156,7 +156,7 @@ fun AppearanceIdle() {
         Spacer(Modifier.height(12.dp))
         T("Hình nền", 13, FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
-        val hasPhoto = remember(S.idlePhotoVer.intValue) { photoFile(ctx).exists() }
+        val hasPhoto = androidx.compose.runtime.remember(S.idlePhotoVer.intValue) { photoFile(ctx).exists() }
         Grid(IDLE_BGS.indices.toList(), 3) { i, m -> Chip(IDLE_BGS[i], S.idleBg.intValue == i, m, 44.dp, 12) {
             if (i == 6 && !hasPhoto) { try { pick.launch("image/*") } catch (e: Exception) { Notice.show(ctx, L.tr("Máy không có trình chọn ảnh.")) } }
             else { S.idleBg.intValue = i; S.saveSettings() }
