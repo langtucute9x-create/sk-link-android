@@ -57,9 +57,12 @@ object Greet {
 
     fun clear(c: Context, k: Int) { file(c, k).delete(); sp(c).edit().remove(KEYS[k]).apply(); ver.intValue++ }
 
+    /** Màn hình ô tô: có nhạc mặc định và câu chào bằng giọng máy. Điện thoại: chỉ phát file mp3 người dùng đã chọn. */
     fun play(c: Context, k: Int, light: Boolean) {
+        val car = S.isCar.value
+        val f = if (file(c, k).exists()) file(c, k) else if (car) builtin(c, k) else null
+        if (f == null && !car) return
         if (light) flash()
-        val f = if (file(c, k).exists()) file(c, k) else builtin(c, k)
         if (f != null && f.exists()) {
             try {
                 mp?.release()
@@ -67,12 +70,12 @@ object Greet {
                 p.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
                 p.setDataSource(f.absolutePath)
                 p.setOnCompletionListener { it.release(); if (mp === it) mp = null; if (pendingConnect) { pendingConnect = false; if (S.connected.value) play(c, 0, true) } }
-                p.setOnErrorListener { m, _, _ -> m.release(); if (mp === m) mp = null; Speaker.say(c, DEF[k], force = true); true }
+                p.setOnErrorListener { m, _, _ -> m.release(); if (mp === m) mp = null; if (car) Speaker.say(c, DEF[k], force = true); true }
                 p.prepare(); p.start(); mp = p
                 return
             } catch (e: Exception) { mp = null }
         }
-        Speaker.say(c, DEF[k], force = true)
+        if (car) Speaker.say(c, DEF[k], force = true)
     }
 
     /** Gọi khi mở app: phát "Lên xe" một lần mỗi lần mở app. */
@@ -119,7 +122,7 @@ fun GreetPage() {
     Card {
         GroupTitle(Icons.Filled.RecordVoiceOver, "Lời chào", 16)
         Spacer(Modifier.height(6.dp))
-        T("Chưa chọn file thì app đọc một câu chào mặc định bằng giọng của máy.", 13)
+        T(if (S.isCar.value) "Chưa chọn file thì dùng nhạc có sẵn, hoặc đọc một câu chào bằng giọng của máy." else "Trên điện thoại, chỉ phát khi anh chọn file mp3. Chưa chọn thì không có lời chào.", 13)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             val on = Greet.enabled(ctx)
@@ -139,7 +142,7 @@ fun GreetPage() {
     for (k in 0..2) Card {
         T("Lời chào " + Greet.KINDS[k].lowercase(), 15, FontWeight.Bold)
         val n = Greet.name(ctx, k)
-        T(if (n.isNotEmpty()) n else if (k <= 1) "Mặc định: nhạc có sẵn trong app" else "Chưa chọn file (dùng giọng máy)", 13, maxLines = 1)
+        T(if (n.isNotEmpty()) n else if (!S.isCar.value) "Chưa chọn file (không phát)" else if (k <= 1) "Mặc định: nhạc có sẵn trong app" else "Chưa chọn file (dùng giọng máy)", 13, maxLines = 1)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlineBtn("Chọn mp3", Modifier.weight(1f)) { target = k; pick.launch(arrayOf("audio/*")) }

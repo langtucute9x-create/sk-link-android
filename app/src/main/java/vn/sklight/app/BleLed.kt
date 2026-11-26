@@ -413,6 +413,7 @@ class BleLed(private val ctx: Context) {
             S.conn.value = "Đã kết nối"
             Act.onConnected(g.device.address)
             Greet.onConnected(ctx)
+            if (!S.isCar.value && L.cur.intValue == 0) Speaker.say(ctx, "Đã kết nối với hộp đèn", force = true)      // điện thoại: có giọng báo đã kết nối; màn hình ô tô đã có lời chào nên không đọc
             Notice.show(ctx, L.tr("Đã kết nối với " + S.devName.value))
             S.isCzh.value = (g.device.name ?: "").contains("CZH2")
             // Gói mở app + độ sáng trước; các lệnh hỏi gửi sau 700 ms để câu trả lời không rơi vào khoảng "vừa gửi lệnh" bị bỏ qua.
