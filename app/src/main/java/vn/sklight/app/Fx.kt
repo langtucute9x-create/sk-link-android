@@ -418,40 +418,43 @@ fun RepeatBtn(icon: ImageVector, desc: String, modifier: Modifier = Modifier, on
     ) { Icon(icon, desc, tint = Txt, modifier = Modifier.size(18.dp)) }
 }
 
+/**
+ * Công tắc dùng chung cho cả app: phím gạt 3D (kiểu 3, chủ dự án chọn 27/11). Nửa phải nổi lên và sáng màu nhấn khi bật,
+ * nửa trái nổi lên màu xám khi tắt; nửa còn lại lõm xuống. "Giảm hiệu ứng" thì vẽ phẳng, không quầng sáng.
+ */
 @Composable
 fun SkSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
-    if (!Fx) {
-        Box(
-            Modifier.size(52.dp, 32.dp).clip(RoundedCornerShape(16.dp)).background(if (on) Pink else Color(0xFFE6E0E9))
-                .border(2.dp, if (on) Pink else Color(0xFF79747E), RoundedCornerShape(16.dp)).clickable { onChange(!on) },
-            contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart
-        ) {
-            Box(Modifier.padding(horizontal = if (on) 4.dp else 6.dp).size(if (on) 24.dp else 16.dp).clip(CircleShape).background(if (on) Color.White else Color(0xFF79747E)))
-        }
-        return
-    }
+    val fx = Fx
     val src = remember { MutableInteractionSource() }
-    val pressed by src.collectIsPressedAsState()
-    val t by animateFloatAsState(if (on) 1f else 0f, spring(dampingRatio = 0.6f, stiffness = 500f), label = "sw")
-    val stretch by animateFloatAsState(if (pressed) 1f else 0f, label = "swp")
+    val t by animateFloatAsState(if (on) 1f else 0f, if (fx) spring(dampingRatio = 0.7f, stiffness = 600f) else snap(), label = "sw")
     val a = Pink
-    val off = SoftTrack
+    val dark = Theme.dark
+    val body = if (dark) Color(0xFF0C1330) else Color(0xFFD5DAE6)
+    val pit = if (dark) Color(0xFF060A1A) else Color(0xFFBAC1D1)
+    val key = if (dark) Color(0xFF39477A) else Color(0xFFFFFFFF)
     val tick = rememberTick()
-    Box(Modifier.size(52.dp, 32.dp).clip(RoundedCornerShape(16.dp)).clickable(src, null) { tick(); onChange(!on) }.drawBehind {
-        val h = size.height
-        val base = lerp(off, a, t.coerceIn(0f, 1f))
-        drawRoundRect(Brush.verticalGradient(listOf(dim(base, 0.30f), base)), cornerRadius = CornerRadius(h / 2f, h / 2f))
-        val d = 24.dp.toPx()
-        val kw = d + 8.dp.toPx() * stretch
-        val pad = 4.dp.toPx()
-        val x = pad + (size.width - 2f * pad - kw) * t
-        val y = (h - d) / 2f
-        val cr = CornerRadius(d / 2f, d / 2f)
-        drawRoundRect(Color.Black.copy(alpha = 0.30f), Offset(x, y + 2.dp.toPx()), Size(kw, d), cr)
-        drawRoundRect(
-            Brush.radialGradient(listOf(Color.White, Color(0xFFE2E4EA), Color(0xFFA9ADB8)), center = Offset(x + kw * 0.35f, y + d * 0.28f), radius = kw * 0.9f),
-            Offset(x, y), Size(kw, d), cr
-        )
+    val sh = RoundedCornerShape(9.dp)
+    Box(Modifier.size(60.dp, 34.dp).then(if (fx) Modifier.shadow(3.dp, sh, clip = false) else Modifier).clip(sh).clickable(src, null) { tick(); onChange(!on) }.drawBehind {
+        val k = t.coerceIn(0f, 1f)
+        val p = 3.dp.toPx()
+        val hw = (size.width - 3f * p) / 2f
+        val hh = size.height - 2f * p
+        val cr = CornerRadius(6.dp.toPx(), 6.dp.toPx())
+        drawRoundRect(if (fx) Brush.verticalGradient(listOf(lite(body, 0.10f), body)) else SolidColor(body), cornerRadius = CornerRadius(9.dp.toPx(), 9.dp.toPx()))
+        val lo = Offset(p, p); val ro = Offset(2f * p + hw, p); val hs = Size(hw, hh)
+        // hai hốc lõm
+        drawRoundRect(pit, lo, hs, cr); drawRoundRect(pit, ro, hs, cr)
+        // nửa trái (tắt) nổi lên khi k -> 0
+        if (k < 0.99f) {
+            if (fx) drawRoundRect(Color.Black.copy(alpha = 0.35f * (1f - k)), Offset(lo.x, lo.y + 2.dp.toPx()), hs, cr)
+            drawRoundRect(if (fx) Brush.verticalGradient(listOf(lite(key, 0.15f), dim(key, 0.30f)), startY = p, endY = p + hh) else SolidColor(key), lo, hs, cr, alpha = 1f - k)
+        }
+        // nửa phải (bật) nổi lên và sáng khi k -> 1
+        if (k > 0.01f) {
+            if (fx) for ((g, al) in listOf(4.dp.toPx() to 0.14f, 2.dp.toPx() to 0.28f)) drawRoundRect(a.copy(alpha = al * k), Offset(ro.x - g, ro.y - g), Size(hw + 2f * g, hh + 2f * g), CornerRadius(6.dp.toPx() + g, 6.dp.toPx() + g))
+            drawRoundRect(if (fx) Brush.verticalGradient(listOf(lite(a, 0.35f), a, dim(a, 0.20f)), startY = p, endY = p + hh) else SolidColor(a), ro, hs, cr, alpha = k)
+            if (fx) drawRoundRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.Transparent), startY = p, endY = p + hh * 0.5f), ro, hs, cr, alpha = k, style = Stroke(1.dp.toPx()))
+        }
     })
 }
 

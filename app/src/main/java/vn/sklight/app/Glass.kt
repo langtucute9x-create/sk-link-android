@@ -164,6 +164,6 @@ fun PowerRow(title: String, on: Boolean, onChange: (Boolean) -> Unit) {
             T(if (on) "Đang bật" else "Đang tắt", 12, FontWeight.SemiBold, if (on) AccentText else Grey)
         }
         Spacer(Modifier.width(10.dp))
-        PowerToggle(on, title, 50, onChange)
+        SkSwitch(on, onChange)
     }
 }
