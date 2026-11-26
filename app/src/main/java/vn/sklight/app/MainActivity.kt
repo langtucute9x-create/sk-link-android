@@ -1,5 +1,6 @@
 package vn.sklight.app
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -167,7 +168,7 @@ fun Root() {
     }.pointerInput(Unit) {
         // vuốt trái / phải ở vùng trống để chuyển 4 trang menu (1.4.108). Thanh trượt, hàng bối cảnh, vòng màu tự xử lý thao tác kéo của mình nên không bị ảnh hưởng.
         var sum = 0f
-        androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+        detectHorizontalDragGestures(
             onDragStart = { sum = 0f }, onDragCancel = { sum = 0f },
             onDragEnd = {
                 if (!S.idleShow.value && S.subPage.intValue == 0 && kotlin.math.abs(sum) > 70.dp.toPx()) {
