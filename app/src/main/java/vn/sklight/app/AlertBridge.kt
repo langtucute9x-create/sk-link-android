@@ -55,6 +55,16 @@ object AlertBridge {
         }
     }
 
+    /** Ghi thông báo thô đủ trường (kể cả khi không có chữ tiêu đề/nội dung) để dò app dẫn đường như Vietmap S2OBU. */
+    @JvmStatic fun onDump(line: String) {
+        h.post {
+            if (S.navDump.firstOrNull() != line) {
+                S.navDump.add(0, line)
+                while (S.navDump.size > 8) S.navDump.removeAt(S.navDump.size - 1)
+            }
+        }
+    }
+
     /** Thử nháy trong 4 giây. */
     fun test(k: Int) {
         if (!S.connected.value) { toast("Chưa kết nối hộp đèn."); return }

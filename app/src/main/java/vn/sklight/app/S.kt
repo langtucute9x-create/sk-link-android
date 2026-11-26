@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.99"
+    const val VER = "1.4.100"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -85,6 +85,8 @@ object S {
     val navDist = mutableIntStateOf(-1)
     val navStreet = mutableStateOf("")
     val navApp = mutableStateOf("")
+    val navDump = mutableStateListOf<String>()            // thông báo thô đủ các trường (kênh, loại, extras) của app dẫn đường, mới nhất ở đầu
+    val limitNote = mutableStateOf("")                    // lần tra OpenStreetMap gần nhất: kết quả hoặc lỗi (để kiểm tra)
     val navLog = mutableStateListOf<String>()             // thông báo thô của app dẫn đường, mới nhất ở đầu
     val speedZone = mutableIntStateOf(0)                  // quá tốc độ: khu nào nháy đỏ (0 = cả xe, 1, 2). Mặc định cả xe.
     val camWarn = mutableStateOf(false)                   // báo camera phạt nguội / AI / đo tốc độ

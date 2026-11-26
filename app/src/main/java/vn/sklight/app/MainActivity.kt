@@ -893,9 +893,14 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit, sim: Boolean = true) {
             for (line in S.navLog) {
                 Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(Theme.r(6))).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
             }
+            T("Thông báo thô đủ trường", 12, FontWeight.Bold, color = SubTxt)
+            if (S.navDump.isEmpty()) T("Chưa có thông báo nào từ app bản đồ (nếu đã cấp quyền đọc thông báo thì app này không đẩy thông báo).", 12, color = Grey)
+            for (line in S.navDump) {
+                Box(Modifier.padding(bottom = 6.dp).fillMaxWidth().clip(RoundedCornerShape(Theme.r(6))).background(ChipBg).padding(horizontal = 9.dp, vertical = 7.dp)) { T(line, 11, color = SubTxt) }
+            }
             OutlineBtn("Sao chép thông báo để gửi", Modifier.fillMaxWidth()) {
                 val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n")))
+                cm.setPrimaryClip(ClipData.newPlainText("SK Light", "SK Light ${S.VER}, thông báo app dẫn đường:\n" + S.navLog.joinToString("\n") + "\n--- thô đủ trường ---\n" + S.navDump.joinToString("\n")))
                 Notice.show(ctx, L.tr("Đã sao chép ${S.navLog.size} dòng."))
             }
             Divider(12.dp, 10.dp)
@@ -942,6 +947,10 @@ fun NavBottom(granted: Boolean, openAccess: () -> Unit, sim: Boolean = true) {
     // ---- tra giới hạn tốc độ theo vị trí (cách 2), luôn ở cuối màn hình dẫn đường ----
     Card {
         SwitchRow("Tra giới hạn tốc độ theo vị trí", "Dùng khi không đọc được biển từ app bản đồ. Cần mạng; gửi vị trí tới máy chủ OpenStreetMap, nhiều đoạn đường chưa có dữ liệu.", S.limitOsm.value) { S.limitOsm.value = it; S.saveSettings(); S.syncService(); if (!it) Limit.clearOsm() }
+        if (S.limitOsm.value) {
+            T(if (S.limitNote.value.isEmpty()) "Chưa tra lần nào (cần xe chạy trên 5 km/h và có GPS)." else S.limitNote.value, 11, color = Grey)
+            if (S.uiStarted && Limit.source == 2) T("Biển nổi OSM đang bị ẩn vì SK Light đang hiện trên màn hình (kể cả khi chia đôi màn hình).", 11, color = Grey)
+        }
     }
 }
 

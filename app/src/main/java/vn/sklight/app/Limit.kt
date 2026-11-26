@@ -56,11 +56,17 @@ object Limit {
         if (!qLat.isNaN() && now - qAt < 60000 && dist(lat, lon, qLat, qLon) < 40.0) return
         qAt = now; qLat = lat; qLon = lon; busy = true
         Thread {
-            try { osm = query(lat, lon); osmAt = System.currentTimeMillis() } catch (_: Exception) { /* mất mạng: giữ giá trị cũ tới khi hết hạn */ }
+            try {
+                osm = query(lat, lon); osmAt = System.currentTimeMillis()
+                note("tra OSM " + java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date()) + ": " + qInfo + " → " + (if (osm > 0) "${osm} km/h" else "không có số"))
+            } catch (e: Exception) { /* mất mạng: giữ giá trị cũ tới khi hết hạn */ note("tra OSM lỗi: ${e.javaClass.simpleName} ${e.message?.take(60) ?: ""}") }
             busy = false
             update()
         }.start()
     }
+
+    @Volatile private var qInfo = ""
+    private fun note(t: String) { main.post { S.limitNote.value = t } }
 
     private fun dist(a: Double, b: Double, c: Double, d: Double): Double {
         val k = 111320.0
@@ -90,10 +96,11 @@ object Limit {
         c.connectTimeout = 4000; c.readTimeout = 7000; c.requestMethod = "POST"; c.doOutput = true
         c.setRequestProperty("User-Agent", "SK-Light/${S.VER}")
         c.outputStream.use { it.write(("data=" + URLEncoder.encode(q, "UTF-8")).toByteArray()) }
-        if (c.responseCode != 200) { c.disconnect(); return 0 }
+        if (c.responseCode != 200) { val rc = c.responseCode; c.disconnect(); qInfo = "máy chủ trả mã $rc"; return 0 }
         val body = c.inputStream.bufferedReader().use { it.readText() }
         c.disconnect()
-        val els = JSONObject(body).optJSONArray("elements") ?: return 0
+        val els = JSONObject(body).optJSONArray("elements") ?: run { qInfo = "trả về rỗng"; return 0 }
+        qInfo = if (els.length() == 0) "không có đoạn đường nào trong 30 m ghi giới hạn (OSM chưa có dữ liệu)" else "${els.length()} đoạn có giới hạn trong 30 m"
         var best = 0; var bestD = Double.MAX_VALUE
         for (i in 0 until els.length()) {
             val e = els.getJSONObject(i)

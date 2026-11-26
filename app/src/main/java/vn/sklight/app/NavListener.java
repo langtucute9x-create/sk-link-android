@@ -1,5 +1,8 @@
 package vn.sklight.app;
 
+import android.app.Notification;
+import android.os.Build;
+import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -68,6 +71,7 @@ public class NavListener extends NotificationListenerService {
         if (pkg == null || pkg.equals(getPackageName())) return;
         remember(pkg);
         if (!Prefs.allApps(this) && !isMapApp(pkg)) return;
+        AlertBridge.onDump(dump(pkg, sbn.getNotification()));
         NavState s = NavParser.parse(this, pkg, sbn.getNotification());
         lastRaw = s;
         AlertBridge.onRaw(s);
@@ -75,6 +79,27 @@ public class NavListener extends NotificationListenerService {
         navKey = sbn.getKey();
         lastNav = s;
         AlertBridge.onNav(s);
+    }
+
+    /** Gom mọi trường chữ của thông báo (kênh, loại, extras) thành một dòng để kiểm tra. */
+    private static String dump(String pkg, Notification n) {
+        StringBuilder b = new StringBuilder(pkg).append(" [");
+        try {
+            if (Build.VERSION.SDK_INT >= 26 && n.getChannelId() != null) b.append("kênh ").append(n.getChannelId()).append(' ');
+            if (n.category != null) b.append("loại ").append(n.category).append(' ');
+            b.append((n.flags & Notification.FLAG_ONGOING_EVENT) != 0 ? "đang chạy" : "thường").append("] ");
+            Bundle ex = n.extras;
+            if (ex != null) for (String k : ex.keySet()) {
+                Object v = ex.get(k);
+                if (v instanceof CharSequence || v instanceof Number || v instanceof Boolean) {
+                    String t = String.valueOf(v).replace('\n', ' ');
+                    if (!t.isEmpty()) b.append(k.replace("android.", "")).append('=').append(t.length() > 80 ? t.substring(0, 80) : t).append("; ");
+                }
+            }
+            if (n.actions != null) b.append("nút:").append(n.actions.length).append(' ');
+            if (n.contentView != null || n.bigContentView != null) b.append("giao diện riêng");
+        } catch (Throwable t) { b.append("lỗi đọc"); }
+        return b.length() > 700 ? b.substring(0, 700) : b.toString();
     }
 
     private static void remember(String pkg) {
