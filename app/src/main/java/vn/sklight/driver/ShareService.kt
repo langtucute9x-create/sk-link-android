@@ -21,26 +21,32 @@ class ShareService : Service() {
     private var sw = 0
     private var sh = 0
     private var view: DriveView? = null
-    private var hw = true
     private val DRAW = 10
 
+    private var peer: Messenger? = null
+    private var drawn = 0
+    private var err = ""
+
     private val h = Handler(ht.looper) { m ->
-        when (m.what) {
-            1 -> {
-                @Suppress("DEPRECATION")
-                surface = m.data.getParcelable("s"); sw = m.arg1; sh = m.arg2; hw = true
-                if (view == null) view = DriveView(this, {}, {})
-                Engine.mirror = { fr -> view?.show(fr); kick() }
-                kick()
+        try {
+            when (m.what) {
+                1 -> {
+                    peer = m.replyTo ?: peer
+                    @Suppress("DEPRECATION")
+                    surface = m.data.getParcelable("s"); sw = m.arg1; sh = m.arg2; drawn = 0; err = ""
+                    if (view == null) view = DriveView(this, {}, {})
+                    Engine.mirror = { fr -> view?.show(fr); kick() }
+                    kick()
+                }
+                2 -> { Engine.mirror = null; surface = null }
+                3 -> {
+                    val v = view
+                    val scr = if (!DriverService.running) 0 else v?.hitAt(m.arg1.toFloat(), m.arg2.toFloat()) ?: -1
+                    try { m.replyTo?.send(Message.obtain(null, 4, scr, 0)) } catch (_: Throwable) {}
+                }
+                DRAW -> { draw(); report(); tick() }
             }
-            2 -> { Engine.mirror = null; surface = null }
-            3 -> {
-                val v = view
-                val scr = if (!DriverService.running) 0 else v?.hitAt(m.arg1.toFloat(), m.arg2.toFloat()) ?: -1
-                try { m.replyTo?.send(Message.obtain(null, 4, scr, 0)) } catch (_: Throwable) {}
-            }
-            DRAW -> { draw(); tick() }
-        }
+        } catch (e: Throwable) { err = "Lỗi ${e.javaClass.simpleName}: ${e.message ?: ""}"; report() }
         true
     }
     private val messenger = Messenger(h)
@@ -49,16 +55,28 @@ class ShareService : Service() {
     /** Không có khung hình mới vẫn vẽ lại đều để hiện trạng thái (chưa chạy, mất hình). */
     private fun tick() { h.removeMessages(DRAW); if (surface != null) h.sendEmptyMessageDelayed(DRAW, 700) }
 
+    /** Báo cho SK Light: tin 5, arg1 = số lần đã vẽ được lên mặt vẽ, data "e" = lỗi (rỗng là ổn). SK Light hiện ngay trên khung hình. */
+    private fun report() {
+        try { peer?.send(Message.obtain(null, 5, drawn, 0).apply { data = android.os.Bundle().apply { putString("e", err) } }) } catch (_: Throwable) {}
+    }
+
     private fun draw() {
         val s = surface ?: return
         val v = view ?: return
-        if (!s.isValid || sw <= 0 || sh <= 0) return
+        if (sw <= 0 || sh <= 0) { err = "Khung hình chưa có kích thước"; return }
+        if (!s.isValid) { err = "Mặt vẽ nhận từ SK Light không dùng được"; return }
         v.note = if (!DriverService.running) "Chạm để mở SK Driver" else Engine.status.ifEmpty { "Đang kết nối…" }
         try {
             if (v.width != sw || v.height != sh) v.layout(0, 0, sw, sh)
-            val c = if (hw) try { s.lockHardwareCanvas() } catch (_: Throwable) { hw = false; s.lockCanvas(null) } else s.lockCanvas(null)
-            try { c.drawColor(0xFF000000.toInt()); v.draw(c) } finally { s.unlockCanvasAndPost(c) }
-        } catch (_: Throwable) {}
+            // Vẽ bằng canvas thường (không dùng canvas phần cứng): chạy được trên mọi máy và với View không gắn cửa sổ.
+            val c = s.lockCanvas(null)
+            try {
+                c.drawColor(0xFF000000.toInt())
+                try { v.draw(c) } catch (e: Throwable) { err = "Lỗi vẽ ${e.javaClass.simpleName}: ${e.message ?: ""}" }
+            } finally { s.unlockCanvasAndPost(c) }
+            drawn++
+            if (!err.startsWith("Lỗi vẽ")) err = ""
+        } catch (e: Throwable) { err = "Không vẽ được lên khung hình (${e.javaClass.simpleName}: ${e.message ?: ""})" }
     }
 
     override fun onBind(i: Intent): IBinder { Engine.init(this); return messenger.binder }
