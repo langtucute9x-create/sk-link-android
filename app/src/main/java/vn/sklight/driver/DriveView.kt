@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
+import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -34,7 +35,7 @@ class Roll(private val n: Int) {
         for (i in 0 until n) {
             val ch = s[i]
             val target = if (ch == ' ') 0f else (ch - '0').toFloat()
-            pos[i] += (target - pos[i]) * 0.2f
+            pos[i] += (target - pos[i]) * 0.35f
             alpha[i] += ((if (ch == ' ') 0f else 1f) - alpha[i]) * 0.25f
             if (alpha[i] > 0.03f) {
                 val f = pos[i] - floor(pos[i])
@@ -67,6 +68,7 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
     private val aLead = RectF()
     private var hasLead = false
     private val bigRoll = Roll(3)
+    private var shownD = -1f
     private val spdRoll = Roll(3)
     private var barA = 0f
     private var toastA = 0f
@@ -186,6 +188,7 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
         p.letterSpacing = 0f; p.clearShadowLayer(); p.textAlign = Paint.Align.LEFT
 
         drawButtons(cv, u, W, H)
+        drawCalibNote(cv, fr, u, W, H)
         postInvalidateOnAnimation() // giữ hiệu ứng chạy đều giữa hai khung hình camera
     }
 
@@ -205,7 +208,9 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
         // số mét lớn
         val base = y + 140f * u
         p.textSize = 112f * u
-        val d = if (fr.lead != null) fr.dist.roundToInt().coerceIn(0, 999) else null
+        // số chỉ đổi khi khoảng cách lệch từ 1 m (hoặc 4% với vật ở xa) so với số đang hiện, để chữ số không cuộn liên tục
+        if (fr.lead == null) shownD = -1f else if (shownD < 0f || abs(fr.dist - shownD) >= max(1f, shownD * 0.04f)) shownD = fr.dist
+        val d = if (fr.lead != null) shownD.roundToInt().coerceIn(0, 999) else null
         var nx = px + bigRoll.draw(cv, p, d, px, base)
         if (d == null) { cv.drawText("—", px, base, p); nx = px + p.measureText("—") }
         p.typeface = Typeface.DEFAULT; p.textSize = 44f * u
@@ -271,11 +276,24 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
         val c = if (fr.hot) Ui.AMBER else Ui.GREEN
         rx = chip(ai, c, c, y, rx) - 8f * u
         chip("Camera điện thoại", Ui.WHITE, 0x44FFFFFF, y, rx)
-        val l = chip("    SK Light: chưa liên kết", Ui.WHITE, 0x44FFFFFF, y + h + 10f * u, W - 30f * u)
+        val lk = if (!Link.enabled) 0 else if (!Link.installed) 1 else if (Link.sending) 2 else 3
+        val l = chip("    SK Light: " + arrayOf("đang tắt", "chưa cài SK Light", "đang gửi tín hiệu", "đang chờ")[lk], Ui.WHITE, if (lk == 2) Ui.GREEN else 0x44FFFFFF, y + h + 10f * u, W - 30f * u)
         val cy = y + h + 10f * u + h / 2f; val cx = l + 20f * u
         val ph = (SystemClock.uptimeMillis() % 1600L) / 1600f
-        p.color = Ui.MUTED; p.alpha = (200 * (1f - ph)).toInt(); cv.drawCircle(cx, cy, 5f * u * (1f + 2f * ph), p)
+        p.color = if (lk == 2) Ui.GREEN else Ui.MUTED
+        if (lk == 2) { p.alpha = (200 * (1f - ph)).toInt(); cv.drawCircle(cx, cy, 5f * u * (1f + 2f * ph), p) }
         p.alpha = 255; cv.drawCircle(cx, cy, 5f * u, p)
+    }
+
+    /** Nhắc cân chỉnh lại khi số mét theo chân trời lệch nhiều so với số mét theo bề ngang ô tô (xem MainActivity.analyze). */
+    private fun drawCalibNote(cv: Canvas, fr: Frame, u: Float, W: Float, H: Float) {
+        if (fr.calib == 0) return
+        val s = if (fr.calib == 1) "Cần cân chỉnh lại: số mét đang báo XA hơn thực tế" else "Cần cân chỉnh lại: số mét đang báo GẦN hơn thực tế"
+        p.textSize = 16f * u; p.textAlign = Paint.Align.CENTER; p.typeface = Typeface.DEFAULT_BOLD
+        val w = p.measureText(s) + 44f * u; val h = 44f * u; val y = H - 30f * u - h
+        p.style = Paint.Style.FILL; p.color = Ui.AMBER; cv.drawRoundRect(W / 2f - w / 2f, y, W / 2f + w / 2f, y + h, h / 2f, h / 2f, p)
+        p.color = 0xFF1A1200.toInt(); cv.drawText(s, W / 2f, y + h / 2f + 6f * u, p)
+        p.textAlign = Paint.Align.LEFT
     }
 
     private fun drawButtons(cv: Canvas, u: Float, W: Float, H: Float) {

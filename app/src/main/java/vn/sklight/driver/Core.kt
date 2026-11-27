@@ -122,13 +122,15 @@ class Cfg(c: Context) {
     @Volatile var startKmh = sp.getInt("startKmh", 40)       // bắt đầu cảnh báo từ tốc độ này
     @Volatile var beep = sp.getBoolean("beep", true)
     @Volatile var thermal = sp.getBoolean("thermal", true)
+    @Volatile var roi = sp.getBoolean("roi", true)           // chỉ nhận diện dải giữa hình quanh chân trời (vật ở xa rõ hơn)
+    @Volatile var link = sp.getBoolean("link", true)         // gửi mức cảnh báo sang SK Light
     @Volatile var gpu = sp.getBoolean("gpu", false)
     @Volatile var kinds = sp.getInt("kinds", 0x1F)           // bit theo Kind: 0 ô tô, 1 xe máy, 2 xe đạp, 3 người, 4 động vật
 
     fun save() {
         sp.edit().putFloat("horizon", horizon).putFloat("vx", vx).putFloat("laneK", laneK).putFloat("camH", camH).putFloat("vfov", vfov)
             .putFloat("gap", gapSec).putInt("startKmh", startKmh).putBoolean("beep", beep).putBoolean("thermal", thermal)
-            .putBoolean("gpu", gpu).putInt("kinds", kinds or 1).apply()
+            .putBoolean("gpu", gpu).putBoolean("link", link).putBoolean("roi", roi).putInt("kinds", kinds or 1).apply()
     }
 }
 
@@ -146,7 +148,7 @@ object Kind {
     }
     fun label(name: String) = when (name) {
         "car" -> "Ô tô"; "truck" -> "Xe tải"; "bus" -> "Xe buýt"; "motorcycle" -> "Xe máy"; "bicycle" -> "Xe đạp"
-        "person" -> "Người đi bộ"; "dog" -> "Chó"; "cat" -> "Mèo"; "horse" -> "Ngựa"; "cow" -> "Bò"; "sheep" -> "Cừu"
+        "person" -> "Người"; "dog" -> "Chó"; "cat" -> "Mèo"; "horse" -> "Ngựa"; "cow" -> "Bò"; "sheep" -> "Cừu"
         else -> name
     }
     fun warn(kind: Int) = when (kind) {
@@ -163,5 +165,6 @@ class Box(val r: RectF, val name: String, val kind: Int, val score: Float, val d
 class Frame(
     val bmp: Bitmap, val boxes: List<Box>, val lead: Box?, val dist: Float, val err: Float, val speed: Float, val minD: Float,
     val level: Int, val fps: Float, val inferMs: Float, val hy: Float, val vpx: Float, val laneK: Float, val hf: Float,
-    val gpu: Boolean, val hot: Boolean, val startKmh: Int
+    val gpu: Boolean, val hot: Boolean, val startKmh: Int,
+    val calib: Int = 0 // tự kiểm tra cân chỉnh bằng bề ngang ô tô: 0 ổn / chưa đủ dữ liệu, 1 đang báo XA hơn thực tế, 2 đang báo GẦN hơn thực tế
 )

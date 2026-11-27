@@ -11,8 +11,8 @@ android {
         applicationId = "vn.sklight.driver"
         minSdk = 29
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.3.1"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
