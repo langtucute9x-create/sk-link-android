@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [sk-light]
+    branches: [sk-light, 'claude/sk-light-**']
   workflow_dispatch:
 permissions:
   contents: write
@@ -25,6 +25,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: sk-light-apk, path: sk-light.apk }
       - name: Tao version.json cho tinh nang bao cap nhat
+        if: github.ref == 'refs/heads/sk-light'
         run: |
           CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
           NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
@@ -35,6 +36,7 @@ jobs:
           python3 -c "import json,os; json.dump({'versionCode':int(os.environ['CODE']),'versionName':os.environ['NAME'],'notes':os.environ['NOTES'],'sha256':os.environ['SHA'],'size':int(os.environ['SIZE']),'url':'https://github.com/${{ github.repository }}/releases/download/sk-light-latest/sk-light.apk'}, open('version.json','w'), ensure_ascii=False)"
           cat version.json
       - name: Phat hanh ban latest
+        if: github.ref == 'refs/heads/sk-light'
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           gh release delete sk-light-latest --yes --cleanup-tag || true

@@ -902,3 +902,35 @@ nút tắt tiếng (mặc định)	mute button (default)	ミュートボタン�
 Chọn phím khác	Choose another key	別のキーを選ぶ	다른 키 선택	เลือกปุ่มอื่น
 Về mặc định	Back to default	既定に戻す	기본값으로	กลับค่าเริ่มต้น
 Tốc độ khu vực 2	Zone 2 speed	ゾーン2の速度	구역 2 속도	ความเร็วโซน 2
+Khoảng cách	Distance					
+Đang nhận tín hiệu	Receiving signal					
+Mất tín hiệu, đèn đã về như cũ	Signal lost, lights restored					
+Chưa nhận tín hiệu. Mở SK Driver để bắt đầu.	No signal yet. Open SK Driver to start.					
+Máy này chưa cài app SK Driver.	SK Driver is not installed on this device.					
+Quá gần	Too close					
+An toàn	Safe					
+Chưa đủ tốc độ	Below start speed					
+Không có xe trước	No vehicle ahead					
+Không có tín hiệu	No signal					
+Độ trễ tín hiệu (đo trên máy này)	Signal delay (measured on this device)					
+SK Driver gửi sang SK Light	SK Driver to SK Light					
+Từ lúc camera xử lý khung hình tới SK Light	From camera frame to SK Light					
+# ms	# ms					
+Chưa gồm thời gian SK Light gửi lệnh xuống hộp đèn qua Bluetooth: app không đo được đoạn này, ước khoảng 40 đến 100 ms.	Does not include the Bluetooth command from SK Light to the LED controller: the app cannot measure that part, roughly 40 to 100 ms.					
+Mở SK Driver	Open SK Driver					
+Cảnh báo khoảng cách	Distance warning					
+Nháy đèn khi SK Driver báo	Flash lights on SK Driver warnings					
+Đèn đổi theo mức Gần và Quá gần do app SK Driver gửi sang.	Lights follow the Close and Too close levels sent by the SK Driver app.					
+Nhường cảnh báo rẽ	Give way to turn alerts					
+Đang báo rẽ, báo biển hoặc quá tốc độ thì mức Gần chờ. Mức Quá gần luôn chen vào.	While a turn, sign or overspeed alert runs, the Close level waits. Too close always cuts in.					
+Tự trả đèn về cũ khi mất tín hiệu	Restore lights when the signal is lost					
+Sau 3 giây không nhận được tín hiệu. Tắt thì đèn giữ cảnh báo cuối tối đa 30 giây.	After 3 seconds without a signal. When off, the last warning stays for up to 30 seconds.					
+SK Light chỉ đổi đèn theo tín hiệu nhận được. Khoảng cách do SK Driver ước lượng bằng camera, là hỗ trợ tham khảo, không phải hệ thống an toàn.	SK Light only changes the lights from the signal it receives. Distance is estimated by SK Driver from the camera; it is a reference aid, not a safety system.					
+Mức Quá gần	Too close level					
+Xe trước ở dưới khoảng cách tối thiểu.	The vehicle ahead is under the minimum distance.					
+Mức Gần	Close level					
+Còn trong 5 m trên khoảng cách tối thiểu.	Within 5 m above the minimum distance.					
+Mức An toàn và Chưa đủ tốc độ: đèn giữ nguyên.	Safe and Below start speed levels: lights stay unchanged.					
+Kiểu nháy	Flash style					
+QUÁ GẦN XE TRƯỚC · ĐÈN NHÁY	TOO CLOSE TO VEHICLE AHEAD · LIGHTS FLASHING					
+GẦN XE TRƯỚC · ĐÈN NHÁY	CLOSE TO VEHICLE AHEAD · LIGHTS FLASHING					

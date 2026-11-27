@@ -19,6 +19,10 @@
     <!-- Xem app đang mở để chia đôi màn hình (người dùng tự cấp trong Cài đặt máy) -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
 
+    <!-- Liên kết SK Driver: quyền chữ ký, chỉ app ký cùng khóa (SK Driver) mới gửi tín hiệu tới được. Hai app cùng khai báo để cài app nào trước cũng được. -->
+    <permission android:name="vn.sklight.permission.DRIVER_LINK" android:protectionLevel="signature" />
+    <uses-permission android:name="vn.sklight.permission.DRIVER_LINK" />
+
     <!-- Để hỏi được máy có bộ nhận giọng nói hay không (Android 11 trở lên) -->
     <queries>
         <intent><action android:name="android.speech.RecognitionService" /></intent>
@@ -70,6 +74,10 @@
 
         <!-- Giữ kết nối với hộp đèn khi app không mở, và giữ nút nổi -->
         <service android:name=".KeepService" android:exported="false" android:foregroundServiceType="connectedDevice|location" />
+        <!-- Nhận mức cảnh báo và khoảng cách từ app SK Driver trên cùng máy -->
+        <receiver android:name=".DriverReceiver" android:exported="true" android:permission="vn.sklight.permission.DRIVER_LINK">
+            <intent-filter><action android:name="vn.sklight.DRIVER_SIGNAL" /></intent-filter>
+        </receiver>
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

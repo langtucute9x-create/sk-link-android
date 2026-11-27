@@ -8,7 +8,8 @@ import java.util.regex.Pattern
 /**
  * Cảnh báo bằng đèn, chỉ dùng lệnh màu (01).
  * Sắp rẽ trái / phải: hiệu ứng vàng của hộp (Trôi đa sắc kiểu 3) chạy theo hướng rẽ. Quá tốc độ: khu được chọn (mặc định cả xe) nháy đỏ.
- * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ, 4 camera, 5 camera đèn đỏ, 6 biển cấm, 7 giới hạn tốc độ giảm.
+ * Loại cảnh báo: 0 không, 1 rẽ trái, 2 rẽ phải, 3 quá tốc độ, 4 camera, 5 camera đèn đỏ, 6 biển cấm, 7 giới hạn tốc độ giảm,
+ * 8 quá gần xe trước, 9 gần xe trước (hai loại này lấy từ app SK Driver, xem DriverLink).
  */
 object AlertBridge {
     private val h = Handler(Looper.getMainLooper())
@@ -76,7 +77,7 @@ object AlertBridge {
     /** Khu [zone] (1 hoặc 2) có đang nháy trong cảnh báo hiện tại không. */
     fun lit(zone: Int): Boolean = when (S.alertKind.intValue) {
         1, 2 -> true
-        3, 4, 5, 6, 7 -> S.alertZone[S.alertKind.intValue] == 0 || S.alertZone[S.alertKind.intValue] == zone
+        3, 4, 5, 6, 7, 8, 9 -> S.alertZone[S.alertKind.intValue] == 0 || S.alertZone[S.alertKind.intValue] == zone
         else -> false
     }
 
@@ -89,9 +90,9 @@ object AlertBridge {
     // Đỏ, xanh lá, xanh dương, trắng là màu thuần nên chắc; vàng, cam, tím trên đèn thật chưa kiểm chứng.
     val PAL = intArrayOf(0xFFFF00, 0xFF4000, 0xFF0000, 0x00FF00, 0x0000FF, 0x8C01FC, 0xFFFFFF)
     val PAL_SHOW = intArrayOf(0xFFC400, 0xFF8A00, 0xFF2D2D, 0x22C55E, 0x3B82F6, 0xA855F7, 0xFFFFFF)
-    fun showOf(k: Int): Int = PAL_SHOW[S.alertCol[k.coerceIn(0, 7)].coerceIn(0, PAL_SHOW.size - 1)]
+    fun showOf(k: Int): Int = PAL_SHOW[S.alertCol[k.coerceIn(0, 9)].coerceIn(0, PAL_SHOW.size - 1)]
     val PAL_NAMES = listOf("Vàng", "Cam", "Đỏ", "Xanh lá", "Xanh dương", "Tím", "Trắng")
-    fun colorOf(k: Int): Int = PAL[S.alertCol[k.coerceIn(0, 7)].coerceIn(0, PAL.size - 1)]
+    fun colorOf(k: Int): Int = PAL[S.alertCol[k.coerceIn(0, 9)].coerceIn(0, PAL.size - 1)]
     private var evKind = 0
     private var evUntil = 0L
     private val evLast = LongArray(8)
@@ -128,6 +129,9 @@ object AlertBridge {
             if (S.navDir.value == "R") turn = 2
         }
         if (turn == 0) expiredKind = 0
+        // SK Driver: Quá gần (8) chen trước mọi cảnh báo; Gần (9) nhường báo rẽ, biển và quá tốc độ khi bật "Nhường cảnh báo rẽ"
+        val dk = if (simK == 0) DriverLink.kind() else 0
+        if (dk == 8 || (dk == 9 && !S.drvYield.value)) return dk
         if (turn != 0 && turn != expiredKind) return turn
         if (System.currentTimeMillis() < evUntil) return evKind
         // Quá tốc độ: vượt giới hạn quá 3 km/h thì báo, xuống bằng giới hạn thì tắt
@@ -137,7 +141,7 @@ object AlertBridge {
             val v = S.carSpeed()
             if (v > (if (kind == 3) lim else lim + 3)) return 3
         }
-        return 0
+        return dk
     }
 
     private fun evaluate() {
@@ -163,7 +167,7 @@ object AlertBridge {
         // Nháy bằng lệnh màu. Cảnh báo có khu vực 1 thì đưa hộp về Đơn sắc trước. Cảnh báo CHỈ ở khu vực 2 mà hộp đang chạy hiệu ứng thường (1..99,
         // không phải loại chạy đuổi) thì giữ nguyên hiệu ứng: hộp vẫn cho khu vực 2 nhận màu riêng, khu vực 1 chạy tiếp chế độ đang để.
         val m = S.mode.intValue
-        keptFx = S.alertZone[k.coerceIn(0, 7)] == 2 && m in 1..99 && m !in CHASE
+        keptFx = S.alertZone[k.coerceIn(0, 9)] == 2 && m in 1..99 && m !in CHASE
         if (m != 0 && !keptFx) S.ble.send(Protocol.effect(S.sens.intValue, S.m1, 0, 0, S.speed.intValue), 3)
         S.alertPhase.value = false
         h.post(tick)
@@ -222,7 +226,7 @@ object AlertBridge {
         try {
             if (!S.connected.value || !S.on.value) return
             if (keptFx && kind >= 3) return          // kiểu nháy bằng độ sáng khu vực 2: nhịp nháy tự gửi mức sáng
-            val z = if (kind >= 3) S.alertZone[kind.coerceIn(0, 7)] else 0          // khu chạy cảnh báo: 0 cả xe, 1, 2 (báo rẽ luôn là cả xe)
+            val z = if (kind >= 3) S.alertZone[kind.coerceIn(0, 9)] else 0          // khu chạy cảnh báo: 0 cả xe, 1, 2 (báo rẽ luôn là cả xe)
             val b1 = if (S.zone.intValue == 0) S.bri[0] else S.bri[1]
             S.ble.send(Protocol.bright(true, false, if (z == 2) b1 else (b1 + BOOST).coerceAtMost(100), 100), 1, true)
         } catch (_: Exception) {}
@@ -244,20 +248,27 @@ object AlertBridge {
         if (S.mode.intValue != 0) S.sendEffect() else S.ble.send(S.colorFrame(), 2)
     }
 
+    private var step = 0
+    private fun dimRgb(c: Int, f: Float): Int = ((((c shr 16) and 255) * f).toInt() shl 16) or ((((c shr 8) and 255) * f).toInt() shl 8) or ((c and 255) * f).toInt()
     private val tick = object : Runnable {
         override fun run() {
             if (kind < 3) return                       // rẽ chạy bằng hiệu ứng hộp; còn lại nháy bằng lệnh màu
             // quá tốc độ: tự xét lại theo từng nhịp nháy, để GPS mất sóng (không còn số mới báo về) thì cảnh báo cũng tắt
-            if (kind == 3 && wanted() != 3) { evaluate(); return }
-            val on = !S.alertPhase.value
+            // SK Driver (8, 9) cũng tự xét lại theo nhịp: mất tín hiệu hoặc đổi mức thì dừng / đổi ngay
+            if ((kind == 3 || kind >= 8) && wanted() != kind) { evaluate(); return }
+            // kiểu Thở (chỉ loại 8, 9): màu sáng dần rồi tối dần theo 14 nấc, mỗi nấc 130 ms
+            val breathe = kind >= 8 && S.drvStyle[kind - 8] == 1
+            var f = 1f
+            if (breathe) { step = (step + 1) % 14; f = (if (step <= 7) step else 14 - step) / 7f }
+            val on = if (breathe) f >= 0.5f else !S.alertPhase.value
             S.alertPhase.value = on
             // Quá tốc độ: khu được chọn nháy đỏ
             val ev = EV[kind]
-            val v = if (on) colorOf(kind) else 0x000000
+            val v = if (breathe) dimRgb(colorOf(kind), f) else if (on) colorOf(kind) else 0x000000
             val uni = S.czone.intValue == 0
             val b1 = if (uni) S.col[0] else S.col[1]
             val b2 = if (uni) S.col[0] else S.col[2]
-            val z = S.alertZone[kind.coerceIn(0, 7)]
+            val z = S.alertZone[kind.coerceIn(0, 9)]
             val c1 = if (z == 0 || z == 1) v else b1
             val c2 = if (z == 0 || z == 2) v else b2
             if (keptFx) {
@@ -265,9 +276,9 @@ object AlertBridge {
                 // Nên giữ màu cảnh báo ở khu vực 2 và nháy bằng độ sáng khu vực 2 (tối đa <-> 0); khu vực 1 giữ mức đang đặt.
                 S.ble.send(Protocol.color(false, b1, colorOf(kind), S.invert.value), 2)
                 val k1 = if (S.zone.intValue == 0) S.bri[0] else S.bri[1]
-                S.ble.send(Protocol.bright(true, false, k1, if (on) 100 else 0), 1, true)
+                S.ble.send(Protocol.bright(true, false, k1, if (breathe) (f * 100).toInt() else if (on) 100 else 0), 1, true)
             } else S.ble.send(Protocol.color(z == 0, c1, c2, S.invert.value), 2)
-            h.postDelayed(this, EV[kind]?.get(1) ?: 250L)
+            h.postDelayed(this, if (breathe) 130L else if (kind == 8) 200L else if (kind == 9) 400L else EV[kind]?.get(1) ?: 250L)
         }
     }
 

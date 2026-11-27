@@ -99,6 +99,8 @@ private fun SimStatus() {
             ak == 5 -> "CAMERA ĐÈN ĐỎ · ĐÈN NHÁY"
             ak == 6 -> "BIỂN CẤM · ĐÈN NHÁY"
             ak == 7 -> "GIỚI HẠN GIẢM · ĐÈN NHÁY"
+            ak == 8 -> "QUÁ GẦN XE TRƯỚC · ĐÈN NHÁY"
+            ak == 9 -> "GẦN XE TRƯỚC · ĐÈN NHÁY"
             !run && S.navOn.value -> "Đang dẫn đường · ${S.navApp.value}"
             !run -> "Chọn một tình huống bên dưới"
             k == 3 || k >= 4 -> "Đang chạy trong giới hạn"
@@ -106,7 +108,7 @@ private fun SimStatus() {
             Sim.dist.floatValue > S.alertDist.intValue -> "Chưa tới điểm báo trước (${S.alertDist.intValue} m)"
             else -> "Đèn báo đã hết thời gian chạy"
         }
-        val col = when { ak in 3..7 -> Color(0xFF000000 or AlertBridge.showOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
+        val col = when { ak in 3..9 -> Color(0xFF000000 or AlertBridge.showOf(ak).toLong()); ak != 0 -> Color(0xFFF59E0B); else -> Color(0xCC15161C) }
         Box(Modifier.clip(RoundedCornerShape(20.dp)).background(col).padding(horizontal = 14.dp, vertical = 6.dp)) { T(txt, 12, FontWeight.ExtraBold, color = Color.White) }
     }
 }
@@ -191,9 +193,9 @@ private fun Scene(modifier: Modifier) {
     // độ sáng đèn trong hình theo độ sáng đang đặt (không luôn tối đa)
     val bf1 = (S.bri[if (S.zone.intValue == 0) 0 else 1] / 100f).coerceIn(0.12f, 1f)
     val bf2 = (S.bri[if (S.zone.intValue == 0) 0 else 2] / 100f).coerceIn(0.12f, 1f)
-    val spz = if (ak in 3..7) S.alertZone[ak] else 0
-    val zl1 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 1))      // khu 1 có tham gia cảnh báo đang chạy không
-    val zl2 = ak in 1..2 || (ak in 3..7 && (spz == 0 || spz == 2))
+    val spz = if (ak in 3..9) S.alertZone[ak] else 0
+    val zl1 = ak in 1..2 || (ak in 3..9 && (spz == 0 || spz == 1))      // khu 1 có tham gia cảnh báo đang chạy không
+    val zl2 = ak in 1..2 || (ak in 3..9 && (spz == 0 || spz == 2))
     val path = remember { Path() }
     val pA = remember { Path() }
     val pB = remember { Path() }
@@ -383,7 +385,7 @@ private fun Scene(modifier: Modifier) {
 
         val act = ak != 0
         val on = act && (ak in 1..2 || phase)
-        val kc = if (ak in 3..7) rgbColor(AlertBridge.showOf(ak)) else Color(0xFFFFC400)
+        val kc = if (ak in 3..9) rgbColor(AlertBridge.showOf(ak)) else Color(0xFFFFC400)
         fun amt(u: Float): Float {
             if (!on) return 0f
             if (ak > 2) return 1f
