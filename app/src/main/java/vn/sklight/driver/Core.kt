@@ -110,14 +110,17 @@ object Ui {
     }
 }
 
-/** Thông số cân chỉnh và cài đặt, lưu trong SharedPreferences "skdriver". */
+/** Thông số cân chỉnh và cài đặt, lưu trong SharedPreferences "skdriver". Cân chỉnh (chân trời, hướng, làn, độ cao, góc nhìn) lưu riêng cho từng nguồn hình. */
 class Cfg(c: Context) {
     private val sp: SharedPreferences = c.getSharedPreferences("skdriver", Context.MODE_PRIVATE)
-    @Volatile var horizon = sp.getFloat("horizon", 0.5f)     // chân trời: 0 = mép trên hình, 1 = mép dưới
-    @Volatile var vx = sp.getFloat("vx", 0f)                 // hướng thẳng lệch khỏi giữa hình, tính theo bề rộng hình
-    @Volatile var laneK = sp.getFloat("laneK", 1.4f)         // nửa bề rộng làn (điểm ảnh) trên mỗi điểm ảnh dưới chân trời
-    @Volatile var camH = sp.getFloat("camH", 1.25f)          // độ cao camera (m)
-    @Volatile var vfov = sp.getFloat("vfov", 50f)            // góc nhìn dọc (độ)
+    @Volatile var src = sp.getInt("src", 0)                  // nguồn hình: 0 camera điện thoại, 1 Wi-Fi MJPEG, 2 Wi-Fi RTSP, 3 USB
+    @Volatile var url1 = sp.getString("url1", "") ?: ""      // địa chỉ luồng MJPEG
+    @Volatile var url2 = sp.getString("url2", "") ?: ""      // địa chỉ luồng RTSP
+    @Volatile var horizon = 0.5f     // chân trời: 0 = mép trên hình, 1 = mép dưới
+    @Volatile var vx = 0f            // hướng thẳng lệch khỏi giữa hình, tính theo bề rộng hình
+    @Volatile var laneK = 1.4f       // nửa bề rộng làn (điểm ảnh) trên mỗi điểm ảnh dưới chân trời
+    @Volatile var camH = 1.25f       // độ cao camera (m)
+    @Volatile var vfov = 50f         // góc nhìn dọc (độ)
     @Volatile var gapSec = sp.getFloat("gap", 2f)            // khoảng cách tối thiểu theo giây
     @Volatile var startKmh = sp.getInt("startKmh", 40)       // bắt đầu cảnh báo từ tốc độ này
     @Volatile var beep = sp.getBoolean("beep", true)
@@ -127,8 +130,20 @@ class Cfg(c: Context) {
     @Volatile var gpu = sp.getBoolean("gpu", false)
     @Volatile var kinds = sp.getInt("kinds", 0x1F)           // bit theo Kind: 0 ô tô, 1 xe máy, 2 xe đạp, 3 người, 4 động vật
 
+    // camera điện thoại giữ khóa cũ (không tiền tố) để bản đã cân chỉnh không mất
+    private fun k(n: String) = if (src == 0) n else "s${src}_$n"
+    init { load() }
+    private fun load() {
+        horizon = sp.getFloat(k("horizon"), 0.5f); vx = sp.getFloat(k("vx"), 0f); laneK = sp.getFloat(k("laneK"), 1.4f)
+        camH = sp.getFloat(k("camH"), 1.25f); vfov = sp.getFloat(k("vfov"), 50f)
+    }
+    /** Đổi nguồn hình: lưu cân chỉnh của nguồn cũ rồi nạp cân chỉnh của nguồn mới. */
+    fun switchSrc(n: Int) { if (n == src) return; save(); src = n; load(); sp.edit().putInt("src", n).apply() }
+    val url get() = if (src == 1) url1 else if (src == 2) url2 else ""
+
     fun save() {
-        sp.edit().putFloat("horizon", horizon).putFloat("vx", vx).putFloat("laneK", laneK).putFloat("camH", camH).putFloat("vfov", vfov)
+        sp.edit().putInt("src", src).putString("url1", url1).putString("url2", url2)
+            .putFloat(k("horizon"), horizon).putFloat(k("vx"), vx).putFloat(k("laneK"), laneK).putFloat(k("camH"), camH).putFloat(k("vfov"), vfov)
             .putFloat("gap", gapSec).putInt("startKmh", startKmh).putBoolean("beep", beep).putBoolean("thermal", thermal)
             .putBoolean("gpu", gpu).putBoolean("link", link).putBoolean("roi", roi).putInt("kinds", kinds or 1).apply()
     }

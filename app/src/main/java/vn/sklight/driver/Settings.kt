@@ -7,6 +7,8 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
+import android.text.InputType
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -70,6 +72,27 @@ class SettingsScreen(private val act: MainActivity, onDrive: () -> Unit, onCalib
     private var apk: File? = null
     private lateinit var upSub: TextView
     private lateinit var upBtn: Button
+    private lateinit var urlBox: EditText
+    private lateinit var srcStatus: TextView
+    private lateinit var srcHint: TextView
+    private lateinit var srcSeg: LinearLayout
+    private val tick = object : Runnable {
+        override fun run() {
+            if (visibility != VISIBLE) return
+            srcStatus.text = if (!DriverService.running) "Chưa chạy" else Engine.status.ifEmpty { "Đang kết nối…" } + (if (Engine.frames > 0) " · ${Engine.frames} khung hình" else "")
+            postDelayed(this, 700)
+        }
+    }
+
+    /** Gọi mỗi lần mở màn Cài đặt: đồng bộ ô địa chỉ theo nguồn đang chọn và bắt đầu cập nhật trạng thái. */
+    fun sync() {
+        urlBox.setText(cfg.url)
+        urlBox.visibility = if (cfg.src == 0) GONE else VISIBLE
+        srcHint.visibility = if (cfg.src == 0) GONE else VISIBLE
+        srcHint.text = if (cfg.src == 1) "Địa chỉ luồng MJPEG, ví dụ http://192.168.1.1:8080/?action=stream. Máy phải nối Wi-Fi của camera." else "Địa chỉ RTSP, ví dụ rtsp://192.168.1.1:554/live. Máy phải nối Wi-Fi của camera."
+        urlBox.hint = if (cfg.src == 1) "http://…" else "rtsp://…"
+        removeCallbacks(tick); post(tick)
+    }
 
     init {
         orientation = VERTICAL
@@ -94,9 +117,32 @@ class SettingsScreen(private val act: MainActivity, onDrive: () -> Unit, onCalib
             parent.addView(c, LayoutParams(-1, -2).apply { topMargin = d(14f) })
         }
 
+        // Nguồn hình: chọn loại camera, nhập địa chỉ luồng (Wi-Fi), nút Thử kết nối. Cân chỉnh lưu riêng cho từng nguồn.
+        urlBox = EditText(act).apply {
+            setTextColor(Ui.WHITE); setHintTextColor(Ui.MUTED); textSize = 14f; isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            background = Ui.bg(0xFF0A0A0B.toInt(), d(12f).toFloat(), 0x55FFFFFF, d(1f))
+            setPadding(d(12f), d(8f), d(12f), d(8f))
+        }
+        srcStatus = Ui.text(act, "", 13f, Ui.MUTED)
+        val testBtn = Ui.pill(act, "Thử kết nối") {
+            val t = urlBox.text.toString().trim()
+            if (cfg.src == 1) cfg.url1 = t else if (cfg.src == 2) cfg.url2 = t
+            act.restartSource()
+        }
+        srcSeg = Ui.seg(act, listOf("Điện thoại", "Wi-Fi MJPEG", "Wi-Fi RTSP"), cfg.src.coerceIn(0, 2)) {
+            val t = urlBox.text.toString().trim()
+            if (cfg.src == 1) cfg.url1 = t else if (cfg.src == 2) cfg.url2 = t
+            cfg.switchSrc(it); act.restartSource(); sync()
+        }
+        srcHint = Ui.text(act, "", 12f, Ui.MUTED)
         card(left, "Nguồn hình",
-            Ui.row(act, "Camera điện thoại", "Camera sau, gắn ngang trên kính lái", null),
-            Ui.row(act, "Camera USB, camera hành trình Wi-Fi", "Dùng khi lắp trên màn hình xe", Ui.soon(act)))
+            Ui.row(act, "Loại camera", "Cân chỉnh được lưu riêng cho từng nguồn hình", null),
+            srcSeg,
+            urlBox, srcHint,
+            Ui.row(act, "Trạng thái", "", testBtn),
+            srcStatus,
+            Ui.row(act, "Camera USB (UVC)", "Cắm thẳng vào màn hình xe hoặc box", Ui.soon(act)))
 
         val gaps = listOf(1.5f, 2f, 3f); val starts = listOf(30, 40, 60)
         card(left, "Cảnh báo khoảng cách",

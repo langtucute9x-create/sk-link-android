@@ -1,95 +1,41 @@
 package vn.sklight.driver
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Matrix
-import android.graphics.RectF
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import android.media.AudioManager
-import android.media.ToneGenerator
+import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
-import android.os.SystemClock
-import android.util.Size
 import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.core.content.ContextCompat
-import com.google.mediapipe.framework.image.BitmapImageBuilder
-import com.google.mediapipe.tasks.core.BaseOptions
-import com.google.mediapipe.tasks.core.Delegate
-import com.google.mediapipe.tasks.vision.core.RunningMode
-import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetector
-import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.atan2
-import kotlin.math.ln
-import kotlin.math.tan
 
 /**
- * SK Driver 0.2.0 – BẢN THỬ. Camera sau của điện thoại (máy gắn ngang trên kính lái), nhận diện xe, người, động vật phía trước ngay trên máy
- * và ước lượng khoảng cách. Ba màn: Lái xe, Cân chỉnh, Cài đặt. Gửi mức cảnh báo sang SK Light (Link.kt). Chưa có cảnh báo lệch làn.
- * Đây là công cụ hỗ trợ tham khảo, KHÔNG phải hệ thống an toàn.
+ * SK Driver 0.4.0 – BẢN THỬ. Màn hình xem và cài đặt. Việc nhận hình, nhận diện, tính khoảng cách và gửi sang SK Light nằm trong [DriverService] /
+ * [Engine], chạy được cả khi app này không ở phía trước. Nguồn hình: camera điện thoại, Wi-Fi MJPEG, Wi-Fi RTSP (USB sắp có).
+ * Ba màn: Lái xe, Cân chỉnh, Cài đặt. Đây là công cụ hỗ trợ tham khảo, KHÔNG phải hệ thống an toàn.
  */
 class MainActivity : ComponentActivity() {
-    lateinit var cfg: Cfg
+    val cfg: Cfg get() = Engine.cfg
+    val roll: Float get() = Engine.roll
     private lateinit var drive: DriveView
     private lateinit var calib: CalibScreen
     private lateinit var settings: SettingsScreen
     private var screen = 0 // 0 lái xe, 1 cân chỉnh, 2 cài đặt
 
-    private val exec = Executors.newSingleThreadExecutor()
-    private var detector: ObjectDetector? = null
-    private var detGpu = false
-    private var detFailed = false
-    @Volatile private var rebuild = false
-    private var lm: LocationManager? = null
-    private var pm: PowerManager? = null
-    private var tone: ToneGenerator? = null
-    @Volatile private var speedKmh = -1f
-    @Volatile private var speedAt = 0L
-    @Volatile var roll = 0f // độ nghiêng trái/phải của máy (độ), đo bằng cảm biến gia tốc
-    private var smooth = -1f
-    private var lastT = 0L
-    private var fps = 0f
-    private var inferMs = 0f
-    private var lastLevel = 0
-    private var lastBeep = 0L
-    private var frameNo = 0
-    private var calibLog = 0f
-    private var calibN = 0
-    private var calibHy = -1f
-    private var calibCh = -1f
-
-    private val gpsL = object : LocationListener {
-        override fun onLocationChanged(l: Location) { speedKmh = if (l.hasSpeed()) l.speed * 3.6f else -1f; speedAt = SystemClock.elapsedRealtime() }
-        @Deprecated("Deprecated in Java") override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
-        override fun onProviderEnabled(p: String) {}
-        override fun onProviderDisabled(p: String) {}
-    }
-
     private val accL = object : SensorEventListener {
         override fun onSensorChanged(e: SensorEvent) {
             // máy nằm ngang: trọng lực chủ yếu theo trục x của máy, phần lệch sang trục y là độ nghiêng
             val r = Math.toDegrees(atan2(e.values[1].toDouble(), abs(e.values[0]).toDouble())).toFloat()
-            roll = roll * 0.85f + r * 0.15f
+            Engine.roll = Engine.roll * 0.85f + r * 0.15f
         }
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
     }
@@ -98,10 +44,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        Engine.init(this)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        cfg = Cfg(this)
-        pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
-        try { tone = ToneGenerator(AudioManager.STREAM_MUSIC, 90) } catch (_: Throwable) {}
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         drive = DriveView(this, { go(1) }, { go(2) })
         calib = CalibScreen(this) { go(0) }
@@ -114,7 +58,9 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { if (screen != 0) go(0) else finish() }
         })
-        ask.launch(arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION))
+        val need = arrayListOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT >= 33) need.add(Manifest.permission.POST_NOTIFICATIONS)
+        ask.launch(need.toTypedArray())
     }
 
     private fun go(s: Int) {
@@ -123,17 +69,33 @@ class MainActivity : ComponentActivity() {
         calib.visibility = if (s == 1) View.VISIBLE else View.GONE
         settings.visibility = if (s == 2) View.VISIBLE else View.GONE
         if (s == 1) calib.sync()
+        if (s == 2) settings.sync()
         cfg.save()
     }
 
     /** Đổi CPU/GPU: dựng lại bộ nhận diện ở khung hình kế tiếp. */
-    fun requestRebuild() { detFailed = false; rebuild = true }
+    fun requestRebuild() = Engine.requestRebuild()
+
+    /** Đổi nguồn hình hoặc địa chỉ: chạy lại dịch vụ với nguồn mới. */
+    fun restartSource() { cfg.save(); DriverService.start(this) }
 
     @Suppress("DEPRECATION")
     override fun onWindowFocusChanged(has: Boolean) {
         super.onWindowFocusChanged(has)
         if (has) window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_FULLSCREEN or
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (Engine.status.isNotEmpty()) drive.note = Engine.status
+        Engine.noteCb = { s -> drive.note = s; drive.postInvalidate() }
+        Engine.ui = { fr -> when (screen) { 0 -> drive.show(fr); 1 -> calib.show(fr) } }
+    }
+
+    override fun onStop() {
+        Engine.ui = null; Engine.noteCb = null
+        super.onStop()
     }
 
     override fun onResume() {
@@ -144,161 +106,12 @@ class MainActivity : ComponentActivity() {
         } catch (_: Throwable) {}
     }
 
-    @Volatile private var stopped = false
-    override fun onStart() { super.onStart(); stopped = false }
-    override fun onStop() { stopped = true; Link.stop(applicationContext, cfg.link); super.onStop() }
-
     override fun onPause() {
         try { (getSystemService(Context.SENSOR_SERVICE) as SensorManager).unregisterListener(accL) } catch (_: Throwable) {}
         cfg.save()
         super.onPause()
     }
 
-    @SuppressLint("MissingPermission")
-    private fun begin() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            try { lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager; lm?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500L, 0f, gpsL) } catch (_: Exception) {}
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) { note("Chưa có quyền camera. Vào Cài đặt máy, cấp quyền Camera cho SK Driver."); return }
-        val fut = ProcessCameraProvider.getInstance(this)
-        fut.addListener({
-            try {
-                val provider = fut.get()
-                @Suppress("DEPRECATION")
-                val an = ImageAnalysis.Builder().setTargetResolution(Size(640, 480)).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888).build()
-                an.setAnalyzer(exec) { img -> try { analyze(img) } catch (_: Throwable) {} finally { img.close() } }
-                provider.unbindAll()
-                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, an)
-            } catch (e: Throwable) { note("Không mở được camera sau: ${e.javaClass.simpleName}") }
-        }, ContextCompat.getMainExecutor(this))
-    }
-
-    private fun note(s: String) { drive.note = s; drive.postInvalidate() }
-
-    /** Dựng bộ nhận diện ngay trên luồng phân tích (GPU cần tạo và chạy cùng một luồng). GPU lỗi thì lùi về CPU. */
-    private fun ensureDetector(): ObjectDetector? {
-        if (rebuild) { rebuild = false; try { detector?.close() } catch (_: Throwable) {}; detector = null }
-        detector?.let { return it }
-        if (detFailed) return null
-        fun make(gpu: Boolean): ObjectDetector {
-            val base = BaseOptions.builder().setModelAssetPath("det.tflite")
-            if (gpu) base.setDelegate(Delegate.GPU)
-            val opt = ObjectDetector.ObjectDetectorOptions.builder().setBaseOptions(base.build())
-                .setRunningMode(RunningMode.IMAGE).setMaxResults(12).setScoreThreshold(0.35f)
-                .setCategoryAllowlist(Kind.ALLOW).build()
-            return ObjectDetector.createFromOptions(this, opt)
-        }
-        if (cfg.gpu) {
-            try { detector = make(true); detGpu = true; return detector } catch (_: Throwable) { cfg.gpu = false }
-        }
-        try { detector = make(false); detGpu = false } catch (e: Throwable) { detFailed = true; note("Không nạp được mô hình nhận diện trên máy này: ${e.javaClass.simpleName}") }
-        return detector
-    }
-
-    private var raw: Bitmap? = null
-
-    private fun analyze(img: ImageProxy) {
-        val camAt = SystemClock.elapsedRealtime()
-        frameNo++
-        val hot = cfg.thermal && (pm?.currentThermalStatus ?: 0) >= PowerManager.THERMAL_STATUS_SEVERE
-        if (hot && frameNo % 2 == 0) return // máy nóng: chỉ xử lý một nửa số khung hình
-        val det = ensureDetector() ?: return
-        val plane = img.planes[0]
-        val rw = plane.rowStride / plane.pixelStride
-        var r = raw
-        if (r == null || r.width != rw || r.height != img.height) { r = Bitmap.createBitmap(rw, img.height, Bitmap.Config.ARGB_8888); raw = r }
-        plane.buffer.rewind(); r!!.copyPixelsFromBuffer(plane.buffer)
-        val m = Matrix().apply { postRotate(img.imageInfo.rotationDegrees.toFloat()) }
-        val bmp = Bitmap.createBitmap(r, 0, 0, img.width, img.height, m, false)
-        // Chỉ đưa cho mô hình dải ngang quanh đường chân trời (cao bằng nửa bề ngang hình: 40% trên, 60% dưới chân trời). Mô hình thu mọi hình về
-        // 320 x 320 nên cắt bớt trời và mặt đường sát đầu xe thì vật ở xa to hơn khoảng 1,5 lần theo chiều dọc. Vật gần hơn chừng 3 m bị cắt đáy.
-        var top = 0
-        var src = bmp
-        if (cfg.roi) {
-            val bandH = (bmp.width / 2).coerceAtMost(bmp.height)
-            top = (cfg.horizon * bmp.height - bandH * 0.4f).toInt().coerceIn(0, bmp.height - bandH)
-            if (bandH < bmp.height) src = Bitmap.createBitmap(bmp, 0, top, bmp.width, bandH)
-        }
-        val t0 = SystemClock.elapsedRealtime()
-        val res = try { det.detect(BitmapImageBuilder(src).build()) } catch (e: Throwable) {
-            // GPU chạy lỗi giữa chừng: chuyển về CPU
-            if (detGpu) { cfg.gpu = false; rebuild = true }
-            return
-        }
-        val ms = (SystemClock.elapsedRealtime() - t0).toFloat()
-        inferMs = if (inferMs == 0f) ms else inferMs * 0.8f + ms * 0.2f
-        val w = bmp.width.toFloat(); val h = bmp.height.toFloat()
-        val hy = cfg.horizon * h
-        val vpx = w / 2f + cfg.vx * w
-        val laneK = cfg.laneK
-        val fpx = (h / 2f) / tan(Math.toRadians(cfg.vfov / 2.0)).toFloat()
-        val hf = cfg.camH * fpx
-        val kinds = cfg.kinds or 1
-        // 1) gom mọi vật mô hình thấy (toạ độ đưa về hình đầy đủ)
-        class Raw(val r: RectF, var name: String, var kind: Int, val score: Float)
-        val raws = ArrayList<Raw>()
-        for (d in res.detections()) {
-            val c = d.categories().firstOrNull() ?: continue
-            val kind = Kind.of(c.categoryName())
-            if (kind < 0) continue
-            raws.add(Raw(RectF(d.boundingBox()).apply { offset(0f, top.toFloat()) }, c.categoryName(), kind, c.score()))
-        }
-        // 2) người ngồi trên xe máy / xe đạp: gộp vào xe thành một vật, đáy khung lấy ở bánh xe (trước đây người lái bị gọi là người đi bộ
-        //    và khung dừng ở chân người nên số mét bị xa thêm)
-        val gone = HashSet<Raw>()
-        for (b in raws) if (b.kind == 1 || b.kind == 2) for (q in raws) if (q.kind == 3 && q !in gone) {
-            val pad = b.r.width() * 0.3f
-            if (q.r.centerX() > b.r.left - pad && q.r.centerX() < b.r.right + pad && q.r.bottom > b.r.top && q.r.top < b.r.bottom) { b.r.union(q.r); gone.add(q) }
-        }
-        // 3) lọc theo nhóm đang bật, tính khoảng cách, chọn vật dẫn đầu
-        val boxes = ArrayList<Box>()
-        var lead: Box? = null
-        var cw = 0f // tự kiểm tra cân chỉnh: tỉ số (mét theo chân trời) / (mét theo bề ngang ô tô 1,8 m) của ô tô nhìn từ sau rõ nhất
-        for (q in raws) {
-            if (q in gone || (kinds shr q.kind) and 1 == 0) continue
-            val bb = q.r
-            val below = bb.bottom - hy
-            val dist = if (below > 2f) hf / below else -1f
-            val bx = Box(bb, q.name, q.kind, q.score, dist)
-            boxes.add(bx)
-            if (dist > 0f && dist < 150f) {
-                // chỉ lấy vật nằm trong làn của mình (theo hai mép đã căn). Người và động vật hay băng ngang nên nới rộng thêm một nửa.
-                val half = laneK * below * (if (q.kind >= 3) 1.5f else 1f)
-                if (abs(bb.centerX() - vpx) < half && (lead == null || dist < lead!!.dist)) lead = bx
-                // ô tô con nhìn từ sau / trước (khung gần vuông), không chạm mép hình, đủ to: bề ngang thật khoảng 1,8 m
-                val asp = bb.width() / bb.height().coerceAtLeast(1f)
-                if (q.name == "car" && q.score > 0.5f && bb.width() > 28f && asp > 0.9f && asp < 1.5f && bb.left > 3f && bb.right < w - 3f && bb.bottom < top + src.height - 3f)
-                    cw = cfg.camH * bb.width() / (1.8f * below)
-            }
-        }
-        if (cw > 0f) { val lg = ln(cw); calibLog = if (calibN == 0) lg else calibLog * 0.9f + lg * 0.1f; if (calibN < 1000) calibN++ }
-        if (cfg.horizon != calibHy || cfg.camH != calibCh) { calibHy = cfg.horizon; calibCh = cfg.camH; calibN = 0; calibLog = 0f } // vừa cân chỉnh lại: đo lại từ đầu
-        // lệch quá 40% sau ít nhất 20 lần thấy ô tô thì nhắc cân chỉnh lại
-        val calibFlag = if (calibN < 20) 0 else if (calibLog > 0.34f) 1 else if (calibLog < -0.34f) 2 else 0
-        val now = SystemClock.elapsedRealtime()
-        if (lastT != 0L) { val f = 1000f / (now - lastT).coerceAtLeast(1); fps = if (fps == 0f) f else fps * 0.8f + f * 0.2f }
-        lastT = now
-        val l = lead
-        smooth = if (l == null) -1f else if (smooth < 0f) l.dist else smooth * 0.6f + l.dist * 0.4f
-        // sai số ước lượng: đáy khung lệch khoảng 2 điểm ảnh thì khoảng cách lệch bấy nhiêu
-        val err = if (l == null) 0f else (smooth * 2f / (l.r.bottom - hy).coerceAtLeast(2f)).coerceAtLeast(1f)
-        val spd = if (now - speedAt < 4000) speedKmh else -1f
-        val start = cfg.startKmh
-        val minD = if (spd >= start) spd / 3.6f * cfg.gapSec else -1f
-        val level = if (l == null) 0 else if (minD < 0f) 4 else if (smooth < minD) 3 else if (smooth < minD + 5f) 2 else 1
-        if (level == 3 && cfg.beep && (lastLevel != 3 || now - lastBeep > 2000)) { lastBeep = now; try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 220) } catch (_: Throwable) {} }
-        lastLevel = level
-        if (!stopped) Link.send(applicationContext, cfg.link, level, smooth, camAt)
-        val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start, calibFlag)
-        when (screen) { 0 -> drive.show(fr); 1 -> calib.show(fr) }
-    }
-
-    override fun onDestroy() {
-        try { lm?.removeUpdates(gpsL) } catch (_: Exception) {}
-        exec.shutdown()
-        try { detector?.close() } catch (_: Exception) {}
-        try { tone?.release() } catch (_: Exception) {}
-        super.onDestroy()
-    }
+    /** Sau khi xin quyền: bật dịch vụ nền (nếu đang chạy rồi thì chỉ chạy lại nguồn hình, không sao). */
+    private fun begin() { if (!DriverService.running) DriverService.start(this) }
 }
