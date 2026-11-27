@@ -40,6 +40,7 @@ import com.google.mediapipe.tasks.vision.objectdetector.ObjectDetector
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.ln
 import kotlin.math.tan
 
 /**
@@ -72,6 +73,10 @@ class MainActivity : ComponentActivity() {
     private var lastLevel = 0
     private var lastBeep = 0L
     private var frameNo = 0
+    private var calibLog = 0f
+    private var calibN = 0
+    private var calibHy = -1f
+    private var calibCh = -1f
 
     private val gpsL = object : LocationListener {
         override fun onLocationChanged(l: Location) { speedKmh = if (l.hasSpeed()) l.speed * 3.6f else -1f; speedAt = SystemClock.elapsedRealtime() }
@@ -206,8 +211,17 @@ class MainActivity : ComponentActivity() {
         plane.buffer.rewind(); r!!.copyPixelsFromBuffer(plane.buffer)
         val m = Matrix().apply { postRotate(img.imageInfo.rotationDegrees.toFloat()) }
         val bmp = Bitmap.createBitmap(r, 0, 0, img.width, img.height, m, false)
+        // Chỉ đưa cho mô hình dải ngang quanh đường chân trời (cao bằng nửa bề ngang hình: 40% trên, 60% dưới chân trời). Mô hình thu mọi hình về
+        // 320 x 320 nên cắt bớt trời và mặt đường sát đầu xe thì vật ở xa to hơn khoảng 1,5 lần theo chiều dọc. Vật gần hơn chừng 3 m bị cắt đáy.
+        var top = 0
+        var src = bmp
+        if (cfg.roi) {
+            val bandH = (bmp.width / 2).coerceAtMost(bmp.height)
+            top = (cfg.horizon * bmp.height - bandH * 0.4f).toInt().coerceIn(0, bmp.height - bandH)
+            if (bandH < bmp.height) src = Bitmap.createBitmap(bmp, 0, top, bmp.width, bandH)
+        }
         val t0 = SystemClock.elapsedRealtime()
-        val res = try { det.detect(BitmapImageBuilder(bmp).build()) } catch (e: Throwable) {
+        val res = try { det.detect(BitmapImageBuilder(src).build()) } catch (e: Throwable) {
             // GPU chạy lỗi giữa chừng: chuyển về CPU
             if (detGpu) { cfg.gpu = false; rebuild = true }
             return
@@ -221,23 +235,47 @@ class MainActivity : ComponentActivity() {
         val fpx = (h / 2f) / tan(Math.toRadians(cfg.vfov / 2.0)).toFloat()
         val hf = cfg.camH * fpx
         val kinds = cfg.kinds or 1
-        val boxes = ArrayList<Box>()
-        var lead: Box? = null
+        // 1) gom mọi vật mô hình thấy (toạ độ đưa về hình đầy đủ)
+        class Raw(val r: RectF, var name: String, var kind: Int, val score: Float)
+        val raws = ArrayList<Raw>()
         for (d in res.detections()) {
-            val bb = d.boundingBox()
             val c = d.categories().firstOrNull() ?: continue
             val kind = Kind.of(c.categoryName())
-            if (kind < 0 || (kinds shr kind) and 1 == 0) continue
+            if (kind < 0) continue
+            raws.add(Raw(RectF(d.boundingBox()).apply { offset(0f, top.toFloat()) }, c.categoryName(), kind, c.score()))
+        }
+        // 2) người ngồi trên xe máy / xe đạp: gộp vào xe thành một vật, đáy khung lấy ở bánh xe (trước đây người lái bị gọi là người đi bộ
+        //    và khung dừng ở chân người nên số mét bị xa thêm)
+        val gone = HashSet<Raw>()
+        for (b in raws) if (b.kind == 1 || b.kind == 2) for (q in raws) if (q.kind == 3 && q !in gone) {
+            val pad = b.r.width() * 0.3f
+            if (q.r.centerX() > b.r.left - pad && q.r.centerX() < b.r.right + pad && q.r.bottom > b.r.top && q.r.top < b.r.bottom) { b.r.union(q.r); gone.add(q) }
+        }
+        // 3) lọc theo nhóm đang bật, tính khoảng cách, chọn vật dẫn đầu
+        val boxes = ArrayList<Box>()
+        var lead: Box? = null
+        var cw = 0f // tự kiểm tra cân chỉnh: tỉ số (mét theo chân trời) / (mét theo bề ngang ô tô 1,8 m) của ô tô nhìn từ sau rõ nhất
+        for (q in raws) {
+            if (q in gone || (kinds shr q.kind) and 1 == 0) continue
+            val bb = q.r
             val below = bb.bottom - hy
             val dist = if (below > 2f) hf / below else -1f
-            val bx = Box(RectF(bb), c.categoryName(), kind, c.score(), dist)
+            val bx = Box(bb, q.name, q.kind, q.score, dist)
             boxes.add(bx)
             if (dist > 0f && dist < 150f) {
                 // chỉ lấy vật nằm trong làn của mình (theo hai mép đã căn). Người và động vật hay băng ngang nên nới rộng thêm một nửa.
-                val half = laneK * below * (if (kind >= 3) 1.5f else 1f)
+                val half = laneK * below * (if (q.kind >= 3) 1.5f else 1f)
                 if (abs(bb.centerX() - vpx) < half && (lead == null || dist < lead!!.dist)) lead = bx
+                // ô tô con nhìn từ sau / trước (khung gần vuông), không chạm mép hình, đủ to: bề ngang thật khoảng 1,8 m
+                val asp = bb.width() / bb.height().coerceAtLeast(1f)
+                if (q.name == "car" && q.score > 0.5f && bb.width() > 28f && asp > 0.9f && asp < 1.5f && bb.left > 3f && bb.right < w - 3f && bb.bottom < top + src.height - 3f)
+                    cw = cfg.camH * bb.width() / (1.8f * below)
             }
         }
+        if (cw > 0f) { val lg = ln(cw); calibLog = if (calibN == 0) lg else calibLog * 0.9f + lg * 0.1f; if (calibN < 1000) calibN++ }
+        if (cfg.horizon != calibHy || cfg.camH != calibCh) { calibHy = cfg.horizon; calibCh = cfg.camH; calibN = 0; calibLog = 0f } // vừa cân chỉnh lại: đo lại từ đầu
+        // lệch quá 40% sau ít nhất 20 lần thấy ô tô thì nhắc cân chỉnh lại
+        val calib = if (calibN < 20) 0 else if (calibLog > 0.34f) 1 else if (calibLog < -0.34f) 2 else 0
         val now = SystemClock.elapsedRealtime()
         if (lastT != 0L) { val f = 1000f / (now - lastT).coerceAtLeast(1); fps = if (fps == 0f) f else fps * 0.8f + f * 0.2f }
         lastT = now
@@ -252,7 +290,7 @@ class MainActivity : ComponentActivity() {
         if (level == 3 && cfg.beep && (lastLevel != 3 || now - lastBeep > 2000)) { lastBeep = now; try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 220) } catch (_: Throwable) {} }
         lastLevel = level
         if (!stopped) Link.send(applicationContext, cfg.link, level, smooth, camAt)
-        val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start)
+        val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start, calib)
         when (screen) { 0 -> drive.show(fr); 1 -> calib.show(fr) }
     }
 

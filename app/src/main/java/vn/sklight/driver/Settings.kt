@@ -133,6 +133,7 @@ class SettingsScreen(private val act: MainActivity, onDrive: () -> Unit, onCalib
         ((upRow.getChildAt(0)) as LinearLayout).addView(upSub)
         upBtn.layoutParams = LayoutParams(d(150f), d(46f)).apply { leftMargin = d(12f) }
         card(right, "Khác",
+            Ui.row(act, "Nhận diện dải giữa hình", "Vật ở xa rõ hơn; vật sát đầu xe (dưới 3 m) bị cắt đáy", Ui.switch(act, cfg.roi) { cfg.roi = it; cfg.save() }),
             Ui.row(act, "Giảm xử lý khi máy nóng", "Tự bỏ bớt một nửa số khung hình", Ui.switch(act, cfg.thermal) { cfg.thermal = it; cfg.save() }),
             Ui.row(act, "Cảnh báo lệch làn", "Đang phát triển, chưa dùng được", Ui.soon(act)),
             Ui.row(act, "Tự mở khi khởi động xe", "Cần quyền Hiện trên ứng dụng khác", Ui.soon(act)),
