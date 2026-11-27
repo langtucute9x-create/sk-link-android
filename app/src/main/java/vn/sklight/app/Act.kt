@@ -53,6 +53,7 @@ object Act {
     val master = mutableStateOf("")
     val masterUntil = mutableStateOf("")      // ngày hết hạn của mã đại lý (yyyy-MM-dd), rỗng = không hết hạn
     private var masterCode = ""
+    private var promptAt = 0L                 // lúc vừa kích hoạt xong bằng mã (để tự mở bảng điền thông tin bảo hành)
     /** 0 chưa hỏi, 1 đang hỏi SK Core, 2 không có mạng (lần đầu nối hộp này), 3 đã có câu trả lời */
     val checking = mutableIntStateOf(0)
     private var devId = ""
@@ -108,7 +109,12 @@ object Act {
 
     private fun store(mac: String, a: String, w: String, need: Boolean = false) {
         sp(app).edit().putString(key(mac), "$a|$w|${if (need) 1 else 0}").apply()
-        if (mac.equals(box, true)) { ok.value = true; at.value = a; until.value = w; needCust.value = need }
+        if (mac.equals(box, true)) {
+            ok.value = true; at.value = a; until.value = w; needCust.value = need
+            // vừa nhập mã xong (trong 1 phút) mà hộp còn thiếu thông tin khách: mở ngay bảng điền thông tin bảo hành,
+            // kể cả khi máy chủ chỉ báo "thiếu thông tin" ở lần hỏi lại sau đó chứ không báo ngay trong câu trả lời kích hoạt (1.4.118)
+            if (need && promptAt != 0L && System.currentTimeMillis() - promptAt < 60000L) { promptAt = 0L; S.subPage.intValue = 13 }
+        }
     }
 
     private fun forget(mac: String) {
@@ -180,7 +186,7 @@ object Act {
                     ok.value = true; needCust.value = false; checking.intValue = 3; this.code.value = masterCode
                     S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Đã mở bằng mã đại lý", force = true)
                 } else
-                if (res == "ok") { checking.intValue = 3; store(mac, a, w, need); val cc = code.uppercase().filter { it.isLetterOrDigit() }; sp(app).edit().putString(codeKey(mac), cc).apply(); if (mac == box) this.code.value = cc; S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
+                if (res == "ok") { checking.intValue = 3; promptAt = System.currentTimeMillis(); store(mac, a, w, need); if (!need) recheck(); val cc = code.uppercase().filter { it.isLetterOrDigit() }; sp(app).edit().putString(codeKey(mac), cc).apply(); if (mac == box) this.code.value = cc; S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
                 done(res)
             }
         }.start()
