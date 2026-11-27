@@ -34,7 +34,7 @@ private fun AlertItem(title: String, sub: String, on: Boolean, onChange: (Boolea
 }
 
 @Composable
-private fun ColorPick(kind: Int) {
+fun ColorPick(kind: Int) {
     T("Màu đèn", 13, FontWeight.Bold)
     Spacer(Modifier.height(6.dp))
     val sel = S.alertCol[kind]
@@ -176,9 +176,9 @@ fun AlertsCard() {
     }
 }
 
-/** Khu nháy của riêng một loại cảnh báo ([kind] 3..7): khu vực 1 (táp lô, cửa), khu vực 2 (gầm chân) hoặc cả xe. */
+/** Khu nháy của riêng một loại cảnh báo ([kind] 3..9): khu vực 1 (táp lô, cửa), khu vực 2 (gầm chân) hoặc cả xe. */
 @Composable
-private fun ZonePick(kind: Int) {
+fun ZonePick(kind: Int) {
     T("Khu nháy", 13, FontWeight.Bold)
     Spacer(Modifier.height(6.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

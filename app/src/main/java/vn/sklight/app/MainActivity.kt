@@ -158,7 +158,7 @@ fun Root() {
     // chưa nối hộp đèn: chỉ còn Cài đặt cơ bản, để người ngoài không xem được tính năng của app
     val gated = (!S.connected.value || !Act.ok.value) && !S.dev.value          // chưa nối hộp hoặc chưa nhập mã kích hoạt
     val unplugged = !S.connected.value && !S.dev.value   // chế độ nghiên cứu mở hết, kể cả khi chưa nối hộp
-    LaunchedEffect(S.subPage.intValue) { if (S.subPage.intValue == 13 && tab < 3) tab = 3 }
+    LaunchedEffect(S.subPage.intValue) { if (S.subPage.intValue == 13 && tab != 3) tab = 3 }
     // lệnh giọng nói "mở trang …": chuyển trang rồi xóa yêu cầu
     LaunchedEffect(S.goTab.intValue) { val g = S.goTab.intValue; if (g in 0..3) { tab = g; S.goTab.intValue = -1 } }
     LaunchedEffect(gated, S.subPage.intValue) { if (gated && S.subPage.intValue !in intArrayOf(0, 1, 2, 12, 13) && !(S.dev.value && S.subPage.intValue == 11)) S.subPage.intValue = 0 }
@@ -172,7 +172,7 @@ fun Root() {
             onDragStart = { sum = 0f }, onDragCancel = { sum = 0f },
             onDragEnd = {
                 if (!S.idleShow.value && S.subPage.intValue == 0 && kotlin.math.abs(sum) > 70.dp.toPx()) {
-                    val n = (tab + if (sum < 0) 1 else -1).coerceIn(0, 3)
+                    val n = (tab + if (sum < 0) 1 else -1).coerceIn(0, 4)
                     if (n != tab) tab = n
                 }
                 sum = 0f
@@ -196,7 +196,7 @@ fun Root() {
             if (!gated) VoicePanel()
             key(tab, S.subPage.intValue, lock) {
               androidx.compose.runtime.CompositionLocalProvider(LocalScrollKey provides (if (S.subPage.intValue == 0) "t$tab" else null)) {
-                if (unplugged && tab < 3) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Column(Modifier.widthIn(max = 460.dp).fillMaxWidth()) { PlugCard() } } else if (lock && tab < 3) WideOne { ActivationPage(true) } else when (tab) {
+                if (unplugged && tab != 3) Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Column(Modifier.widthIn(max = 460.dp).fillMaxWidth()) { PlugCard() } } else if (lock && tab != 3) WideOne { ActivationPage(true) } else when (tab) {
                     0 -> TwoCol(leftW.dp, { PlugCard(); SceneRow(); LedMain(); EffectTuneCard() }, { LedEffects(cols, false) })
                     1 -> TwoCol(leftW.dp, { WelcomeTop() }, { WelcomeDiagram() })
                     2 -> {
@@ -204,6 +204,7 @@ fun Root() {
                         // màn hình ngang: cột trái = trạng thái dẫn đường + mô phỏng, cột phải = cài đặt cảnh báo (bật tắt bên phải, xem đèn đổi bên trái)
                         TwoCol(leftW.dp, { NavTop(granted, open) { tab = 1 }; SimCard() }, { NavBottom(granted, open, false) }, half = true)
                     }
+                    4 -> TwoCol(leftW.dp, { DriverTop() }, { DriverBottom() }, half = true)
                     else -> if (S.subPage.intValue == 13) WideOne { ExtraPage(13) }
                     else if (S.subPage.intValue >= 5) WideSub { ExtraPage(S.subPage.intValue) }
                     else if (S.subPage.intValue == 4) WideSub { VoicePage() }
@@ -260,10 +261,11 @@ fun Root() {
                 Modifier.weight(1f).verticalScroll(if (S.subPage.intValue == 0) ScrollMem.get("p$tab") else remember(tab, S.subPage.intValue) { ScrollState(0) }).padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                if (unplugged && tab < 3) PlugCard() else if (lock && tab < 3) ActivationPage(true) else when (tab) {
+                if (unplugged && tab != 3) PlugCard() else if (lock && tab != 3) ActivationPage(true) else when (tab) {
                     0 -> LedPage()
                     1 -> WelcomePage()
                     2 -> NavPage { tab = 1 }
+                    4 -> { DriverTop(); DriverBottom() }
                     else -> if (S.subPage.intValue >= 5) ExtraPage(S.subPage.intValue) else if (S.subPage.intValue == 4) VoicePage() else if (S.subPage.intValue == 3) CustomTestPage() else if (S.subPage.intValue == 2) LanguagePage() else if (S.subPage.intValue == 1) AppearancePage() else SettingsPage(pick)
                 }
                 LogoFooter()
@@ -293,7 +295,7 @@ fun StatusRow(onPick: () -> Unit) {
 }
 
 val TAB_ITEMS: List<Pair<String, ImageVector>> =
-    listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings)
+    listOf("Đèn" to Icons.Outlined.Lightbulb, "Chào mừng" to Icons.Filled.PanTool, "Dẫn đường" to Icons.Filled.Navigation, "Cài đặt" to Icons.Filled.Settings, "Khoảng cách" to Icons.Filled.DirectionsCar)
 
 /** Trang cài đặt con ở màn ngang: dùng hết chiều ngang, các thẻ tự xếp thành hai cột. */
 /** Một trang đơn (nhập mã, thông tin bảo hành): một cột, căn giữa, không chia hai nửa như WideSub. */
@@ -795,7 +797,7 @@ fun Strip(modifier: Modifier = Modifier) {
     val ph = S.alertPhase.value
     if (!S.on.value) { l = SolidColor(Color(0xFFD5D9E3)); r = l }
     else if (k != 0) {          // hai thanh = khu vực 1 và khu vực 2
-        val c = SolidColor(if (ph) (if (k == 3) ALERT_RED else AMBER) else DARK)
+        val c = SolidColor(if (ph) (if (k >= 8) rgbColor(AlertBridge.showOf(k)) else if (k == 3) ALERT_RED else AMBER) else DARK)
         if (AlertBridge.lit(1)) l = c
         if (AlertBridge.lit(2)) r = c
     } else if (S.mode.intValue != 0) {
