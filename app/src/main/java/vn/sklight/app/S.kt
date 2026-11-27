@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.113"
+    const val VER = "1.4.114"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -119,7 +119,8 @@ object S {
     val manualOpen = mutableIntStateOf(0)                 // mục đang mở trong Cẩm nang sử dụng (-1 = đóng hết)
     val turnFx = mutableIntStateOf(0)                     // hiệu ứng báo rẽ: chỉ số trong AlertBridge.TURN_FX
     val turnSpd = mutableStateListOf(10, 10, 10)          // tốc độ (1..10) của từng hiệu ứng báo rẽ
-    val turnFlip = mutableStateOf(false)                  // đảo chiều chạy của kiểu 1
+    val turnFlip = mutableStateOf(false)                  // (cũ, tới 1.4.113) đảo chiều chạy; từ 1.4.114 thay bằng turnDir
+    val turnDir = mutableIntStateOf(0x3F)                 // hướng chạy riêng khi báo RẼ TRÁI: bit của từng đoạn (X.dirMask), bật = Ngược. Rẽ phải dùng hướng ngược lại.
     val alertKind = mutableIntStateOf(0)                  // xem AlertBridge
     val alertPhase = mutableStateOf(false)                // pha sáng / tối của nhịp nháy
 
@@ -204,6 +205,7 @@ object S {
         warnOn.value = sp.getBoolean("warnOn", false)
         turnStyle.intValue = sp.getInt("turnStyle", 0).coerceIn(0, 1)
         turnFlip.value = sp.getBoolean("turnFlip", false)
+        turnDir.intValue = sp.getInt("turnDir", if (turnFlip.value) 0 else 0x3F) and 0x3F      // lần đầu lên 1.4.114: giữ đúng chiều người dùng đang đặt bằng công tắc Đảo chiều
         turnFx.intValue = sp.getInt("turnFx", 0).coerceIn(0, 2)
         (sp.getString("turnSpd", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.take(3).forEachIndexed { i, v -> turnSpd[i] = v.coerceIn(1, 10) }
         alertDist.intValue = sp.getInt("alertDist", 150).coerceIn(50, 300)
@@ -273,7 +275,7 @@ object S {
 
     fun saveSettings() {
         sp.edit().putBoolean("invert2", invert.value)
-            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("camWarn", camWarn.value).putBoolean("redCamWarn", redCamWarn.value).putBoolean("banWarn", banWarn.value).putBoolean("limitChgWarn", limitChgWarn.value).putInt("camDist", camDist.intValue).putString("alertZone", alertZone.joinToString(",")).putString("alertCol", alertCol.joinToString(",")).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
+            .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("camWarn", camWarn.value).putBoolean("redCamWarn", redCamWarn.value).putBoolean("banWarn", banWarn.value).putBoolean("limitChgWarn", limitChgWarn.value).putInt("camDist", camDist.intValue).putString("alertZone", alertZone.joinToString(",")).putString("alertCol", alertCol.joinToString(",")).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnDir", turnDir.intValue).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
             .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)

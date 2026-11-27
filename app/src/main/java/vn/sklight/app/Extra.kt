@@ -262,6 +262,8 @@ object X {
     }
     fun facBits(i: Int, mask: Int) = (S.fac?.get(i) ?: 0) and mask
 
+    /** Bit của đoạn [seg] trong byte hướng chạy của khối 07 (thứ tự đoạn như trang Hướng ánh sáng chạy). */
+    fun dirMask(seg: Int) = 1 shl dirBit[seg]
     /** Hướng ánh sáng chạy từng đoạn (khối 07). true = bit bật. */
     fun flow(seg: Int): Boolean = ((S.p07?.get(0) ?: 0) shr dirBit[seg]) and 1 == 1
     fun setFlow(seg: Int, on: Boolean): Boolean {

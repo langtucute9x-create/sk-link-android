@@ -71,7 +71,36 @@ fun AlertsCard() {
         AlertItem("Báo rẽ", "Đèn chạy theo hướng rẽ.", S.warnOn.value, { S.warnOn.value = it; S.saveSettings(); S.syncService() }) {
             T("Màu đèn báo rẽ là màu của hiệu ứng đã chọn.", 12, color = Grey)
             Spacer(Modifier.height(8.dp))
-            SwitchRow("Đảo chiều chạy", "", S.turnFlip.value) { S.turnFlip.value = it; S.saveSettings() }
+            // Hướng chạy riêng cho báo rẽ, từng đoạn đèn (thay công tắc "Đảo chiều chạy" cũ). Không đổi hướng chạy thường ngày của hộp.
+            var dirOpen by remember { mutableStateOf(false) }
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 46.dp).clip(RoundedCornerShape(Theme.r(8))).background(tint(0.12f)).border(1.dp, tint(0.5f), RoundedCornerShape(Theme.r(8)))
+                    .clickable { dirOpen = !dirOpen }.padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                T("Hướng chạy", 14, FontWeight.Bold, modifier = Modifier.weight(1f))
+                Icon(Icons.Filled.ArrowDropDown, if (dirOpen) "Thu gọn" else "Mở cài đặt hướng chạy", tint = Pink, modifier = Modifier.size(22.dp))
+            }
+            if (dirOpen) {
+                Spacer(Modifier.height(6.dp))
+                T("Hướng ánh sáng chạy của từng đoạn đèn khi báo RẼ TRÁI. Báo rẽ phải tự chạy ngược lại. Hết cảnh báo, hộp về hướng chạy thường ngày.", 12, color = Grey)
+                val names = listOf("Bảng đồng hồ trái", "Bảng đồng hồ phải", "Cửa trước trái", "Cửa trước phải", "Cửa sau trái", "Cửa sau phải")
+                for (sg in 0 until 6) {
+                    val bit = X.dirMask(sg)
+                    val rev = S.turnDir.intValue and bit != 0
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                        T(names[sg], 13, FontWeight.SemiBold, modifier = Modifier.weight(1.3f))
+                        Chip("Thuận", !rev, Modifier.weight(1f), 40.dp, 12) { S.turnDir.intValue = S.turnDir.intValue and bit.inv(); S.saveSettings() }
+                        Chip("Ngược", rev, Modifier.weight(1f), 40.dp, 12) { S.turnDir.intValue = S.turnDir.intValue or bit; S.saveSettings() }
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
+                    OutlineBtn("Đảo tất cả", Modifier.weight(1f)) { S.turnDir.intValue = S.turnDir.intValue xor 0x3F; S.saveSettings() }
+                    OutlineBtn("Về mặc định", Modifier.weight(1f)) { S.turnDir.intValue = 0x3F; S.saveSettings() }
+                }
+                Spacer(Modifier.height(6.dp))
+            }
+            Spacer(Modifier.height(8.dp))
             T("Hiệu ứng khi báo rẽ", 14, FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
             val tf = S.turnFx.intValue.coerceIn(0, AlertBridge.TURN_FX.size - 1)

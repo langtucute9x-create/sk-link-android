@@ -188,9 +188,10 @@ object AlertBridge {
     private fun startFlow(k: Int): Boolean {
         val p = hold ?: S.p07 ?: run { S.ble.send(Protocol.query(0x07)); return false }
         if (hold == null) { hold = p.copyOf(); S.holdP07(p) }
-        // rẽ trái và rẽ phải dùng hai hướng ngược nhau; bên nào ứng với bit nào thì thử trên xe rồi chỉnh bằng công tắc Đảo chiều
-        val left = (k == 1) != S.turnFlip.value
-        val d1 = (p[0] and DIR_BITS.inv()) or (if (left) DIR_BITS else 0)
+        // rẽ trái và rẽ phải dùng hai hướng ngược nhau; bên nào ứng với bit nào thì thử trên xe rồi chỉnh từng đoạn ở mục Hướng chạy
+        // hướng chạy riêng của báo rẽ (Cảnh báo > Báo rẽ > Hướng chạy): rẽ trái dùng đúng các bit đã đặt, rẽ phải dùng hướng ngược lại
+        val m = S.turnDir.intValue and DIR_BITS
+        val d1 = (p[0] and DIR_BITS.inv()) or (if (k == 1) m else m xor DIR_BITS)
         S.ble.send(Protocol.block07(d1, p[1], p[2]), 23, true)
         val fx = S.turnFx.intValue.coerceIn(0, TURN_FX.size - 1)
         val fr = Protocol.effect(S.sens.intValue, S.m1, TURN_FX[fx].first, TURN_FX[fx].second, S.turnSpd[fx].coerceIn(1, 10))
