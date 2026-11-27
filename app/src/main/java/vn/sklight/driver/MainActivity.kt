@@ -275,7 +275,7 @@ class MainActivity : ComponentActivity() {
         if (cw > 0f) { val lg = ln(cw); calibLog = if (calibN == 0) lg else calibLog * 0.9f + lg * 0.1f; if (calibN < 1000) calibN++ }
         if (cfg.horizon != calibHy || cfg.camH != calibCh) { calibHy = cfg.horizon; calibCh = cfg.camH; calibN = 0; calibLog = 0f } // vừa cân chỉnh lại: đo lại từ đầu
         // lệch quá 40% sau ít nhất 20 lần thấy ô tô thì nhắc cân chỉnh lại
-        val calib = if (calibN < 20) 0 else if (calibLog > 0.34f) 1 else if (calibLog < -0.34f) 2 else 0
+        val calibFlag = if (calibN < 20) 0 else if (calibLog > 0.34f) 1 else if (calibLog < -0.34f) 2 else 0
         val now = SystemClock.elapsedRealtime()
         if (lastT != 0L) { val f = 1000f / (now - lastT).coerceAtLeast(1); fps = if (fps == 0f) f else fps * 0.8f + f * 0.2f }
         lastT = now
@@ -290,7 +290,7 @@ class MainActivity : ComponentActivity() {
         if (level == 3 && cfg.beep && (lastLevel != 3 || now - lastBeep > 2000)) { lastBeep = now; try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 220) } catch (_: Throwable) {} }
         lastLevel = level
         if (!stopped) Link.send(applicationContext, cfg.link, level, smooth, camAt)
-        val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start, calib)
+        val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start, calibFlag)
         when (screen) { 0 -> drive.show(fr); 1 -> calib.show(fr) }
     }
 
