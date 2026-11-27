@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [sk-driver]
+    branches: [sk-driver, 'claude/sk-driver-**']
   workflow_dispatch:
 permissions:
   contents: write
@@ -27,9 +27,19 @@ jobs:
           if [ -n "$KS_B64" ]; then echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/sklink.keystore"; echo "SKL_KEYSTORE=$RUNNER_TEMP/sklink.keystore" >> $GITHUB_ENV; echo "SKL_PASS=${{ secrets.KEYSTORE_PASS }}" >> $GITHUB_ENV; else echo "Khong co khoa -> dung khoa debug"; fi
       - name: Build
         run: gradle --no-daemon assembleRelease
-      - run: cp app/build/outputs/apk/release/app-release.apk sk-driver.apk
+      - name: Dat ten APK va ghi file phien ban (app dung de kiem tra cap nhat)
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk sk-driver.apk
+          VC=$(grep -oP 'versionCode = \K\d+' app/build.gradle.kts)
+          VN=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          echo "$VC|$VN" > sk-driver-version.txt
+          cat sk-driver-version.txt
+          echo "VN=$VN" >> $GITHUB_ENV
+      - uses: actions/upload-artifact@v4
+        with: { name: sk-driver-apk, path: sk-driver.apk }
       - name: Phat hanh ban latest
+        if: github.ref == 'refs/heads/sk-driver'
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           gh release delete sk-driver-latest --yes --cleanup-tag || true
-          gh release create sk-driver-latest sk-driver.apk --target "$GITHUB_SHA" --prerelease --title "SK Driver (ban thu moi nhat)" --notes "Build tu commit ${GITHUB_SHA::7}"
+          gh release create sk-driver-latest sk-driver.apk sk-driver-version.txt --target "$GITHUB_SHA" --prerelease --title "SK Driver $VN (ban thu moi nhat)" --notes "Build tu commit ${GITHUB_SHA::7}"
