@@ -16,6 +16,7 @@ jobs:
         with: { gradle-version: '8.9' }
       - name: Tai mo hinh nhan dien (EfficientDet-Lite0, Apache-2.0)
         run: |
+          mkdir -p app/src/main/assets
           curl -fL --retry 3 -o app/src/main/assets/det.tflite https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite
           ls -la app/src/main/assets/det.tflite
           test $(stat -c%s app/src/main/assets/det.tflite) -gt 1000000
