@@ -25,6 +25,8 @@
 
     <!-- Để hỏi được máy có bộ nhận giọng nói hay không (Android 11 trở lên) -->
     <queries>
+        <!-- Để nối vào SK Driver và xem màn Lái xe của nó -->
+        <package android:name="vn.sklight.driver" />
         <intent><action android:name="android.speech.RecognitionService" /></intent>
         <!-- Để dùng được bộ đọc chữ thành tiếng của máy (trả lời bằng tiếng nói) -->
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>

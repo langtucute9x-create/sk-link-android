@@ -87,6 +87,7 @@ fun DriverTop() {
     val live = seen && now - DriverLink.lastAt.longValue <= 3000
     val lv = if (live) DriverLink.level.intValue else 0
     val red = Color(0xFFE5484D)
+    if (inst) { DriverMirror(); Spacer(Modifier.height(10.dp)) }
     Card {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(12.dp).clip(CircleShape).background(if (live) OkGreen else if (seen) red else Color(0xFFB8BCC6)))
