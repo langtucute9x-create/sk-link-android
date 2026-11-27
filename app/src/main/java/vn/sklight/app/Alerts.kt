@@ -94,10 +94,6 @@ fun AlertsCard() {
                         Chip("Ngược", rev, Modifier.weight(1f), 40.dp, 12) { S.turnDir.intValue = S.turnDir.intValue or bit; S.saveSettings() }
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-                    OutlineBtn("Đảo tất cả", Modifier.weight(1f)) { S.turnDir.intValue = S.turnDir.intValue xor 0x3F; S.saveSettings() }
-                    OutlineBtn("Về mặc định", Modifier.weight(1f)) { S.turnDir.intValue = 0x3F; S.saveSettings() }
-                }
                 Spacer(Modifier.height(6.dp))
             }
             Spacer(Modifier.height(8.dp))
