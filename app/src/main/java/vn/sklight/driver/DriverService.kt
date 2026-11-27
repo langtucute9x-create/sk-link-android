@@ -48,7 +48,7 @@ class DriverService : LifecycleService() {
         val cfg = Engine.cfg
         val s: Src? = when (cfg.src) {
             0 -> PhoneSrc(this)
-            1 -> MjpegSrc(cfg.url1)
+            1 -> MjpegSrc(applicationContext, cfg.url1)
             2 -> RtspSrc(applicationContext, cfg.url2)
             else -> null
         }

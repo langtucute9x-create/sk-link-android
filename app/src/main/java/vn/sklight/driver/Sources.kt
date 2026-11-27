@@ -89,7 +89,7 @@ class PhoneSrc(private val svc: LifecycleService) : Src {
  * Wi-Fi, luồng MJPEG qua HTTP (nhiều camera hành trình và camera giá rẻ dùng): đọc liên tục, cắt từng ảnh JPEG theo dấu đầu FFD8 và dấu cuối FFD9.
  * Cũng nhận địa chỉ trả về MỘT ảnh JPEG (snapshot): khi đó tải lại liên tục. Địa chỉ có dạng http://tên:mật-khẩu@địa-chỉ/... thì gửi kèm đăng nhập.
  */
-class MjpegSrc(private val url: String) : Src {
+class MjpegSrc(private val ctx: Context, private val url: String) : Src {
     override val name = "Wi-Fi MJPEG"
     @Volatile private var run = false
     private var reader: Thread? = null
@@ -118,7 +118,7 @@ class MjpegSrc(private val url: String) : Src {
             var conn: HttpURLConnection? = null
             try {
                 val u = URL(url)
-                conn = (u.openConnection() as HttpURLConnection).apply {
+                conn = ((Net.wifi(ctx)?.openConnection(u) ?: u.openConnection()) as HttpURLConnection).apply {
                     connectTimeout = 5000; readTimeout = 6000; setRequestProperty("User-Agent", "SKDriver")
                     u.userInfo?.let { setRequestProperty("Authorization", "Basic " + Base64.encodeToString(it.toByteArray(), Base64.NO_WRAP)) }
                 }
@@ -207,7 +207,9 @@ class RtspSrc(private val ctx: Context, private val url: String) : Src {
                         main.postDelayed({ if (run) try { p.prepare() } catch (_: Throwable) {} }, 3000)
                     }
                 })
-                val ms = RtspMediaSource.Factory().setForceUseRtpTcp(true).setTimeoutMs(8000).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
+                val fac = RtspMediaSource.Factory().setForceUseRtpTcp(true).setTimeoutMs(8000)
+                Net.wifi(ctx)?.let { fac.setSocketFactory(it.socketFactory) } // ép đi qua Wi-Fi của camera (Wi-Fi này không có internet)
+                val ms = fac.createMediaSource(MediaItem.fromUri(Uri.parse(url)))
                 p.setMediaSource(ms)
                 attach(p, 1280, 720)
                 p.playWhenReady = true

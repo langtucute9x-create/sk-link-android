@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
+import android.app.AlertDialog
 import android.widget.Button
 import android.widget.EditText
 import android.text.InputType
@@ -75,6 +76,7 @@ class SettingsScreen(private val act: MainActivity, onDrive: () -> Unit, onCalib
     private lateinit var urlBox: EditText
     private lateinit var srcStatus: TextView
     private lateinit var srcHint: TextView
+    private lateinit var probeMsg: TextView
     private lateinit var srcSeg: LinearLayout
     private val tick = object : Runnable {
         override fun run() {
@@ -136,9 +138,28 @@ class SettingsScreen(private val act: MainActivity, onDrive: () -> Unit, onCalib
             cfg.switchSrc(it); act.restartSource(); sync()
         }
         srcHint = Ui.text(act, "", 12f, Ui.MUTED)
+        fun use(p: Probe.Preset) {
+            cfg.switchSrc(p.src)
+            if (p.src == 1) cfg.url1 = p.url else cfg.url2 = p.url
+            act.restartSource(); act.recreateSettings()
+        }
+        probeMsg = Ui.text(act, "Nối máy vào Wi-Fi của camera trước khi dò.", 12f, Ui.MUTED)
+        val probeBtn = Ui.pill(act, "Tự dò camera") {
+            if (!Probe.busy) thread {
+                val r = Probe.run(act.applicationContext) { m -> post { probeMsg.text = m } }
+                post { probeMsg.text = r.msg; r.hit?.let { use(it) } }
+            }
+        }
+        val listBtn = Ui.pill(act, "Chọn mẫu") {
+            AlertDialog.Builder(act).setTitle("Dòng camera").setItems(Probe.LIST.map { it.name }.toTypedArray()) { _, i -> use(Probe.LIST[i]) }.show()
+        }
+        val probeRow = LinearLayout(act).apply { orientation = HORIZONTAL; setPadding(0, d(8f), 0, d(4f)) }
+        probeRow.addView(probeBtn, LayoutParams(-2, d(46f)))
+        probeRow.addView(listBtn, LayoutParams(-2, d(46f)).apply { leftMargin = d(10f) })
         card(left, "Nguồn hình",
             Ui.row(act, "Loại camera", "Cân chỉnh được lưu riêng cho từng nguồn hình", null),
             srcSeg,
+            probeRow, probeMsg,
             urlBox, srcHint,
             Ui.row(act, "Trạng thái", "", testBtn),
             srcStatus,

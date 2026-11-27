@@ -76,6 +76,17 @@ class MainActivity : ComponentActivity() {
     /** Đổi CPU/GPU: dựng lại bộ nhận diện ở khung hình kế tiếp. */
     fun requestRebuild() = Engine.requestRebuild()
 
+    /** Dựng lại màn Cài đặt sau khi nguồn hình bị đổi từ bên ngoài ô chọn (tự dò, chọn mẫu). */
+    fun recreateSettings() {
+        val root = settings.parent as FrameLayout
+        val vis = settings.visibility
+        root.removeView(settings)
+        settings = SettingsScreen(this, { go(0) }, { go(1) })
+        settings.visibility = vis
+        root.addView(settings, FrameLayout.LayoutParams(-1, -1))
+        settings.sync()
+    }
+
     /** Đổi nguồn hình hoặc địa chỉ: chạy lại dịch vụ với nguồn mới. */
     fun restartSource() { cfg.save(); DriverService.start(this) }
 
