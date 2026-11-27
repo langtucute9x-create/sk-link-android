@@ -42,6 +42,8 @@ object Act {
     const val HOTLINE = "0868055555"
     private val main = Handler(Looper.getMainLooper())
 
+    val code = mutableStateOf("")             // mã kích hoạt đang dùng cho hộp đang nối (lưu trên máy từ 1.4.115; hộp kích hoạt trước đó thì trống)
+    private fun codeKey(mac: String) = "code_" + mac.uppercase()
     val ok = mutableStateOf(false)            // hộp đang nối đã kích hoạt (được điều khiển)
     val at = mutableStateOf("")               // ngày kích hoạt của hộp đang nối, yyyy-MM-dd
     val until = mutableStateOf("")            // ngày hết bảo hành, yyyy-MM-dd
@@ -110,14 +112,15 @@ object Act {
     }
 
     private fun forget(mac: String) {
-        sp(app).edit().remove(key(mac)).apply()
-        if (mac.equals(box, true) && masterCode.isEmpty()) { ok.value = false; at.value = ""; until.value = ""; needCust.value = false }
+        sp(app).edit().remove(key(mac)).remove(codeKey(mac)).apply()
+        if (mac.equals(box, true) && masterCode.isEmpty()) { code.value = ""; ok.value = false; at.value = ""; until.value = ""; needCust.value = false }
     }
 
     /** Gọi khi vừa nối được hộp [mac]. */
     fun onConnected(mac: String) {
         box = mac
-        if (masterCode.isNotEmpty()) { ok.value = true; needCust.value = false; checking.intValue = 3; recheckMaster(); return }
+        if (masterCode.isNotEmpty()) { ok.value = true; needCust.value = false; checking.intValue = 3; code.value = masterCode; recheckMaster(); return }
+        code.value = sp(app).getString(codeKey(mac), "") ?: ""
         val saved = sp(app).getString(key(mac), null)
         if (saved != null) {
             val p = saved.split('|')
@@ -138,7 +141,11 @@ object Act {
                 if (r.has("activated")) {
                     st = 3
                     val yes = r.optBoolean("activated", false)
-                    main.post { if (yes) store(mac, r.optString("activated_at"), r.optString("warranty_until"), r.optBoolean("need_customer", false)) else forget(mac) }
+                    val sc = r.optString("code")          // SK Core hiện chưa trả mã ở lệnh này; nếu sau này có trả thì app lưu lại luôn
+                    main.post {
+                        if (yes) { store(mac, r.optString("activated_at"), r.optString("warranty_until"), r.optBoolean("need_customer", false)); if (sc.isNotEmpty()) { sp(app).edit().putString(codeKey(mac), sc).apply(); if (mac == box) code.value = sc } }
+                        else forget(mac)
+                    }
                 }
             } catch (_: Exception) {}
             main.post { if (mac == box) checking.intValue = st }
@@ -170,10 +177,10 @@ object Act {
                 if (res == "ok" && mLabel != null) {
                     masterCode = code.uppercase().filter { it.isLetterOrDigit() }; master.value = mLabel; masterUntil.value = a
                     sp(app).edit().putString("master", masterCode + "|" + mLabel).apply()
-                    ok.value = true; needCust.value = false; checking.intValue = 3
+                    ok.value = true; needCust.value = false; checking.intValue = 3; this.code.value = masterCode
                     S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Đã mở bằng mã đại lý", force = true)
                 } else
-                if (res == "ok") { checking.intValue = 3; store(mac, a, w, need); S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
+                if (res == "ok") { checking.intValue = 3; store(mac, a, w, need); val cc = code.uppercase().filter { it.isLetterOrDigit() }; sp(app).edit().putString(codeKey(mac), cc).apply(); if (mac == box) this.code.value = cc; S.sendBright(); S.sendEffect(); if (L.cur.intValue == 0) Speaker.say(ac, "Kích hoạt bảo hành thành công", force = true) }
                 done(res)
             }
         }.start()

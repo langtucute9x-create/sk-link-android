@@ -98,6 +98,18 @@ fun WarrantyCard() {
                     T(L.tr("Hết hạn") + ": " + (if (Act.until.value.isEmpty()) "—" else Act.vn(Act.until.value)), 13, color = SubTxt)
                 }
             }
+            // mã kích hoạt đang dùng: mặc định ẩn, bấm nút mới hiện
+            Spacer(Modifier.height(10.dp))
+            var showCode by remember { mutableStateOf(false) }
+            val cd = Act.code.value
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    T("Mã kích hoạt đang dùng", 13, FontWeight.Bold)
+                    if (cd.isEmpty()) T("Chưa lưu trên máy này (hộp kích hoạt trước bản 1.4.115).", 12, color = Grey)
+                    else androidx.compose.foundation.text.selection.SelectionContainer { T(if (showCode) cd else "•".repeat(cd.length.coerceIn(6, 16)), 15, FontWeight.ExtraBold, if (showCode) AccentText else SubTxt) }
+                }
+                if (cd.isNotEmpty()) OutlineBtn(if (showCode) "Ẩn mã" else "Hiện mã", Modifier.width(96.dp)) { showCode = !showCode }
+            }
             if (Act.needCust.value) {
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(Theme.r(10))).background(Color(0x1AFFA000)).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
