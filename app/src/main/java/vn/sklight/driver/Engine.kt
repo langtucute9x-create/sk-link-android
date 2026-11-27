@@ -35,6 +35,8 @@ object Engine {
 
     /** Màn hình đang mở nhận khung hình (gọi trên luồng xử lý). Null khi app không ở phía trước. */
     @Volatile var ui: ((Frame) -> Unit)? = null
+    /** Màn Lái xe đang được chiếu sang SK Light (xem ShareService). */
+    @Volatile var mirror: ((Frame) -> Unit)? = null
     @Volatile var noteCb: ((String) -> Unit)? = null
     @Volatile var roll = 0f // độ nghiêng trái/phải của máy (độ), do màn hình cân chỉnh đo bằng cảm biến
 
@@ -235,5 +237,6 @@ object Engine {
         Link.send(app, cfg.link, level, smooth, camAt)
         val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start, calibFlag)
         ui?.invoke(fr)
+        mirror?.invoke(fr)
     }
 }

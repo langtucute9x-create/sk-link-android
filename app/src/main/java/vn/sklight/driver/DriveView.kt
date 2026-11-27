@@ -318,6 +318,9 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
         p.textAlign = Paint.Align.LEFT
     }
 
+    /** Điểm chạm trúng nút nào (dùng khi màn này được chiếu sang SK Light): 1 cân chỉnh, 2 cài đặt, -1 không trúng. */
+    fun hitAt(x: Float, y: Float) = if (btnCalib.contains(x, y)) 1 else if (btnSet.contains(x, y)) 2 else -1
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(e: MotionEvent): Boolean {
         val hit = if (btnCalib.contains(e.x, e.y)) 1 else if (btnSet.contains(e.x, e.y)) 2 else 0

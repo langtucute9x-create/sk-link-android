@@ -2,6 +2,7 @@ package vn.sklight.driver
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -58,9 +59,17 @@ class MainActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() { if (screen != 0) go(0) else finish() }
         })
+        intent?.getIntExtra("screen", 0)?.let { if (it in 1..2) go(it) }
         val need = arrayListOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
         if (Build.VERSION.SDK_INT >= 33) need.add(Manifest.permission.POST_NOTIFICATIONS)
         ask.launch(need.toTypedArray())
+    }
+
+    /** SK Light mở app này kèm màn cần hiện (chạm nút Cân chỉnh / Cài đặt trên hình chiếu trong SK Light). */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val s = intent.getIntExtra("screen", -1)
+        if (s in 0..2) go(s)
     }
 
     private fun go(s: Int) {
