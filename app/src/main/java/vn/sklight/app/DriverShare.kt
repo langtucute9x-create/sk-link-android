@@ -86,7 +86,7 @@ fun DriverMirror() {
     val ctx = LocalContext.current
     DisposableEffect(Unit) { DriverShare.bind(ctx); onDispose { DriverShare.unbind() } }
     AndroidView(
-        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(Theme.r(10).dp)),
+        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(Theme.r(10))),
         factory = { c ->
             TextureView(c).apply {
                 isOpaque = true
