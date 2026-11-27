@@ -44,7 +44,7 @@ import kotlin.math.tan
 
 /**
  * SK Driver 0.2.0 – BẢN THỬ. Camera sau của điện thoại (máy gắn ngang trên kính lái), nhận diện xe, người, động vật phía trước ngay trên máy
- * và ước lượng khoảng cách. Ba màn: Lái xe, Cân chỉnh, Cài đặt. Chưa liên kết SK Light, chưa có cảnh báo lệch làn.
+ * và ước lượng khoảng cách. Ba màn: Lái xe, Cân chỉnh, Cài đặt. Gửi mức cảnh báo sang SK Light (Link.kt). Chưa có cảnh báo lệch làn.
  * Đây là công cụ hỗ trợ tham khảo, KHÔNG phải hệ thống an toàn.
  */
 class MainActivity : ComponentActivity() {
@@ -139,6 +139,10 @@ class MainActivity : ComponentActivity() {
         } catch (_: Throwable) {}
     }
 
+    @Volatile private var stopped = false
+    override fun onStart() { super.onStart(); stopped = false }
+    override fun onStop() { stopped = true; Link.stop(applicationContext, cfg.link); super.onStop() }
+
     override fun onPause() {
         try { (getSystemService(Context.SENSOR_SERVICE) as SensorManager).unregisterListener(accL) } catch (_: Throwable) {}
         cfg.save()
@@ -190,6 +194,7 @@ class MainActivity : ComponentActivity() {
     private var raw: Bitmap? = null
 
     private fun analyze(img: ImageProxy) {
+        val camAt = SystemClock.elapsedRealtime()
         frameNo++
         val hot = cfg.thermal && (pm?.currentThermalStatus ?: 0) >= PowerManager.THERMAL_STATUS_SEVERE
         if (hot && frameNo % 2 == 0) return // máy nóng: chỉ xử lý một nửa số khung hình
@@ -246,6 +251,7 @@ class MainActivity : ComponentActivity() {
         val level = if (l == null) 0 else if (minD < 0f) 4 else if (smooth < minD) 3 else if (smooth < minD + 5f) 2 else 1
         if (level == 3 && cfg.beep && (lastLevel != 3 || now - lastBeep > 2000)) { lastBeep = now; try { tone?.startTone(ToneGenerator.TONE_PROP_BEEP2, 220) } catch (_: Throwable) {} }
         lastLevel = level
+        if (!stopped) Link.send(applicationContext, cfg.link, level, smooth, camAt)
         val fr = Frame(bmp, boxes, l, smooth, err, spd, minD, level, fps, inferMs, hy, vpx, laneK, hf, detGpu, hot, start)
         when (screen) { 0 -> drive.show(fr); 1 -> calib.show(fr) }
     }

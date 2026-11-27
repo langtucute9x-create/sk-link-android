@@ -124,7 +124,7 @@ class SettingsScreen(private val act: MainActivity, onDrive: () -> Unit, onCalib
 
         card(right, "Cách báo",
             Ui.row(act, "Tiếng báo khi quá gần", "Một tiếng bíp ngắn, nhắc lại mỗi 2 giây", Ui.switch(act, cfg.beep) { cfg.beep = it; cfg.save() }),
-            Ui.row(act, "Nháy đèn qua SK Light", "Táp lô vàng khi gần, nháy đỏ khi quá gần", Ui.soon(act)),
+            Ui.row(act, "Gửi tín hiệu sang SK Light", "Chọn màu, khu vực và bật nháy đèn trong SK Light, trang Khoảng cách", Ui.switch(act, cfg.link) { cfg.link = it; cfg.save() }),
             Ui.row(act, "Cửa sổ nổi trên app bản đồ", "Hiện số mét khi đang mở app khác", Ui.soon(act)))
 
         upBtn = Ui.pill(act, "Kiểm tra") { onUpdateClick() }

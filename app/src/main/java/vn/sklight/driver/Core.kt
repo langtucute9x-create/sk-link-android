@@ -122,13 +122,14 @@ class Cfg(c: Context) {
     @Volatile var startKmh = sp.getInt("startKmh", 40)       // bắt đầu cảnh báo từ tốc độ này
     @Volatile var beep = sp.getBoolean("beep", true)
     @Volatile var thermal = sp.getBoolean("thermal", true)
+    @Volatile var link = sp.getBoolean("link", true)         // gửi mức cảnh báo sang SK Light
     @Volatile var gpu = sp.getBoolean("gpu", false)
     @Volatile var kinds = sp.getInt("kinds", 0x1F)           // bit theo Kind: 0 ô tô, 1 xe máy, 2 xe đạp, 3 người, 4 động vật
 
     fun save() {
         sp.edit().putFloat("horizon", horizon).putFloat("vx", vx).putFloat("laneK", laneK).putFloat("camH", camH).putFloat("vfov", vfov)
             .putFloat("gap", gapSec).putInt("startKmh", startKmh).putBoolean("beep", beep).putBoolean("thermal", thermal)
-            .putBoolean("gpu", gpu).putInt("kinds", kinds or 1).apply()
+            .putBoolean("gpu", gpu).putBoolean("link", link).putInt("kinds", kinds or 1).apply()
     }
 }
 

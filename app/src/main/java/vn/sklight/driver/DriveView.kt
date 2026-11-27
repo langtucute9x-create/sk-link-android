@@ -271,10 +271,12 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
         val c = if (fr.hot) Ui.AMBER else Ui.GREEN
         rx = chip(ai, c, c, y, rx) - 8f * u
         chip("Camera điện thoại", Ui.WHITE, 0x44FFFFFF, y, rx)
-        val l = chip("    SK Light: chưa liên kết", Ui.WHITE, 0x44FFFFFF, y + h + 10f * u, W - 30f * u)
+        val lk = if (!Link.enabled) 0 else if (!Link.installed) 1 else if (Link.sending) 2 else 3
+        val l = chip("    SK Light: " + arrayOf("đang tắt", "chưa cài SK Light", "đang gửi tín hiệu", "đang chờ")[lk], Ui.WHITE, if (lk == 2) Ui.GREEN else 0x44FFFFFF, y + h + 10f * u, W - 30f * u)
         val cy = y + h + 10f * u + h / 2f; val cx = l + 20f * u
         val ph = (SystemClock.uptimeMillis() % 1600L) / 1600f
-        p.color = Ui.MUTED; p.alpha = (200 * (1f - ph)).toInt(); cv.drawCircle(cx, cy, 5f * u * (1f + 2f * ph), p)
+        p.color = if (lk == 2) Ui.GREEN else Ui.MUTED
+        if (lk == 2) { p.alpha = (200 * (1f - ph)).toInt(); cv.drawCircle(cx, cy, 5f * u * (1f + 2f * ph), p) }
         p.alpha = 255; cv.drawCircle(cx, cy, 5f * u, p)
     }
 
