@@ -11,6 +11,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import kotlin.math.abs
@@ -99,8 +100,8 @@ class CalibScreen(private val act: MainActivity, private val onExit: () -> Unit)
     private val view = CalibView(act, cfg) { syncBars() }
     private val dots = ArrayList<TextView>()
     private val stepTxt = Ui.text(act, "", 14f, Ui.MUTED)
-    private val title = Ui.text(act, "", 26f, Ui.WHITE, true)
-    private val desc = Ui.text(act, "", 15f, 0xFFC9CCD1.toInt())
+    private val title = Ui.text(act, "", 22f, Ui.WHITE, true)
+    private val desc = Ui.text(act, "", 14f, 0xFFC9CCD1.toInt())
     private val body = FrameLayout(act)
     private val pages = ArrayList<View>()
     private val live2 = Ui.text(act, "Đang đo…", 20f, Ui.GREEN, true)
@@ -135,23 +136,22 @@ class CalibScreen(private val act: MainActivity, private val onExit: () -> Unit)
         val panel = LinearLayout(act).apply {
             orientation = VERTICAL
             background = Ui.bg(0xFF0A0A0B.toInt(), d(24f).toFloat(), Ui.LINE, d(1f))
-            setPadding(d(22f), d(16f), d(22f), d(14f))
+            setPadding(d(18f), d(12f), d(18f), d(10f))
         }
-        // đầu bảng: tên app + bước
-        val head = LinearLayout(act).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        head.addView(Ui.text(act, "SK ", 15f, Ui.WHITE, true)); head.addView(Ui.text(act, "Driver", 15f, Ui.PINK, true))
-        head.addView(stepTxt, LayoutParams(-2, -2).apply { leftMargin = d(12f) })
-        panel.addView(head)
-        // 5 vòng tròn bước
+        // đầu bảng: 5 vòng tròn bước + chữ "bước n / 5" trên cùng một hàng (màn điện thoại nằm ngang rất thấp)
         val row = LinearLayout(act).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         for (i in 1..5) {
-            val t = Ui.text(act, i.toString(), 15f, Ui.WHITE, true).apply { gravity = Gravity.CENTER; setOnClickListener { n = i; render() } }
-            dots.add(t); row.addView(t, LayoutParams(d(40f), d(40f)).apply { rightMargin = d(10f) })
+            val t = Ui.text(act, i.toString(), 14f, Ui.WHITE, true).apply { gravity = Gravity.CENTER; setOnClickListener { n = i; render() } }
+            dots.add(t); row.addView(t, LayoutParams(d(36f), d(36f)).apply { rightMargin = d(8f) })
         }
-        panel.addView(row, LayoutParams(-1, -2).apply { topMargin = d(10f) })
-        panel.addView(title, LayoutParams(-1, -2).apply { topMargin = d(10f) })
-        panel.addView(desc, LayoutParams(-1, -2).apply { topMargin = d(4f) })
-        panel.addView(body, LayoutParams(-1, 0, 1f).apply { topMargin = d(8f) })
+        row.addView(stepTxt, LayoutParams(-2, -2).apply { leftMargin = d(6f) })
+        panel.addView(row)
+        // phần giữa cuộn được để không bị cắt trên màn thấp
+        val mid = LinearLayout(act).apply { orientation = VERTICAL }
+        mid.addView(title, LayoutParams(-1, -2).apply { topMargin = d(8f) })
+        mid.addView(desc, LayoutParams(-1, -2).apply { topMargin = d(2f) })
+        mid.addView(body, LayoutParams(-1, -2).apply { topMargin = d(6f) })
+        panel.addView(ScrollView(act).apply { isVerticalScrollBarEnabled = false; addView(mid) }, LayoutParams(-1, 0, 1f))
         // 5 trang nội dung
         pages.add(col(Ui.row(act, "Đang dùng", "Camera sau của điện thoại, 640 × 480", null), Ui.row(act, "Camera USB, camera hành trình Wi-Fi", "Cần biết loại camera và màn hình trên xe", Ui.soon(act))))
         pages.add(col(live2, live2b, Ui.row(act, "Thử dùng GPU", "Thử nghiệm. Lỗi thì tự quay về CPU", Ui.switch(act, cfg.gpu) { cfg.gpu = it; act.requestRebuild() })))
@@ -171,13 +171,13 @@ class CalibScreen(private val act: MainActivity, private val onExit: () -> Unit)
         for (pg in pages) body.addView(pg, FrameLayout.LayoutParams(-1, -2))
         // hàng nút dưới
         val foot = LinearLayout(act).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        foot.addView(Ui.pill(act, "Lái xe") { onExit() }, LayoutParams(-2, d(52f)))
-        foot.addView(back, LayoutParams(-2, d(52f)).apply { leftMargin = d(10f) })
+        foot.addView(Ui.pill(act, "Lái xe") { onExit() }, LayoutParams(-2, d(48f)))
+        foot.addView(back, LayoutParams(-2, d(48f)).apply { leftMargin = d(10f) })
         foot.addView(View(act), LayoutParams(0, 1, 1f))
-        foot.addView(next, LayoutParams(-2, d(52f)))
+        foot.addView(next, LayoutParams(-2, d(48f)))
         panel.addView(foot, LayoutParams(-1, -2).apply { topMargin = d(8f) })
-        addView(panel, LayoutParams(0, -1, 44f).apply { setMargins(d(14f), d(14f), d(8f), d(14f)) })
-        addView(view, LayoutParams(0, -1, 56f).apply { setMargins(0, d(14f), d(14f), d(14f)) })
+        addView(panel, LayoutParams(0, -1, 44f).apply { setMargins(d(10f), d(10f), d(8f), d(10f)) })
+        addView(view, LayoutParams(0, -1, 56f).apply { setMargins(0, d(10f), d(10f), d(10f)) })
         render()
     }
 
@@ -217,7 +217,7 @@ class CalibScreen(private val act: MainActivity, private val onExit: () -> Unit)
     fun sync() { syncBars(); render() }
 
     private fun render() {
-        stepTxt.text = "Cân chỉnh · bước $n / 5"
+        stepTxt.text = "Bước $n / 5"
         title.text = T[n - 1].first; desc.text = T[n - 1].second
         val r = Ui.dp(act, 20f).toFloat()
         dots.forEachIndexed { i, t ->
