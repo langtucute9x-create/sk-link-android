@@ -93,6 +93,13 @@ class KeepService : Service() {
 /** Máy khởi động xong: tự chạy dịch vụ nền để nối lại hộp đèn đã chọn. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, i: Intent?) {
-        try { S.init(ctx); if (S.autoBoot.value) S.syncService(ctx, true) } catch (_: Exception) {}
+        try {
+            S.init(ctx); if (S.autoBoot.value) S.syncService(ctx, true)
+            // máy vừa khởi động (không tính lúc app vừa cập nhật): tự mở giao diện nếu người dùng bật
+            if (i?.action != Intent.ACTION_MY_PACKAGE_REPLACED && S.autoOpen.value) {
+                val app = ctx.applicationContext
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ S.openUi(app) }, 4000)
+            }
+        } catch (_: Exception) {}
     }
 }

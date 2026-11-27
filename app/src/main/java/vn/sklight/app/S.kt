@@ -12,7 +12,7 @@ import androidx.compose.runtime.*
 
 /** Trạng thái chung của app + các hành động gửi lệnh tới hộp đèn. */
 object S {
-    const val VER = "1.4.115"
+    const val VER = "1.4.116"
     private var inited = false
     lateinit var app: Context
     lateinit var ble: BleLed
@@ -139,6 +139,21 @@ object S {
     }
     val z2Speed = mutableIntStateOf(5)                      // tốc độ riêng của kiểu khu vực 2 do app chạy (Màu thở, Màu chớp, Màu cầu vồng), 1..10
     val alwaysBg = mutableStateOf(false)                    // luôn chạy nền (màn hình xe / Android box); tắt thì mất kết nối hộp quá 1 phút là dừng chạy nền
+    val autoOpen = mutableStateOf(false)                  // tự mở giao diện app khi máy khởi động / khi nối lại hộp sau lúc xe tắt máy (cần quyền Hiện trên ứng dụng khác)
+    var lostAt = 0L                                       // lúc mất kết nối hộp gần nhất (0 = chưa mất lần nào từ khi app chạy)
+    private var autoOpenedAt = 0L
+    /** Tự đưa giao diện app lên màn hình. Android 10 trở lên chỉ cho app nền làm việc này khi có quyền Hiện trên ứng dụng khác. Chưa thử trên xe thật. */
+    fun openUi(c: Context) {
+        if (!autoOpen.value || appVisible) return
+        val now = System.currentTimeMillis()
+        if (now - autoOpenedAt < 20000) return
+        try {
+            if (!android.provider.Settings.canDrawOverlays(c)) return
+            val i = c.packageManager.getLaunchIntentForPackage(c.packageName) ?: return
+            autoOpenedAt = now
+            c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+        } catch (_: Exception) {}
+    }
     val autoBoot = mutableStateOf(true)                   // tự kết nối khi khởi động máy
     val nightOn = mutableStateOf(false)                   // tự dịu đèn ban đêm
     val nightMode = mutableIntStateOf(0)                  // 0 theo giờ mặt trời, 1 theo giờ tự đặt
@@ -223,7 +238,7 @@ object S {
         (sp.getString("bri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.forEachIndexed { i, v -> if (i < 3) bri[i] = v.coerceIn(0, 100) }
         on.value = sp.getBoolean("on", true)
         dayBri = (sp.getString("dayBri", "") ?: "").split(",").mapNotNull { it.toIntOrNull() }.let { if (it.size == 3) it.toIntArray() else null }
-        autoBoot.value = sp.getBoolean("autoBoot", true)
+        autoBoot.value = sp.getBoolean("autoBoot", true); autoOpen.value = sp.getBoolean("autoOpen", false)
         // bản cũ: đã chọn Màn hình xe (2) hoặc chưa chọn (0) thì giữ chạy nền liên tục; chọn Điện thoại (1) hoặc cài mới thì tắt
         alwaysBg.value = if (sp.contains("alwaysBg")) sp.getBoolean("alwaysBg", false) else (sp.contains("runMode") && sp.getInt("runMode", 0) != 1)
         nightOn.value = sp.getBoolean("nightOn", false)
@@ -277,7 +292,7 @@ object S {
         sp.edit().putBoolean("invert2", invert.value)
             .putInt("speedZoneB", speedZone.intValue).putBoolean("speedWarn", speedWarn.value).putBoolean("camWarn", camWarn.value).putBoolean("redCamWarn", redCamWarn.value).putBoolean("banWarn", banWarn.value).putBoolean("limitChgWarn", limitChgWarn.value).putInt("camDist", camDist.intValue).putString("alertZone", alertZone.joinToString(",")).putString("alertCol", alertCol.joinToString(",")).putBoolean("screenAuto2", screenAuto.value).putBoolean("warnOn", warnOn.value).putInt("turnStyle", turnStyle.intValue).putBoolean("turnFlip", turnFlip.value).putInt("turnDir", turnDir.intValue).putInt("turnFx", turnFx.intValue).putString("turnSpd", turnSpd.joinToString(",")).putInt("alertDist", alertDist.intValue).putInt("alertMaxSec", alertMaxSec.intValue)
             .putBoolean("on", on.value).putString("bri", bri.joinToString(",")).putString("dayBri", dayBri?.joinToString(",") ?: "")
-            .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
+            .putBoolean("alwaysBg", alwaysBg.value).putBoolean("autoBoot", autoBoot.value).putBoolean("autoOpen", autoOpen.value).putBoolean("nightOn", nightOn.value).putInt("nightMode", nightMode.intValue)
             .putInt("nightFrom", nightFrom.intValue).putInt("nightTo", nightTo.intValue).putInt("nightBri", nightBri.intValue)
             .putBoolean("idleOn", idleOn.value).putInt("floatSize", floatSize.intValue).putInt("floatMascot", floatMascot.intValue).putInt("idleDelay", idleDelay.intValue).putBoolean("limitOsm", limitOsm.value).putInt("idleStyle", idleStyle.intValue).putInt("idleClock", idleClock.intValue).putInt("idleBg", idleBg.intValue).putBoolean("floatOn", floatOn.value).putInt("floatStyle2", floatStyle.intValue).putBoolean("menuTop2", menuTop.value)
             .putBoolean("voiceReply", voiceReply.value).putInt("z2Speed", z2Speed.intValue).putBoolean("voiceQuiet", voiceQuiet.value)

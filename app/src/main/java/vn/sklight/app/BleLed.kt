@@ -130,6 +130,7 @@ class BleLed(private val ctx: Context) {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 main.post {
                     val wasConn = S.connected.value
+                    if (wasConn) S.lostAt = System.currentTimeMillis()
                     S.connected.value = false
                     S.conn.value = "Mất kết nối"
                     val bye = wasConn && wantMac != null && Greet.onLost(ctx)
@@ -414,6 +415,9 @@ class BleLed(private val ctx: Context) {
             S.devName.value = g.device.name ?: g.device.address
             S.conn.value = "Đã kết nối"
             Act.onConnected(g.device.address)
+            // màn xe chỉ ngủ chứ không tắt hẳn thì không có tín hiệu khởi động: nối lại được hộp sau khi mất từ 1 phút trở lên (xe vừa nổ máy) cũng tự mở app
+            if (S.lostAt != 0L && System.currentTimeMillis() - S.lostAt > 60000L) S.openUi(ctx)
+            S.lostAt = 0L
             Greet.onConnected(ctx)
             if (!S.isCar.value && L.cur.intValue == 0) Speaker.say(ctx, "Đã kết nối với hộp đèn", force = true)      // điện thoại: có giọng báo đã kết nối; màn hình ô tô đã có lời chào nên không đọc
             Notice.show(ctx, L.tr("Đã kết nối với " + S.devName.value))

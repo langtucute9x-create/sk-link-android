@@ -203,6 +203,15 @@ fun DriveCard() {
             S.autoBoot.value = it; S.saveSettings(); S.syncService(ctx)
         }
         Divider()
+        SwitchRow("Tự mở app khi khởi động xe", "Mở giao diện khi máy khởi động, hoặc khi nối lại hộp đèn sau lúc xe tắt máy", S.autoOpen.value) {
+            S.autoOpen.value = it; S.saveSettings()
+            if (it && !(try { Settings.canDrawOverlays(ctx) } catch (e: Exception) { false })) {
+                Notice.show(ctx, L.tr("Cần bật quyền Hiện trên ứng dụng khác cho SK Light thì app mới tự mở được."))
+                try { ctx.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + ctx.packageName)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) {}
+            }
+        }
+        if (S.autoOpen.value && !(try { Settings.canDrawOverlays(ctx) } catch (e: Exception) { false })) T("Chưa có quyền Hiện trên ứng dụng khác: app chưa tự mở được.", 11, color = Pink)
+        Divider()
         SwitchRow("Tự dịu đèn ban đêm", "", S.nightOn.value) {
             S.nightOn.value = it; S.saveSettings(); Night.tick()
         }
@@ -236,7 +245,7 @@ fun DriveCard() {
             val w = Night.window()
             val noPlace = S.nightMode.intValue == 0 && Night.sunToday() == null
             T(
-                (if (noPlace) "Chưa có vị trí của máy, tạm dùng giờ tự đặt: " else "Hôm nay dịu đèn ") + "từ ${Night.hm(w.first)} đến ${Night.hm(w.second)}. Ban đêm chỉnh độ sáng tay thì app nhớ mức đó cho ban đêm.",
+                (if (noPlace) "Chưa có vị trí của máy, tạm dùng giờ tự đặt: " else "Hôm nay dịu đèn ") + "từ ${Night.hm(w.first)} đến ${Night.hm(w.second)}. Mức sáng ban đêm đặt riêng ở thanh bên dưới, không đổi theo thanh độ sáng ở trang Đèn.",
                 11, color = Grey, modifier = Modifier.padding(top = 6.dp, bottom = 10.dp)
             )
         }
