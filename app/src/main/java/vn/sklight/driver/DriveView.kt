@@ -77,20 +77,29 @@ class DriveView(c: Context, private val onCalib: () -> Unit, private val onSetti
     private val btnSet = RectF()
     private var pressed = 0
 
+    private val redraw = Runnable { invalidate() }
+    /** Hẹn vẽ lại MỘT lần (hủy lần hẹn trước) để không dồn lệnh vẽ. */
+    private fun again(ms: Long) { removeCallbacks(redraw); postDelayed(redraw, ms) }
+
     fun show(fr: Frame) { f = fr; postInvalidateOnAnimation() }
 
     override fun onDraw(cv: Canvas) {
         val u = height / 720f
         val W = width.toFloat(); val H = height.toFloat()
         val t = (SystemClock.uptimeMillis() % 120000L) / 1000f
-        val fr = f
+        // Hình đứng quá 2,5 giây (mất luồng Wi-Fi, đổi nguồn hình): không vẽ khung hình cũ kèm số mét cũ nữa, báo rõ là đang mất hình.
+        val stale = Engine.frames == 0L || SystemClock.elapsedRealtime() - Engine.lastFrameAt > 2500
+        val fr = if (stale) null else f
         p.style = Paint.Style.FILL; p.typeface = Typeface.DEFAULT_BOLD; p.textAlign = Paint.Align.LEFT; p.alpha = 255
         if (fr == null) {
             p.color = Ui.WHITE; p.textSize = 22f * u; p.textAlign = Paint.Align.CENTER
-            cv.drawText(note, W / 2f, H / 2f, p)
+            val msg = if (f != null && note.startsWith("Đã nhận")) "Mất hình từ camera. Đang chờ nối lại…" else note
+            cv.drawText(msg, W / 2f, H / 2f, p)
             drawButtons(cv, u, W, H)
+            again(700)
             return
         }
+        again(1200) // để phát hiện hình đứng dù không còn khung hình mới gọi vẽ lại
         val bw = fr.bmp.width.toFloat(); val bh = fr.bmp.height.toFloat()
         val k = max(W / bw, H / bh) // phủ kín màn hình, cắt bớt phần thừa
         val ox = (W - bw * k) / 2f; val oy = (H - bh * k) / 2f
