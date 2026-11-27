@@ -11,8 +11,8 @@ android {
         applicationId = "vn.sklight.driver"
         minSdk = 29
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
@@ -54,6 +54,10 @@ dependencies {
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.lifecycle:lifecycle-service:2.8.4")
+    // Nhan luong RTSP tu camera hanh trinh Wi-Fi (Media3, giay phep Apache-2.0)
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-rtsp:1.4.1")
     // Nhan dien vat the chay tren may (MediaPipe Tasks, giay phep Apache-2.0)
     implementation("com.google.mediapipe:tasks-vision:0.10.14")
 }
