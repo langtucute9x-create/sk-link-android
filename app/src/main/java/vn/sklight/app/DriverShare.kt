@@ -15,6 +15,15 @@ import android.view.MotionEvent
 import android.view.Surface
 import android.view.TextureView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material3.Icon
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -99,12 +108,24 @@ object DriverShare {
         send(Message.obtain(null, 1, w, h).apply { data = Bundle().apply { putParcelable("s", s) }; replyTo = reply })
     }
 
-    fun setSurface(s: Surface?, ww: Int, hh: Int) {
-        if (s == null) { send(Message.obtain(null, 2)); surface?.release(); surface = null; return }
-        surface = s; w = ww; h = hh; push()
+    private var owner: SurfaceTexture? = null
+
+    fun setSurface(st: SurfaceTexture, ww: Int, hh: Int) {
+        val old = surface
+        owner = st; surface = Surface(st); w = ww; h = hh; push()
+        try { old?.release() } catch (_: Throwable) {}
     }
 
-    fun resize(ww: Int, hh: Int) { w = ww; h = hh; push() }
+    /** Khung hình bị gỡ. Chỉ thôi vẽ khi đó đúng là khung đang dùng (lúc phóng to / thu nhỏ, khung mới có thể đã thay vào trước). */
+    fun clear(st: SurfaceTexture) {
+        if (st !== owner) return
+        send(Message.obtain(null, 2)); try { surface?.release() } catch (_: Throwable) {}
+        surface = null; owner = null
+    }
+
+    val full = mutableStateOf(false)
+
+    fun resize(st: SurfaceTexture, ww: Int, hh: Int) { if (st === owner) { w = ww; h = hh; push() } }
 
     fun tap(x: Float, y: Float) {
         // chưa nối được hoặc SK Driver đã dừng: chạm là mở SK Driver
@@ -113,23 +134,35 @@ object DriverShare {
     }
 }
 
-/** Khung hình 16:9 chiếu màn Lái xe của SK Driver. */
+/** Khung hình 16:9 chiếu màn Lái xe của SK Driver, có nút phóng to toàn màn hình. */
 @Composable
 fun DriverMirror() {
     val ctx = LocalContext.current
-    DisposableEffect(Unit) { DriverShare.bind(ctx); onDispose { DriverShare.unbind() } }
+    DisposableEffect(Unit) { DriverShare.bind(ctx); onDispose { DriverShare.full.value = false; DriverShare.unbind() } }
     LaunchedEffect(Unit) { while (true) { delay(1000); DriverShare.watch() } }
-    val st = DriverShare.state.value
+    val full = DriverShare.full.value
     Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(Theme.r(10))).background(Color.Black), contentAlignment = Alignment.Center) {
+        if (!full) MirrorView(false) else T("Đang xem toàn màn hình", 13, FontWeight.Bold, Color.White)
+    }
+    if (full) Dialog(onDismissRequest = { DriverShare.full.value = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) { MirrorView(true) }
+    }
+}
+
+/** Mặt vẽ + dòng trạng thái + nút phóng to / thu nhỏ (giữa cạnh dưới, tránh hai nút Cân chỉnh và Cài đặt của SK Driver ở hai góc). */
+@Composable
+private fun MirrorView(full: Boolean) {
+    val st = DriverShare.state.value
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { c ->
                 TextureView(c).apply {
                     isOpaque = true
                     surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-                        override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) { DriverShare.setSurface(Surface(st), w, h) }
-                        override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) { DriverShare.resize(w, h) }
-                        override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean { DriverShare.setSurface(null, 0, 0); return true }
+                        override fun onSurfaceTextureAvailable(st: SurfaceTexture, w: Int, h: Int) { DriverShare.setSurface(st, w, h) }
+                        override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, w: Int, h: Int) { DriverShare.resize(st, w, h) }
+                        override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean { DriverShare.clear(st); return true }
                         override fun onSurfaceTextureUpdated(st: SurfaceTexture) {}
                     }
                     var lx = 0f; var ly = 0f
@@ -141,5 +174,11 @@ fun DriverMirror() {
         if (st.isNotEmpty()) Box(Modifier.fillMaxSize().background(Color(0xCC000000)).padding(16.dp), contentAlignment = Alignment.Center) {
             T(st, 13, FontWeight.Bold, Color.White)
         }
+        val sz = if (full) 52 else 40
+        Box(
+            Modifier.align(Alignment.BottomCenter).padding(bottom = (if (full) 16 else 8).dp).size(sz.dp).clip(CircleShape)
+                .background(Color(0xD0141416)).clickable { DriverShare.full.value = !full },
+            contentAlignment = Alignment.Center
+        ) { Icon(if (full) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen, L.tr(if (full) "Thu nhỏ" else "Phóng to"), tint = Color.White, modifier = Modifier.size((sz * 0.6f).dp)) }
     }
 }
